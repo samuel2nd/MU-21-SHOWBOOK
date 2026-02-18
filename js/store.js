@@ -1133,6 +1133,19 @@ const Store = (() => {
         if (!data.fiberTac || Object.keys(data.fiberTac).length === 0) {
           data.fiberTac = initTacData();
         }
+        // Ensure sources array always has 80 items
+        if (!data.sources || !Array.isArray(data.sources) || data.sources.length < 80) {
+          const defaultSources = emptyShow().sources;
+          data.sources = data.sources || [];
+          for (let i = 0; i < 80; i++) {
+            if (!data.sources[i]) {
+              data.sources[i] = defaultSources[i];
+            } else {
+              // Ensure each source has all required fields
+              data.sources[i] = { ...defaultSources[i], ...data.sources[i] };
+            }
+          }
+        }
       }
     } catch (e) {
       console.warn('Failed to load from localStorage:', e);
