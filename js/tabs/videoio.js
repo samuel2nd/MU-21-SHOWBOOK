@@ -382,10 +382,10 @@ const VideoIoTab = (() => {
   function makeJfsMuxInput(row, idx, storePath, key, placeholder = '') {
     const td = document.createElement('td');
     if (key === 'source') {
-      // Use select dropdown for source
+      // Use select dropdown for source - from RTR I/O MASTER devices
       const sel = document.createElement('select');
       sel.innerHTML = '<option value="">--</option>';
-      Utils.getSourceOptions().forEach(o => {
+      Utils.getDeviceOptions().forEach(o => {
         const opt = document.createElement('option');
         opt.value = o.value;
         opt.textContent = o.label;
@@ -393,7 +393,7 @@ const VideoIoTab = (() => {
         sel.appendChild(opt);
       });
       // Preserve current value if not in list
-      if (row[key] && !Utils.getSourceOptions().find(o => o.value === row[key])) {
+      if (row[key] && !Utils.getDeviceOptions().find(o => o.value === row[key])) {
         const orphanOpt = document.createElement('option');
         orphanOpt.value = row[key];
         orphanOpt.textContent = row[key];
@@ -420,12 +420,12 @@ const VideoIoTab = (() => {
     return td;
   }
 
-  // Helper: Source select dropdown
+  // Helper: Source select dropdown - uses RTR I/O MASTER devices
   function makeSourceInput(row, idx, section, key) {
     const td = document.createElement('td');
     const sel = document.createElement('select');
     sel.innerHTML = '<option value="">--</option>';
-    Utils.getSourceOptions().forEach(o => {
+    Utils.getDeviceOptions().forEach(o => {
       const opt = document.createElement('option');
       opt.value = o.value;
       opt.textContent = o.label;
@@ -433,7 +433,7 @@ const VideoIoTab = (() => {
       sel.appendChild(opt);
     });
     // Preserve current value if not in list
-    if (row[key] && !Utils.getSourceOptions().find(o => o.value === row[key])) {
+    if (row[key] && !Utils.getDeviceOptions().find(o => o.value === row[key])) {
       const orphanOpt = document.createElement('option');
       orphanOpt.value = row[key];
       orphanOpt.textContent = row[key];
