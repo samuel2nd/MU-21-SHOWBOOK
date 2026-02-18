@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MU-21 Showbook</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header id="app-header">
+    <div class="header-left">
+      <span class="header-logo">MU-21</span>
+      <span id="header-show-name" class="header-show">No Show Loaded</span>
+      <span id="header-show-format" class="header-format"></span>
+    </div>
+    <div class="header-right">
+      <span id="save-indicator" class="save-indicator" title="All changes saved">Saved</span>
+      <span id="connection-status" class="status-indicator offline" title="Storage mode">LOCAL</span>
+      <button id="btn-new-show" class="header-btn" title="New Show">+ New Show</button>
+      <button id="btn-import" class="header-btn" title="Import Show">Import</button>
+      <button id="btn-export-json" class="header-btn" title="Export JSON">Export JSON</button>
+      <button id="btn-export-csv" class="header-btn" title="Export Current Tab CSV">Export CSV</button>
+    </div>
+  </header>
+
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar">
+    <div class="nav-group" data-category="home">
+      <div class="nav-group-label">Home</div>
+      <button class="nav-tab active" data-tab="home">HOME</button>
+    </div>
+    <div class="nav-group" data-category="input">
+      <div class="nav-group-label">Input</div>
+      <button class="nav-tab" data-tab="source">SOURCE</button>
+      <button class="nav-tab" data-tab="txpgmgfx">TX/PGM/GFX</button>
+      <button class="nav-tab" data-tab="ccufsy">CCU/FSY INPUT</button>
+    </div>
+    <div class="nav-group" data-category="lookup">
+      <div class="nav-group-label">Lookup</div>
+      <button class="nav-tab" data-tab="rtrmaster">RTR I/O MASTER</button>
+      <button class="nav-tab" data-tab="sheet8">Sheet8 (Ref Data)</button>
+    </div>
+    <div class="nav-group" data-category="output">
+      <div class="nav-group-label">Output / Computed</div>
+      <button class="nav-tab" data-tab="engineer">ENGINEER</button>
+      <button class="nav-tab" data-tab="swrio">SWR I/O</button>
+    </div>
+    <div class="nav-group" data-category="physical">
+      <div class="nav-group-label">Physical I/O</div>
+      <button class="nav-tab" data-tab="videoio">VIDEO I/O</button>
+      <button class="nav-tab" data-tab="fibertac">FIBER TAC</button>
+      <button class="nav-tab" data-tab="coax">COAX MULTS/MUX</button>
+      <button class="nav-tab" data-tab="audiomult">AUDIO MULT</button>
+      <button class="nav-tab" data-tab="networkio">NETWORK I/O</button>
+    </div>
+    <div class="nav-group" data-category="monitor">
+      <div class="nav-group-label">Monitor Walls</div>
+      <button class="nav-tab" data-tab="monitors-prod-digital">PROD Digital</button>
+      <button class="nav-tab" data-tab="monitors-prod-print">PROD Print</button>
+      <button class="nav-tab" data-tab="monitors-p2p3">P2-P3</button>
+      <button class="nav-tab" data-tab="monitors-evs">EVS</button>
+      <button class="nav-tab" data-tab="monitors-aud">AUD</button>
+    </div>
+    <div class="nav-group" data-category="config">
+      <div class="nav-group-label">Config</div>
+      <button class="nav-tab" data-tab="evsconfig">EVS CONFIG</button>
+      <button class="nav-tab" data-tab="multiviewer">MULTIVIEWER</button>
+      <button class="nav-tab" data-tab="routerpanel">ROUTER PANELS</button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main id="tab-content">
+    <!-- Tab content rendered here by JS -->
+  </main>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="import-file-input" accept=".json" style="display:none">
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/formulas.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/tabs/home.js"></script>
+  <script src="js/tabs/source.js"></script>
+  <script src="js/tabs/txpgmgfx.js"></script>
+  <script src="js/tabs/ccufsy.js"></script>
+  <script src="js/tabs/rtrmaster.js"></script>
+  <script src="js/tabs/sheet8.js"></script>
+  <script src="js/tabs/engineer.js"></script>
+  <script src="js/tabs/swrio.js"></script>
+  <script src="js/tabs/videoio.js"></script>
+  <script src="js/tabs/fibertac.js"></script>
+  <script src="js/tabs/coax.js"></script>
+  <script src="js/tabs/audiomult.js"></script>
+  <script src="js/tabs/networkio.js"></script>
+  <script src="js/tabs/monitors.js"></script>
+  <script src="js/tabs/proddigital.js"></script>
+  <script src="js/tabs/multiviewer.js"></script>
+  <script src="js/tabs/evsconfig.js"></script>
+  <script src="js/tabs/routerpanel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
