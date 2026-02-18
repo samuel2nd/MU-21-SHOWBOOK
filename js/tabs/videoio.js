@@ -381,70 +381,52 @@ const VideoIoTab = (() => {
   // Helper for JFS MUX inputs (different store path)
   function makeJfsMuxInput(row, idx, storePath, key, placeholder = '') {
     const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = placeholder;
     if (key === 'source') {
-      // Use select dropdown for source - from RTR I/O MASTER devices
-      const sel = document.createElement('select');
-      sel.innerHTML = '<option value="">--</option>';
+      const dlId = `jfsmux-${storePath}-${idx}-${key}`;
+      inp.setAttribute('list', dlId);
+      const dl = document.createElement('datalist');
+      dl.id = dlId;
       Utils.getDeviceOptions().forEach(o => {
         const opt = document.createElement('option');
         opt.value = o.value;
-        opt.textContent = o.label;
-        if (row[key] === o.value) opt.selected = true;
-        sel.appendChild(opt);
+        dl.appendChild(opt);
       });
-      // Preserve current value if not in list
-      if (row[key] && !Utils.getDeviceOptions().find(o => o.value === row[key])) {
-        const orphanOpt = document.createElement('option');
-        orphanOpt.value = row[key];
-        orphanOpt.textContent = row[key];
-        orphanOpt.selected = true;
-        sel.insertBefore(orphanOpt, sel.children[1]);
-      }
-      sel.addEventListener('change', () => {
-        row[key] = sel.value;
-        Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, sel.value);
-      });
-      td.appendChild(sel);
-    } else {
-      // Text input for destination
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.value = row[key] || '';
-      inp.placeholder = placeholder;
-      inp.addEventListener('change', () => {
-        row[key] = inp.value;
-        Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, inp.value);
-      });
-      td.appendChild(inp);
+      td.appendChild(dl);
     }
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, inp.value);
+    });
+    td.appendChild(inp);
     return td;
   }
 
-  // Helper: Source select dropdown - uses RTR I/O MASTER devices
+  // Helper: Source input with datalist (filterable) - uses RTR I/O MASTER devices
   function makeSourceInput(row, idx, section, key) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = '';
+    const dlId = `videoio-${section}-${idx}-${key}`;
+    inp.setAttribute('list', dlId);
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
     Utils.getDeviceOptions().forEach(o => {
       const opt = document.createElement('option');
       opt.value = o.value;
-      opt.textContent = o.label;
-      if (row[key] === o.value) opt.selected = true;
-      sel.appendChild(opt);
+      dl.appendChild(opt);
     });
-    // Preserve current value if not in list
-    if (row[key] && !Utils.getDeviceOptions().find(o => o.value === row[key])) {
-      const orphanOpt = document.createElement('option');
-      orphanOpt.value = row[key];
-      orphanOpt.textContent = row[key];
-      orphanOpt.selected = true;
-      sel.insertBefore(orphanOpt, sel.children[1]);
-    }
-    sel.addEventListener('change', () => {
-      row[key] = sel.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, sel.value);
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
     });
-    td.appendChild(sel);
+    td.appendChild(inp);
+    td.appendChild(dl);
     return td;
   }
 
