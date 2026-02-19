@@ -425,17 +425,12 @@ const ProdDigitalTab = (() => {
     function renderRange(start, end) {
       sourcesGrid.innerHTML = '';
       const sources = (Store.data && Store.data.sources) ? Store.data.sources : [];
-      for (let i = start - 1; i < end && i < sources.length; i++) {
+      // Always show all sources 1-80, use placeholder if no showName defined
+      for (let i = start - 1; i < end; i++) {
         const src = sources[i];
-        if (src && src.showName) {
-          sourcesGrid.appendChild(createDraggableChip(src.showName, 'show'));
-        }
-      }
-      if (sourcesGrid.children.length === 0) {
-        const empty = document.createElement('span');
-        empty.style.cssText = 'font-size:10px;color:var(--text-muted);padding:4px;';
-        empty.textContent = 'No sources in this range';
-        sourcesGrid.appendChild(empty);
+        const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+        const isPlaceholder = !(src && src.showName);
+        sourcesGrid.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
       }
     }
 
@@ -531,7 +526,7 @@ const ProdDigitalTab = (() => {
   }
 
   // Create a draggable source chip
-  function createDraggableChip(label, type) {
+  function createDraggableChip(label, type, isPlaceholder = false) {
     const chip = document.createElement('div');
     chip.draggable = true;
     chip.dataset.source = label;
@@ -543,6 +538,8 @@ const ProdDigitalTab = (() => {
       swr: { bg: '#2a4a3a', border: '#3a7a5a', text: '#7effb8' },
     };
     const c = colors[type] || colors.show;
+    // Dim placeholder chips to distinguish from defined sources
+    const opacity = isPlaceholder ? '0.5' : '1';
 
     chip.style.cssText = `
       padding: 3px 6px;
@@ -555,17 +552,18 @@ const ProdDigitalTab = (() => {
       cursor: grab;
       user-select: none;
       white-space: nowrap;
+      opacity: ${opacity};
     `;
     chip.textContent = label;
 
     chip.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', label);
       e.dataTransfer.effectAllowed = 'copy';
-      chip.style.opacity = '0.5';
+      chip.style.opacity = '0.3';
     });
 
     chip.addEventListener('dragend', () => {
-      chip.style.opacity = '1';
+      chip.style.opacity = isPlaceholder ? '0.5' : '1';
     });
 
     return chip;
