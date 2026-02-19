@@ -877,17 +877,12 @@ const MonitorsTab = (() => {
     function renderRange(start, end) {
       grid.innerHTML = '';
       const sources = (Store.data && Store.data.sources) ? Store.data.sources : [];
-      for (let i = start - 1; i < end && i < sources.length; i++) {
+      // Always show all sources 1-80, use placeholder if no showName defined
+      for (let i = start - 1; i < end; i++) {
         const src = sources[i];
-        if (src && src.showName) {
-          grid.appendChild(createChip(src.showName, 'show'));
-        }
-      }
-      if (grid.children.length === 0) {
-        const empty = document.createElement('span');
-        empty.style.cssText = 'font-size:10px;color:var(--text-muted);padding:4px;';
-        empty.textContent = 'No sources';
-        grid.appendChild(empty);
+        const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+        const isPlaceholder = !(src && src.showName);
+        grid.appendChild(createChip(showName, 'show', isPlaceholder));
       }
     }
 
@@ -958,7 +953,7 @@ const MonitorsTab = (() => {
     return section;
   }
 
-  function createChip(label, type) {
+  function createChip(label, type, isPlaceholder = false) {
     const chip = document.createElement('div');
     chip.draggable = true;
     const colors = {
@@ -967,14 +962,16 @@ const MonitorsTab = (() => {
       swr: { bg: '#2a4a3a', border: '#3a7a5a', text: '#7effb8' },
     };
     const c = colors[type] || colors.show;
-    chip.style.cssText = `padding:3px 6px;font-size:9px;font-weight:500;background:${c.bg};border:1px solid ${c.border};border-radius:3px;color:${c.text};cursor:grab;user-select:none;white-space:nowrap;`;
+    // Dim placeholder chips to distinguish from defined sources
+    const opacity = isPlaceholder ? '0.5' : '1';
+    chip.style.cssText = `padding:3px 6px;font-size:9px;font-weight:500;background:${c.bg};border:1px solid ${c.border};border-radius:3px;color:${c.text};cursor:grab;user-select:none;white-space:nowrap;opacity:${opacity};`;
     chip.textContent = label;
     chip.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', label);
       e.dataTransfer.effectAllowed = 'copy';
-      chip.style.opacity = '0.5';
+      chip.style.opacity = '0.3';
     });
-    chip.addEventListener('dragend', () => { chip.style.opacity = '1'; });
+    chip.addEventListener('dragend', () => { chip.style.opacity = isPlaceholder ? '0.5' : '1'; });
     return chip;
   }
 
