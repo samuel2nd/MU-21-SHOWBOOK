@@ -1,0 +1,2 @@
+2026-02-20 14:48:17 - Starting C:\Program Files\nodejs\node.exe  C:\Users\rober\Desktop\mu21-showbook\showbook-server\node_modules\node-windows\lib\wrapper.js --file C:\Users\rober\Desktop\mu21-showbook\showbook-server\server.js --scriptoptions= --log "MU-21 Showbook Server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2026-02-20 14:48:17 - Started 11992

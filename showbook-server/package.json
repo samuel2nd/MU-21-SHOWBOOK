@@ -1,0 +1,15 @@
+{
+  "name": "showbook-server",
+  "version": "1.0.0",
+  "description": "Local web server for MU-21 Showbook",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "install-service": "node install-service.js",
+    "uninstall-service": "node uninstall-service.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-windows": "^1.0.0-beta.8"
+  }
+}
