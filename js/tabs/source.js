@@ -6,7 +6,9 @@ const SourceTab = (() => {
     prefix: '',
     startRow: 1,
     endRow: 10,
-    startNum: 1
+    startNum: 1,
+    audioValue: '',
+    mode: 'increment' // 'increment' or 'repeat'
   };
 
   function render(container) {
@@ -67,22 +69,60 @@ const SourceTab = (() => {
     colGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Column</label>';
     const colSelect = document.createElement('select');
     colSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    colSelect.innerHTML = '<option value="showName">Show Name</option><option value="umdName">UMD Name</option>';
+    colSelect.innerHTML = `
+      <option value="showName">Show Name</option>
+      <option value="umdName">UMD Name</option>
+      <option value="engSource">Eng Source</option>
+      <option value="audioSource">Audio Source</option>
+    `;
     colSelect.value = autofillState.column;
     colGroup.appendChild(colSelect);
     row.appendChild(colGroup);
 
-    // Prefix input
+    // Mode select (increment vs repeat)
+    const modeGroup = document.createElement('div');
+    modeGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Mode</label>';
+    const modeSelect = document.createElement('select');
+    modeSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    modeSelect.innerHTML = `
+      <option value="increment">Increment (CAM01, CAM02...)</option>
+      <option value="repeat">Repeat Same Value</option>
+    `;
+    modeSelect.value = autofillState.mode;
+    modeGroup.appendChild(modeSelect);
+    row.appendChild(modeGroup);
+
+    // Prefix input (for increment mode) / Value input (for repeat mode)
     const prefixGroup = document.createElement('div');
-    prefixGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Prefix</label>';
+    const prefixLabel = document.createElement('label');
+    prefixLabel.style.cssText = 'display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;';
+    prefixLabel.textContent = 'Prefix';
+    prefixGroup.appendChild(prefixLabel);
     const prefixInput = document.createElement('input');
     prefixInput.type = 'text';
     prefixInput.placeholder = 'CAM';
-    prefixInput.maxLength = 6;
+    prefixInput.maxLength = 10;
     prefixInput.value = autofillState.prefix;
-    prefixInput.style.cssText = 'width:80px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    prefixInput.style.cssText = 'width:100px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
     prefixGroup.appendChild(prefixInput);
     row.appendChild(prefixGroup);
+
+    // Audio source dropdown (for audio column in repeat mode)
+    const audioGroup = document.createElement('div');
+    audioGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Audio Source</label>';
+    const audioSelect = document.createElement('select');
+    audioSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);min-width:120px;';
+    audioSelect.innerHTML = '<option value="">-- Select --</option>';
+    (Store.data.sheet8.audioSources || []).forEach(src => {
+      const opt = document.createElement('option');
+      opt.value = src;
+      opt.textContent = src;
+      if (autofillState.audioValue === src) opt.selected = true;
+      audioSelect.appendChild(opt);
+    });
+    audioGroup.appendChild(audioSelect);
+    audioGroup.style.display = 'none'; // Hidden initially
+    row.appendChild(audioGroup);
 
     // Start row
     const startGroup = document.createElement('div');
@@ -108,7 +148,7 @@ const SourceTab = (() => {
     endGroup.appendChild(endInput);
     row.appendChild(endGroup);
 
-    // Start number
+    // Start number (for increment mode)
     const numGroup = document.createElement('div');
     numGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Start #</label>';
     const numInput = document.createElement('input');
@@ -124,16 +164,90 @@ const SourceTab = (() => {
     applyBtn.className = 'btn btn-primary';
     applyBtn.textContent = 'Apply';
     applyBtn.style.cssText = 'padding:6px 16px;';
+    row.appendChild(applyBtn);
+
+    wrapper.appendChild(row);
+
+    // Preview text
+    const preview = document.createElement('div');
+    preview.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-secondary);';
+    wrapper.appendChild(preview);
+
+    // Update UI based on column and mode selection
+    const updateUI = () => {
+      const col = colSelect.value;
+      const mode = modeSelect.value;
+
+      // Audio column always uses repeat mode with audio dropdown
+      if (col === 'audioSource') {
+        modeSelect.value = 'repeat';
+        modeSelect.disabled = true;
+        modeGroup.style.opacity = '0.5';
+        prefixGroup.style.display = 'none';
+        numGroup.style.display = 'none';
+        audioGroup.style.display = 'block';
+        preview.textContent = audioSelect.value
+          ? `Will set "${audioSelect.value}" for rows ${startInput.value}–${endInput.value}`
+          : 'Select an audio source';
+      } else {
+        modeSelect.disabled = false;
+        modeGroup.style.opacity = '1';
+        audioGroup.style.display = 'none';
+
+        if (mode === 'increment') {
+          prefixLabel.textContent = 'Prefix';
+          prefixInput.placeholder = 'CAM';
+          prefixGroup.style.display = 'block';
+          numGroup.style.display = 'block';
+          const prefix = prefixInput.value.trim() || 'CAM';
+          const startNum = parseInt(numInput.value) || 1;
+          preview.textContent = `Preview: ${prefix}${padNum(startNum)}, ${prefix}${padNum(startNum + 1)}, ${prefix}${padNum(startNum + 2)}...`;
+        } else {
+          prefixLabel.textContent = 'Value';
+          prefixInput.placeholder = 'Enter value...';
+          prefixGroup.style.display = 'block';
+          numGroup.style.display = 'none';
+          const value = prefixInput.value.trim() || '(enter value)';
+          preview.textContent = `Will set "${value}" for rows ${startInput.value}–${endInput.value}`;
+        }
+      }
+    };
+
+    // Event listeners
+    colSelect.addEventListener('change', updateUI);
+    modeSelect.addEventListener('change', updateUI);
+    prefixInput.addEventListener('input', updateUI);
+    numInput.addEventListener('input', updateUI);
+    startInput.addEventListener('input', updateUI);
+    endInput.addEventListener('input', updateUI);
+    audioSelect.addEventListener('change', updateUI);
+
+    // Apply button handler
     applyBtn.addEventListener('click', () => {
       const col = colSelect.value;
+      const mode = col === 'audioSource' ? 'repeat' : modeSelect.value;
       const prefix = prefixInput.value.trim();
       const startRow = Math.max(1, Math.min(80, parseInt(startInput.value) || 1));
       const endRow = Math.max(startRow, Math.min(80, parseInt(endInput.value) || startRow));
       const startNum = parseInt(numInput.value) || 1;
+      const audioValue = audioSelect.value;
 
-      if (!prefix) {
-        Utils.toast('Please enter a prefix', 'warn');
-        return;
+      // Validation
+      if (col === 'audioSource') {
+        if (!audioValue) {
+          Utils.toast('Please select an audio source', 'warn');
+          return;
+        }
+      } else if (mode === 'increment') {
+        if (!prefix) {
+          Utils.toast('Please enter a prefix', 'warn');
+          return;
+        }
+      } else {
+        if (!prefix) {
+          Utils.toast('Please enter a value', 'warn');
+          return;
+        }
       }
 
       // Save state for persistence across re-renders
@@ -142,34 +256,113 @@ const SourceTab = (() => {
       autofillState.startRow = startRow;
       autofillState.endRow = endRow;
       autofillState.startNum = startNum;
+      autofillState.audioValue = audioValue;
+      autofillState.mode = mode;
 
+      // Apply values
       let num = startNum;
       for (let i = startRow - 1; i < endRow; i++) {
-        const value = `${prefix}${padNum(num)}`;
+        let value;
+        if (col === 'audioSource') {
+          value = audioValue;
+        } else if (mode === 'increment') {
+          value = `${prefix}${padNum(num)}`;
+          num++;
+        } else {
+          value = prefix;
+        }
         data[i][col] = value;
         Store.set(`sources.${i}.${col}`, value);
-        num++;
       }
 
-      Utils.toast(`Filled ${col === 'showName' ? 'Show Name' : 'UMD Name'} for rows ${startRow}–${endRow}`, 'success');
+      const colNames = {
+        showName: 'Show Name',
+        umdName: 'UMD Name',
+        engSource: 'Eng Source',
+        audioSource: 'Audio Source'
+      };
+      Utils.toast(`Filled ${colNames[col]} for rows ${startRow}–${endRow}`, 'success');
       App.renderCurrentTab();
     });
-    row.appendChild(applyBtn);
 
-    wrapper.appendChild(row);
+    // Initialize UI state
+    updateUI();
 
-    // Preview text
-    const preview = document.createElement('div');
-    preview.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-secondary);';
-    const updatePreview = () => {
-      const prefix = prefixInput.value.trim() || 'CAM';
-      const startNum = parseInt(numInput.value) || 1;
-      preview.textContent = `Preview: ${prefix}${padNum(startNum)}, ${prefix}${padNum(startNum + 1)}, ${prefix}${padNum(startNum + 2)}...`;
-    };
-    updatePreview();
-    prefixInput.addEventListener('input', updatePreview);
-    numInput.addEventListener('input', updatePreview);
-    wrapper.appendChild(preview);
+    // Quick presets section
+    const presetsWrapper = document.createElement('div');
+    presetsWrapper.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
+
+    const presetsTitle = document.createElement('div');
+    presetsTitle.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:8px;';
+    presetsTitle.textContent = 'Quick Presets';
+    presetsWrapper.appendChild(presetsTitle);
+
+    const presetsRow = document.createElement('div');
+    presetsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+    // Common presets for Eng Sources
+    const engPresets = [
+      { label: 'CAM 1-10', prefix: 'CAM', start: 1, end: 10, col: 'engSource' },
+      { label: 'CAM 11-20', prefix: 'CAM', start: 11, end: 20, startNum: 11, col: 'engSource' },
+      { label: 'VTR 1-6', prefix: 'VTR', start: 1, end: 6, col: 'engSource' },
+      { label: 'GFX 1-4', prefix: 'GFX', start: 1, end: 4, col: 'engSource' },
+      { label: 'SSM 1-4', prefix: 'SSM', start: 1, end: 4, col: 'engSource' },
+      { label: 'EVS 1-6', prefix: 'EVS', start: 1, end: 6, col: 'engSource' },
+    ];
+
+    engPresets.forEach(preset => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.style.cssText = 'padding:4px 10px;font-size:11px;';
+      btn.textContent = preset.label;
+      btn.title = `Fill rows ${preset.start}-${preset.end} with ${preset.prefix}01, ${preset.prefix}02...`;
+      btn.addEventListener('click', () => {
+        // Set form values
+        colSelect.value = preset.col;
+        modeSelect.value = 'increment';
+        prefixInput.value = preset.prefix;
+        startInput.value = preset.start;
+        endInput.value = preset.end;
+        numInput.value = preset.startNum || 1;
+        updateUI();
+        // Auto-apply
+        applyBtn.click();
+      });
+      presetsRow.appendChild(btn);
+    });
+
+    presetsWrapper.appendChild(presetsRow);
+
+    // Audio presets row
+    const audioSources = Store.data.sheet8.audioSources || [];
+    if (audioSources.length > 0) {
+      const audioPresetsTitle = document.createElement('div');
+      audioPresetsTitle.style.cssText = 'font-size:11px;color:var(--text-secondary);margin:10px 0 6px;';
+      audioPresetsTitle.textContent = 'Audio Source Presets (click to set, then choose rows)';
+      presetsWrapper.appendChild(audioPresetsTitle);
+
+      const audioPresetsRow = document.createElement('div');
+      audioPresetsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+      audioSources.slice(0, 12).forEach(src => { // Show first 12 audio sources
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.cssText = 'padding:4px 10px;font-size:11px;';
+        btn.textContent = src;
+        btn.title = `Set audio source to "${src}" for selected rows`;
+        btn.addEventListener('click', () => {
+          colSelect.value = 'audioSource';
+          audioSelect.value = src;
+          updateUI();
+          Utils.toast(`Selected "${src}" - now set row range and click Apply`, 'info');
+        });
+        audioPresetsRow.appendChild(btn);
+      });
+
+      presetsWrapper.appendChild(audioPresetsRow);
+    }
+
+    wrapper.appendChild(presetsWrapper);
 
     return wrapper;
   }
