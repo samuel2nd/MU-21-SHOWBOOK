@@ -52,468 +52,327 @@ const SourceTab = (() => {
     return String(n).padStart(2, '0');
   }
 
+  // Helper: Find sequential devices from RTR I/O Master
+  // e.g., "CAM 1" → finds "CAM 2", "CAM 3", etc.
+  function findSequentialDevices(startDevice, count) {
+    const allDevices = Utils.getDeviceOptions().map(o => o.value).filter(v => v);
+
+    // Extract prefix and number from start device
+    // Handles: "CAM 1", "CAM1", "CAM-1", "CAM_1", "CAMERA 01"
+    const match = startDevice.match(/^(.+?)[\s\-_]*(\d+)$/);
+    if (!match) return [startDevice]; // No number pattern, just return the one device
+
+    const prefix = match[1];
+    const startNum = parseInt(match[2]);
+    const numPadding = match[2].length; // Preserve padding (01 vs 1)
+
+    const results = [];
+    for (let i = 0; i < count && results.length < count; i++) {
+      const targetNum = startNum + i;
+      // Try different formats to find matching device
+      const formats = [
+        `${prefix}${String(targetNum).padStart(numPadding, '0')}`,  // CAM01
+        `${prefix} ${String(targetNum).padStart(numPadding, '0')}`, // CAM 01
+        `${prefix}${targetNum}`,  // CAM1
+        `${prefix} ${targetNum}`, // CAM 1
+        `${prefix}-${targetNum}`, // CAM-1
+        `${prefix}_${targetNum}`, // CAM_1
+      ];
+
+      const found = allDevices.find(d =>
+        formats.some(f => d.toLowerCase() === f.toLowerCase())
+      );
+
+      if (found) {
+        results.push(found);
+      }
+    }
+
+    return results;
+  }
+
   function createAutofillControls(data) {
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:16px;';
 
     const title = document.createElement('div');
     title.style.cssText = 'font-weight:700;margin-bottom:10px;color:var(--text-primary);';
-    title.textContent = 'Autofill';
+    title.textContent = 'Quick Fill';
     wrapper.appendChild(title);
 
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;';
+    // Get all devices and audio sources
+    const allDevices = Utils.getDeviceOptions().map(o => o.value).filter(v => v);
+    const audioSources = Store.data.sheet8.audioSources || [];
 
-    // Column select
-    const colGroup = document.createElement('div');
-    colGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Column</label>';
-    const colSelect = document.createElement('select');
-    colSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    colSelect.innerHTML = `
-      <option value="showName">Show Name</option>
-      <option value="umdName">UMD Name</option>
-      <option value="engSource">Eng Source</option>
-      <option value="audioSource">Audio Source</option>
-    `;
-    colSelect.value = autofillState.column;
-    colGroup.appendChild(colSelect);
-    row.appendChild(colGroup);
+    // === SIMPLE LAYOUT: 3 sections side by side ===
+    const sectionsRow = document.createElement('div');
+    sectionsRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;';
 
-    // Mode select (increment vs repeat) - only for showName/umdName
-    const modeGroup = document.createElement('div');
-    modeGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Mode</label>';
-    const modeSelect = document.createElement('select');
-    modeSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    modeSelect.innerHTML = `
-      <option value="increment">Increment (CAM01, CAM02...)</option>
-      <option value="repeat">Repeat Same Value</option>
-    `;
-    modeSelect.value = autofillState.mode;
-    modeGroup.appendChild(modeSelect);
-    row.appendChild(modeGroup);
+    // --- SECTION 1: Show Name / UMD ---
+    const nameSection = document.createElement('div');
+    nameSection.style.cssText = 'padding:10px;background:var(--bg-primary);border-radius:4px;border:1px solid var(--border);';
+    nameSection.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--accent-blue);margin-bottom:8px;">SHOW NAME / UMD</div>`;
 
-    // Prefix input (for increment mode) / Value input (for repeat mode)
-    const prefixGroup = document.createElement('div');
-    const prefixLabel = document.createElement('label');
-    prefixLabel.style.cssText = 'display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;';
-    prefixLabel.textContent = 'Prefix';
-    prefixGroup.appendChild(prefixLabel);
-    const prefixInput = document.createElement('input');
-    prefixInput.type = 'text';
-    prefixInput.placeholder = 'CAM';
-    prefixInput.maxLength = 10;
-    prefixInput.value = autofillState.prefix;
-    prefixInput.style.cssText = 'width:100px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    prefixGroup.appendChild(prefixInput);
-    row.appendChild(prefixGroup);
+    const nameRow = document.createElement('div');
+    nameRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
 
-    // Audio source dropdown (for audio column)
-    const audioGroup = document.createElement('div');
-    audioGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Audio Source</label>';
-    const audioSelect = document.createElement('select');
-    audioSelect.style.cssText = 'padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);min-width:120px;';
-    audioSelect.innerHTML = '<option value="">-- Select --</option>';
-    (Store.data.sheet8.audioSources || []).forEach(src => {
+    const namePrefix = document.createElement('input');
+    namePrefix.type = 'text';
+    namePrefix.placeholder = 'CAM';
+    namePrefix.style.cssText = 'width:60px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+
+    const nameStart = document.createElement('input');
+    nameStart.type = 'number';
+    nameStart.value = '1';
+    nameStart.min = '1';
+    nameStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+
+    const nameArrow = document.createElement('span');
+    nameArrow.textContent = '→';
+    nameArrow.style.cssText = 'color:var(--text-secondary);';
+
+    const nameEnd = document.createElement('input');
+    nameEnd.type = 'number';
+    nameEnd.value = '10';
+    nameEnd.min = '1';
+    nameEnd.max = '80';
+    nameEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+
+    const nameColSelect = document.createElement('select');
+    nameColSelect.style.cssText = 'padding:4px 6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    nameColSelect.innerHTML = '<option value="showName">Show</option><option value="umdName">UMD</option><option value="both">Both</option>';
+
+    const nameBtn = document.createElement('button');
+    nameBtn.className = 'btn btn-primary';
+    nameBtn.textContent = 'Fill';
+    nameBtn.style.cssText = 'padding:4px 12px;font-size:11px;';
+
+    nameRow.appendChild(namePrefix);
+    nameRow.appendChild(nameStart);
+    nameRow.appendChild(nameArrow);
+    nameRow.appendChild(nameEnd);
+    nameRow.appendChild(nameColSelect);
+    nameRow.appendChild(nameBtn);
+    nameSection.appendChild(nameRow);
+
+    const namePreview = document.createElement('div');
+    namePreview.style.cssText = 'font-size:10px;color:var(--text-secondary);margin-top:6px;';
+    namePreview.textContent = 'CAM01, CAM02, CAM03...';
+    nameSection.appendChild(namePreview);
+
+    // Update preview
+    const updateNamePreview = () => {
+      const prefix = namePrefix.value || 'CAM';
+      const start = parseInt(nameStart.value) || 1;
+      namePreview.textContent = `${prefix}${padNum(start)}, ${prefix}${padNum(start+1)}, ${prefix}${padNum(start+2)}...`;
+    };
+    namePrefix.addEventListener('input', updateNamePreview);
+    nameStart.addEventListener('input', updateNamePreview);
+
+    // Fill handler
+    nameBtn.addEventListener('click', () => {
+      const prefix = namePrefix.value.trim();
+      if (!prefix) { Utils.toast('Enter a prefix', 'warn'); return; }
+
+      const startRow = Math.max(1, Math.min(80, parseInt(nameStart.value) || 1));
+      const endRow = Math.max(startRow, Math.min(80, parseInt(nameEnd.value) || startRow));
+      const col = nameColSelect.value;
+
+      let num = 1;
+      for (let i = startRow - 1; i < endRow; i++) {
+        const value = `${prefix}${padNum(num)}`;
+        if (col === 'both' || col === 'showName') {
+          data[i].showName = value;
+          Store.set(`sources.${i}.showName`, value);
+        }
+        if (col === 'both' || col === 'umdName') {
+          data[i].umdName = value;
+          Store.set(`sources.${i}.umdName`, value);
+        }
+        num++;
+      }
+      Utils.toast(`Filled rows ${startRow}–${endRow}`, 'success');
+      App.renderCurrentTab();
+    });
+
+    sectionsRow.appendChild(nameSection);
+
+    // --- SECTION 2: Eng Source ---
+    const engSection = document.createElement('div');
+    engSection.style.cssText = 'padding:10px;background:var(--bg-primary);border-radius:4px;border:1px solid var(--border);';
+    engSection.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--accent-green);margin-bottom:8px;">ENG SOURCE</div>`;
+
+    const engRow = document.createElement('div');
+    engRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+
+    const engSelect = document.createElement('select');
+    engSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    engSelect.innerHTML = '<option value="">Start device...</option>';
+    allDevices.forEach(d => {
       const opt = document.createElement('option');
-      opt.value = src;
-      opt.textContent = src;
-      if (autofillState.audioValue === src) opt.selected = true;
+      opt.value = d;
+      opt.textContent = d;
+      engSelect.appendChild(opt);
+    });
+
+    const engCount = document.createElement('input');
+    engCount.type = 'number';
+    engCount.value = '10';
+    engCount.min = '1';
+    engCount.max = '80';
+    engCount.title = 'Number of rows';
+    engCount.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+
+    const engStartRow = document.createElement('input');
+    engStartRow.type = 'number';
+    engStartRow.value = '1';
+    engStartRow.min = '1';
+    engStartRow.max = '80';
+    engStartRow.title = 'Starting row';
+    engStartRow.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+
+    const engBtn = document.createElement('button');
+    engBtn.className = 'btn btn-primary';
+    engBtn.textContent = 'Fill ↓';
+    engBtn.style.cssText = 'padding:4px 12px;font-size:11px;';
+
+    const engCountLabel = document.createElement('span');
+    engCountLabel.textContent = '×';
+    engCountLabel.style.cssText = 'color:var(--text-secondary);font-size:11px;';
+
+    const engRowLabel = document.createElement('span');
+    engRowLabel.textContent = '@row';
+    engRowLabel.style.cssText = 'color:var(--text-secondary);font-size:10px;';
+
+    engRow.appendChild(engSelect);
+    engRow.appendChild(engCountLabel);
+    engRow.appendChild(engCount);
+    engRow.appendChild(engRowLabel);
+    engRow.appendChild(engStartRow);
+    engRow.appendChild(engBtn);
+    engSection.appendChild(engRow);
+
+    const engPreview = document.createElement('div');
+    engPreview.style.cssText = 'font-size:10px;color:var(--text-secondary);margin-top:6px;';
+    engPreview.textContent = 'Select a device to see sequence';
+    engSection.appendChild(engPreview);
+
+    // Update eng preview
+    const updateEngPreview = () => {
+      const device = engSelect.value;
+      const count = parseInt(engCount.value) || 1;
+      if (!device) {
+        engPreview.textContent = 'Select a device to see sequence';
+        return;
+      }
+      const seq = findSequentialDevices(device, Math.min(count, 5));
+      engPreview.textContent = seq.join(', ') + (count > 5 ? '...' : '');
+      if (seq.length < count) {
+        engPreview.textContent += ` (${seq.length} found)`;
+      }
+    };
+    engSelect.addEventListener('change', updateEngPreview);
+    engCount.addEventListener('input', updateEngPreview);
+
+    // Fill handler
+    engBtn.addEventListener('click', () => {
+      const device = engSelect.value;
+      if (!device) { Utils.toast('Select a starting device', 'warn'); return; }
+
+      const count = parseInt(engCount.value) || 1;
+      const startRow = Math.max(1, Math.min(80, parseInt(engStartRow.value) || 1));
+      const devices = findSequentialDevices(device, count);
+
+      if (devices.length === 0) {
+        Utils.toast('No matching devices found', 'warn');
+        return;
+      }
+
+      devices.forEach((d, idx) => {
+        const row = startRow - 1 + idx;
+        if (row < 80) {
+          data[row].engSource = d;
+          Store.set(`sources.${row}.engSource`, d);
+        }
+      });
+
+      Utils.toast(`Filled ${devices.length} devices starting row ${startRow}`, 'success');
+      App.renderCurrentTab();
+    });
+
+    sectionsRow.appendChild(engSection);
+
+    // --- SECTION 3: Audio Source ---
+    const audioSection = document.createElement('div');
+    audioSection.style.cssText = 'padding:10px;background:var(--bg-primary);border-radius:4px;border:1px solid var(--border);';
+    audioSection.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--accent-orange);margin-bottom:8px;">AUDIO SOURCE</div>`;
+
+    const audioRow = document.createElement('div');
+    audioRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+
+    const audioSelect = document.createElement('select');
+    audioSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    audioSelect.innerHTML = '<option value="">Select...</option>';
+    audioSources.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
       audioSelect.appendChild(opt);
     });
-    audioGroup.appendChild(audioSelect);
-    audioGroup.style.display = 'none';
-    row.appendChild(audioGroup);
 
-    // Start row
-    const startGroup = document.createElement('div');
-    startGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Start Row</label>';
-    const startInput = document.createElement('input');
-    startInput.type = 'number';
-    startInput.min = 1;
-    startInput.max = 80;
-    startInput.value = autofillState.startRow;
-    startInput.style.cssText = 'width:60px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    startGroup.appendChild(startInput);
-    row.appendChild(startGroup);
+    const audioStart = document.createElement('input');
+    audioStart.type = 'number';
+    audioStart.value = '1';
+    audioStart.min = '1';
+    audioStart.max = '80';
+    audioStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
-    // End row
-    const endGroup = document.createElement('div');
-    endGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">End Row</label>';
-    const endInput = document.createElement('input');
-    endInput.type = 'number';
-    endInput.min = 1;
-    endInput.max = 80;
-    endInput.value = autofillState.endRow;
-    endInput.style.cssText = 'width:60px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    endGroup.appendChild(endInput);
-    row.appendChild(endGroup);
+    const audioArrow = document.createElement('span');
+    audioArrow.textContent = '→';
+    audioArrow.style.cssText = 'color:var(--text-secondary);';
 
-    // Start number (for increment mode)
-    const numGroup = document.createElement('div');
-    numGroup.innerHTML = '<label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Start #</label>';
-    const numInput = document.createElement('input');
-    numInput.type = 'number';
-    numInput.min = 1;
-    numInput.value = autofillState.startNum;
-    numInput.style.cssText = 'width:60px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    numGroup.appendChild(numInput);
-    row.appendChild(numGroup);
+    const audioEnd = document.createElement('input');
+    audioEnd.type = 'number';
+    audioEnd.value = '10';
+    audioEnd.min = '1';
+    audioEnd.max = '80';
+    audioEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
-    // Apply button
-    const applyBtn = document.createElement('button');
-    applyBtn.className = 'btn btn-primary';
-    applyBtn.textContent = 'Apply';
-    applyBtn.style.cssText = 'padding:6px 16px;';
-    row.appendChild(applyBtn);
+    const audioBtn = document.createElement('button');
+    audioBtn.className = 'btn btn-primary';
+    audioBtn.textContent = 'Fill';
+    audioBtn.style.cssText = 'padding:4px 12px;font-size:11px;';
 
-    wrapper.appendChild(row);
+    audioRow.appendChild(audioSelect);
+    audioRow.appendChild(audioStart);
+    audioRow.appendChild(audioArrow);
+    audioRow.appendChild(audioEnd);
+    audioRow.appendChild(audioBtn);
+    audioSection.appendChild(audioRow);
 
-    // Preview text
-    const preview = document.createElement('div');
-    preview.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-secondary);';
-    wrapper.appendChild(preview);
+    const audioPreview = document.createElement('div');
+    audioPreview.style.cssText = 'font-size:10px;color:var(--text-secondary);margin-top:6px;';
+    audioPreview.textContent = 'Repeats same value for all rows';
+    audioSection.appendChild(audioPreview);
 
-    // === ENG SOURCE DEVICE PICKER ===
-    const engPickerWrapper = document.createElement('div');
-    engPickerWrapper.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:none;';
+    // Fill handler
+    audioBtn.addEventListener('click', () => {
+      const source = audioSelect.value;
+      if (!source) { Utils.toast('Select an audio source', 'warn'); return; }
 
-    const engPickerTitle = document.createElement('div');
-    engPickerTitle.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:8px;';
-    engPickerTitle.textContent = 'Select Devices from RTR I/O Master';
-    engPickerWrapper.appendChild(engPickerTitle);
+      const startRow = Math.max(1, Math.min(80, parseInt(audioStart.value) || 1));
+      const endRow = Math.max(startRow, Math.min(80, parseInt(audioEnd.value) || startRow));
 
-    // Filter input
-    const filterRow = document.createElement('div');
-    filterRow.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
-    const filterInput = document.createElement('input');
-    filterInput.type = 'text';
-    filterInput.placeholder = 'Filter devices (e.g. CAM, VTR, GFX)...';
-    filterInput.style.cssText = 'flex:1;max-width:250px;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
-    filterRow.appendChild(filterInput);
-
-    const selectAllBtn = document.createElement('button');
-    selectAllBtn.className = 'btn btn-secondary';
-    selectAllBtn.style.cssText = 'padding:4px 10px;font-size:11px;';
-    selectAllBtn.textContent = 'Select All Visible';
-    filterRow.appendChild(selectAllBtn);
-
-    const clearBtn = document.createElement('button');
-    clearBtn.className = 'btn btn-secondary';
-    clearBtn.style.cssText = 'padding:4px 10px;font-size:11px;';
-    clearBtn.textContent = 'Clear';
-    filterRow.appendChild(clearBtn);
-
-    engPickerWrapper.appendChild(filterRow);
-
-    // Device checkboxes container
-    const devicesContainer = document.createElement('div');
-    devicesContainer.style.cssText = 'max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;background:var(--bg-primary);';
-    engPickerWrapper.appendChild(devicesContainer);
-
-    // Selected devices preview
-    const selectedPreview = document.createElement('div');
-    selectedPreview.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text-secondary);';
-    engPickerWrapper.appendChild(selectedPreview);
-
-    // Apply selected devices button
-    const applyDevicesBtn = document.createElement('button');
-    applyDevicesBtn.className = 'btn btn-primary';
-    applyDevicesBtn.style.cssText = 'margin-top:8px;padding:6px 16px;';
-    applyDevicesBtn.textContent = 'Apply Selected Devices';
-    engPickerWrapper.appendChild(applyDevicesBtn);
-
-    wrapper.appendChild(engPickerWrapper);
-
-    // Get all devices from RTR I/O Master
-    const allDevices = Utils.getDeviceOptions().map(o => o.value).filter(v => v);
-    let selectedDevices = [];
-
-    // Render device checkboxes
-    const renderDevices = (filter = '') => {
-      devicesContainer.innerHTML = '';
-      const filterLower = filter.toLowerCase();
-      const filtered = allDevices.filter(d => d.toLowerCase().includes(filterLower));
-
-      if (filtered.length === 0) {
-        devicesContainer.innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:8px;">No devices match filter</div>';
-        return;
-      }
-
-      // Group by prefix (first word or characters before number)
-      const groups = {};
-      filtered.forEach(device => {
-        const match = device.match(/^([A-Za-z]+)/);
-        const prefix = match ? match[1].toUpperCase() : 'OTHER';
-        if (!groups[prefix]) groups[prefix] = [];
-        groups[prefix].push(device);
-      });
-
-      Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0])).forEach(([prefix, devices]) => {
-        const groupDiv = document.createElement('div');
-        groupDiv.style.cssText = 'margin-bottom:8px;';
-
-        const groupHeader = document.createElement('div');
-        groupHeader.style.cssText = 'font-size:10px;font-weight:600;color:var(--accent-blue);margin-bottom:4px;text-transform:uppercase;';
-        groupHeader.textContent = prefix;
-        groupDiv.appendChild(groupHeader);
-
-        const checkboxRow = document.createElement('div');
-        checkboxRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
-
-        devices.forEach(device => {
-          const label = document.createElement('label');
-          label.style.cssText = 'display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;';
-
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.value = device;
-          checkbox.checked = selectedDevices.includes(device);
-          checkbox.style.cssText = 'margin:0;';
-          checkbox.addEventListener('change', () => {
-            if (checkbox.checked) {
-              if (!selectedDevices.includes(device)) {
-                selectedDevices.push(device);
-              }
-            } else {
-              selectedDevices = selectedDevices.filter(d => d !== device);
-            }
-            updateSelectedPreview();
-          });
-
-          label.appendChild(checkbox);
-          label.appendChild(document.createTextNode(device));
-          checkboxRow.appendChild(label);
-        });
-
-        groupDiv.appendChild(checkboxRow);
-        devicesContainer.appendChild(groupDiv);
-      });
-    };
-
-    // Update selected preview
-    const updateSelectedPreview = () => {
-      const startRow = parseInt(startInput.value) || 1;
-      if (selectedDevices.length === 0) {
-        selectedPreview.textContent = 'No devices selected';
-      } else {
-        const endRow = startRow + selectedDevices.length - 1;
-        selectedPreview.innerHTML = `<strong>${selectedDevices.length}</strong> devices selected → will fill rows ${startRow}–${endRow}: ` +
-          selectedDevices.slice(0, 5).join(', ') + (selectedDevices.length > 5 ? '...' : '');
-      }
-    };
-
-    // Filter input handler
-    filterInput.addEventListener('input', () => renderDevices(filterInput.value));
-
-    // Select all visible
-    selectAllBtn.addEventListener('click', () => {
-      const filterLower = filterInput.value.toLowerCase();
-      const visible = allDevices.filter(d => d.toLowerCase().includes(filterLower));
-      visible.forEach(d => {
-        if (!selectedDevices.includes(d)) selectedDevices.push(d);
-      });
-      renderDevices(filterInput.value);
-      updateSelectedPreview();
-    });
-
-    // Clear selection
-    clearBtn.addEventListener('click', () => {
-      selectedDevices = [];
-      renderDevices(filterInput.value);
-      updateSelectedPreview();
-    });
-
-    // Apply selected devices
-    applyDevicesBtn.addEventListener('click', () => {
-      if (selectedDevices.length === 0) {
-        Utils.toast('Please select at least one device', 'warn');
-        return;
-      }
-
-      const startRow = Math.max(1, Math.min(80, parseInt(startInput.value) || 1));
-      let row = startRow - 1;
-
-      selectedDevices.forEach(device => {
-        if (row < 80) {
-          data[row].engSource = device;
-          Store.set(`sources.${row}.engSource`, device);
-          row++;
-        }
-      });
-
-      Utils.toast(`Filled Eng Source for rows ${startRow}–${row}`, 'success');
-      selectedDevices = [];
-      App.renderCurrentTab();
-    });
-
-    // Update UI based on column and mode selection
-    const updateUI = () => {
-      const col = colSelect.value;
-      const mode = modeSelect.value;
-
-      // Eng Source uses device picker
-      if (col === 'engSource') {
-        modeGroup.style.display = 'none';
-        prefixGroup.style.display = 'none';
-        numGroup.style.display = 'none';
-        audioGroup.style.display = 'none';
-        endGroup.style.display = 'none';
-        applyBtn.style.display = 'none';
-        engPickerWrapper.style.display = 'block';
-        preview.textContent = 'Select devices below to fill Eng Source column';
-        renderDevices(filterInput.value);
-        updateSelectedPreview();
-      }
-      // Audio column uses dropdown
-      else if (col === 'audioSource') {
-        modeGroup.style.display = 'none';
-        prefixGroup.style.display = 'none';
-        numGroup.style.display = 'none';
-        audioGroup.style.display = 'block';
-        endGroup.style.display = 'block';
-        applyBtn.style.display = 'inline-block';
-        engPickerWrapper.style.display = 'none';
-        preview.textContent = audioSelect.value
-          ? `Will set "${audioSelect.value}" for rows ${startInput.value}–${endInput.value}`
-          : 'Select an audio source';
-      }
-      // Show Name / UMD Name use increment/repeat
-      else {
-        modeGroup.style.display = 'block';
-        audioGroup.style.display = 'none';
-        endGroup.style.display = 'block';
-        applyBtn.style.display = 'inline-block';
-        engPickerWrapper.style.display = 'none';
-
-        if (mode === 'increment') {
-          prefixLabel.textContent = 'Prefix';
-          prefixInput.placeholder = 'CAM';
-          prefixGroup.style.display = 'block';
-          numGroup.style.display = 'block';
-          const prefix = prefixInput.value.trim() || 'CAM';
-          const startNum = parseInt(numInput.value) || 1;
-          preview.textContent = `Preview: ${prefix}${padNum(startNum)}, ${prefix}${padNum(startNum + 1)}, ${prefix}${padNum(startNum + 2)}...`;
-        } else {
-          prefixLabel.textContent = 'Value';
-          prefixInput.placeholder = 'Enter value...';
-          prefixGroup.style.display = 'block';
-          numGroup.style.display = 'none';
-          const value = prefixInput.value.trim() || '(enter value)';
-          preview.textContent = `Will set "${value}" for rows ${startInput.value}–${endInput.value}`;
-        }
-      }
-    };
-
-    // Event listeners
-    colSelect.addEventListener('change', updateUI);
-    modeSelect.addEventListener('change', updateUI);
-    prefixInput.addEventListener('input', updateUI);
-    numInput.addEventListener('input', updateUI);
-    startInput.addEventListener('input', () => {
-      updateUI();
-      updateSelectedPreview();
-    });
-    endInput.addEventListener('input', updateUI);
-    audioSelect.addEventListener('change', updateUI);
-
-    // Apply button handler (for showName, umdName, audioSource)
-    applyBtn.addEventListener('click', () => {
-      const col = colSelect.value;
-      const mode = col === 'audioSource' ? 'repeat' : modeSelect.value;
-      const prefix = prefixInput.value.trim();
-      const startRow = Math.max(1, Math.min(80, parseInt(startInput.value) || 1));
-      const endRow = Math.max(startRow, Math.min(80, parseInt(endInput.value) || startRow));
-      const startNum = parseInt(numInput.value) || 1;
-      const audioValue = audioSelect.value;
-
-      // Validation
-      if (col === 'audioSource') {
-        if (!audioValue) {
-          Utils.toast('Please select an audio source', 'warn');
-          return;
-        }
-      } else if (mode === 'increment') {
-        if (!prefix) {
-          Utils.toast('Please enter a prefix', 'warn');
-          return;
-        }
-      } else {
-        if (!prefix) {
-          Utils.toast('Please enter a value', 'warn');
-          return;
-        }
-      }
-
-      // Save state for persistence across re-renders
-      autofillState.column = col;
-      autofillState.prefix = prefix;
-      autofillState.startRow = startRow;
-      autofillState.endRow = endRow;
-      autofillState.startNum = startNum;
-      autofillState.audioValue = audioValue;
-      autofillState.mode = mode;
-
-      // Apply values
-      let num = startNum;
       for (let i = startRow - 1; i < endRow; i++) {
-        let value;
-        if (col === 'audioSource') {
-          value = audioValue;
-        } else if (mode === 'increment') {
-          value = `${prefix}${padNum(num)}`;
-          num++;
-        } else {
-          value = prefix;
-        }
-        data[i][col] = value;
-        Store.set(`sources.${i}.${col}`, value);
+        data[i].audioSource = source;
+        Store.set(`sources.${i}.audioSource`, source);
       }
-
-      const colNames = {
-        showName: 'Show Name',
-        umdName: 'UMD Name',
-        engSource: 'Eng Source',
-        audioSource: 'Audio Source'
-      };
-      Utils.toast(`Filled ${colNames[col]} for rows ${startRow}–${endRow}`, 'success');
+      Utils.toast(`Filled rows ${startRow}–${endRow} with "${source}"`, 'success');
       App.renderCurrentTab();
     });
 
-    // Initialize UI state
-    updateUI();
-
-    // === AUDIO SOURCE PRESETS ===
-    const audioSources = Store.data.sheet8.audioSources || [];
-    if (audioSources.length > 0) {
-      const audioPresetsWrapper = document.createElement('div');
-      audioPresetsWrapper.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
-
-      const audioPresetsTitle = document.createElement('div');
-      audioPresetsTitle.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:6px;';
-      audioPresetsTitle.textContent = 'Quick Audio Source (click to select, set rows, Apply)';
-      audioPresetsWrapper.appendChild(audioPresetsTitle);
-
-      const audioPresetsRow = document.createElement('div');
-      audioPresetsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
-
-      audioSources.slice(0, 12).forEach(src => {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-secondary';
-        btn.style.cssText = 'padding:4px 10px;font-size:11px;';
-        btn.textContent = src;
-        btn.title = `Set audio source to "${src}"`;
-        btn.addEventListener('click', () => {
-          colSelect.value = 'audioSource';
-          audioSelect.value = src;
-          updateUI();
-          Utils.toast(`Selected "${src}" - set row range and click Apply`, 'info');
-        });
-        audioPresetsRow.appendChild(btn);
-      });
-
-      audioPresetsWrapper.appendChild(audioPresetsRow);
-      wrapper.appendChild(audioPresetsWrapper);
-    }
+    sectionsRow.appendChild(audioSection);
+    wrapper.appendChild(sectionsRow);
 
     return wrapper;
   }
