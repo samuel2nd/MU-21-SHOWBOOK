@@ -399,8 +399,15 @@ const MonitorsTab = (() => {
 
     // Layout selector (if MV assigned)
     if (mv) {
+      // Check if this MV has a staged layout change
+      const stagedLayouts = (typeof KaleidoClient !== 'undefined') ? KaleidoClient.getStagedLayouts() : {};
+      const isStaged = stagedLayouts[mv.id] !== undefined;
+
       const layoutSelect = document.createElement('select');
-      layoutSelect.style.cssText = 'padding:2px;font-size:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;color:var(--text-primary);';
+      layoutSelect.style.cssText = `padding:2px;font-size:8px;background:var(--bg-secondary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:2px;color:var(--text-primary);${isStaged ? 'box-shadow: 0 0 4px rgba(234, 179, 8, 0.3);' : ''}`;
+      if (isStaged) {
+        layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
+      }
       Object.entries(LAYOUTS).forEach(([key, l]) => {
         if (key !== 'FULL_SCREEN') {
           const opt = document.createElement('option');
@@ -410,11 +417,24 @@ const MonitorsTab = (() => {
           layoutSelect.appendChild(opt);
         }
       });
-      layoutSelect.addEventListener('change', (e) => {
+      layoutSelect.addEventListener('change', async (e) => {
         e.stopPropagation();
         if (mvIdx >= 0) {
-          Store.data.prodDigital.multiviewers[mvIdx].layout = layoutSelect.value;
-          Store.set(`prodDigital.multiviewers.${mvIdx}.layout`, layoutSelect.value);
+          const oldLayout = mv.layout;
+          const newLayout = layoutSelect.value;
+          const cardId = mv.cardId;
+
+          Store.data.prodDigital.multiviewers[mvIdx].layout = newLayout;
+          Store.set(`prodDigital.multiviewers.${mvIdx}.layout`, newLayout);
+
+          // Handle Kaleido trigger based on mode
+          if (typeof KaleidoClient !== 'undefined' && newLayout && cardId) {
+            const result = await KaleidoClient.handleLayoutChange(mv.id, oldLayout || '', newLayout, cardId);
+            if (result.staged) {
+              layoutSelect.style.borderColor = 'var(--accent-yellow)';
+            }
+          }
+
           App.renderCurrentTab();
         }
       });

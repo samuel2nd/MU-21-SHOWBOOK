@@ -1107,6 +1107,18 @@ const Store = (() => {
         form: Array.from({ length: 20 }, (_, i) => ({ row: i + 1, panelName: '', location: '', type: '', levels: '', notes: '' })),
         td: Array.from({ length: 20 }, (_, i) => ({ row: i + 1, button: '', source: '', dest: '', notes: '' })),
       },
+      // Kaleido multiviewer layout control configuration
+      kaleidoConfig: {
+        bridgeUrl: 'http://localhost:3001',
+        triggerMode: 'staged', // 'staged' or 'immediate'
+        cards: Array.from({ length: 22 }, (_, i) => ({
+          cardId: i + 1,
+          ip: `192.168.23.${201 + i}`, // Default: 192.168.23.201 - 192.168.23.222
+          port: 8902,
+          enabled: true,
+        })),
+        stagedLayouts: {}, // { "1-1": { from: "9_SPLIT", to: "6_SPLIT_R", cardId: 1 }, ... }
+      },
     };
   }
 
