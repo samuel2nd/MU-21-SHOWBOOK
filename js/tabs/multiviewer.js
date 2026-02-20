@@ -391,81 +391,464 @@ const MultiviewerTab = (() => {
     return section;
   }
 
-  // MV Windows Section (original functionality)
+  // Layout definitions (same as proddigital.js)
+  const LAYOUTS = {
+    '9_SPLIT': {
+      name: '9 SPLIT', positions: 9,
+      template: '"p1 p2 p3" "p4 p5 p6" "p7 p8 p9"',
+      colSizes: '1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+        { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' }, { pos: 9, area: 'p9' },
+      ],
+    },
+    '9_SPLIT_R': {
+      name: '9 SPLIT R', positions: 9,
+      template: '"p1 p2 p3 p4 p5 p6" "p7 p9 p9 p9 p9 p9" "p8 p9 p9 p9 p9 p9"',
+      colSizes: '1fr 1fr 1fr 1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+        { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' }, { pos: 9, area: 'p9', vip: true },
+      ],
+    },
+    '9_SPLIT_L': {
+      name: '9 SPLIT L', positions: 9,
+      template: '"p1 p2 p3 p4 p5 p6" "p9 p9 p9 p9 p9 p7" "p9 p9 p9 p9 p9 p8"',
+      colSizes: '1fr 1fr 1fr 1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+        { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' }, { pos: 9, area: 'p9', vip: true },
+      ],
+    },
+    '6_SPLIT_R': {
+      name: '6 SPLIT R', positions: 6,
+      template: '"p1 p2 p3" "p4 p5 p5" "p6 p5 p5"',
+      colSizes: '1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5', vip: true }, { pos: 6, area: 'p6' },
+      ],
+    },
+    '6_SPLIT_L': {
+      name: '6 SPLIT L', positions: 6,
+      template: '"p1 p2 p3" "p4 p4 p5" "p4 p4 p6"',
+      colSizes: '1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4', vip: true }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+      ],
+    },
+    '5_SPLIT': {
+      name: '5 SPLIT', positions: 5,
+      template: '"p1 p1 p2 p2 p3 p3" "p4 p4 p4 p5 p5 p5"',
+      colSizes: '1fr 1fr 1fr 1fr 1fr 1fr', rowSizes: '1fr 2fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4', vip: true }, { pos: 5, area: 'p5', vip: true },
+      ],
+    },
+    '4_SPLIT': {
+      name: '4 SPLIT', positions: 4,
+      template: '"p1 p2" "p3 p4"',
+      colSizes: '1fr 1fr', rowSizes: '1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' },
+        { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' },
+      ],
+    },
+  };
+
+  // Get all source options from RTR Master
+  function getAllSourceOptions() {
+    const sources = [];
+    const rtrMaster = (Store.data && Store.data.rtrMaster) ? Store.data.rtrMaster : [];
+    if (Array.isArray(rtrMaster)) {
+      rtrMaster.forEach(device => {
+        if (device && device.deviceName) {
+          sources.push({ value: device.deviceName, label: device.deviceName });
+        }
+      });
+    }
+    return sources;
+  }
+
+  // MV Cards Section - mirrors monitor wall MVs
   function renderMvWindowsSection() {
     const wrapper = document.createElement('div');
 
-    Store.data.multiviewer.forEach((mv, mvIdx) => {
-      const mvSection = document.createElement('div');
-      mvSection.style.cssText = 'margin-bottom:16px;';
+    // Ensure prodDigital data exists
+    if (!Store.data.prodDigital || !Store.data.prodDigital.multiviewers) {
+      const notice = document.createElement('div');
+      notice.style.cssText = 'padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);color:var(--text-muted);';
+      notice.textContent = 'No multiviewer data. Visit a monitor wall page first to initialize MV configurations.';
+      wrapper.appendChild(notice);
+      return wrapper;
+    }
 
-      mvSection.appendChild(Utils.sectionHeader(`MV ${mv.mv}`));
+    const multiviewers = Store.data.prodDigital.multiviewers;
 
-      // Visual 4x4 grid
-      const grid = document.createElement('div');
-      grid.className = 'monitor-wall';
-      grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
-      grid.style.maxWidth = '500px';
+    // Group by card (1-22)
+    const cards = {};
+    multiviewers.forEach((mv, idx) => {
+      const cardId = mv.cardId;
+      if (!cards[cardId]) cards[cardId] = [];
+      cards[cardId].push({ ...mv, _idx: idx });
+    });
 
-      mv.windows.forEach((win, wIdx) => {
-        const cell = document.createElement('div');
-        cell.className = 'monitor-cell' + (win.source ? ' active' : '');
-        cell.style.minHeight = '45px';
+    // Render each card
+    Object.keys(cards).sort((a, b) => parseInt(a) - parseInt(b)).forEach(cardId => {
+      const cardMvs = cards[cardId];
+      const cardSection = document.createElement('div');
+      cardSection.style.cssText = 'margin-bottom:16px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;';
 
-        const wLabel = document.createElement('div');
-        wLabel.className = 'mon-label';
-        wLabel.textContent = `W${win.window}`;
+      // Card header
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;';
 
-        const wSource = document.createElement('div');
-        wSource.className = 'mon-source';
-        wSource.style.fontSize = '10px';
-        wSource.textContent = win.source || '-';
+      const cardLabel = document.createElement('span');
+      cardLabel.style.cssText = 'font-weight:700;font-size:13px;color:var(--accent-blue);';
+      cardLabel.textContent = `MV ${cardId}`;
+      header.appendChild(cardLabel);
 
-        cell.appendChild(wLabel);
-        cell.appendChild(wSource);
+      // Show which pages use this MV
+      const usedOn = findMvUsage(cardId);
+      if (usedOn.length > 0) {
+        const usageLabel = document.createElement('span');
+        usageLabel.style.cssText = 'font-size:10px;color:var(--text-muted);';
+        usageLabel.textContent = `Used on: ${usedOn.join(', ')}`;
+        header.appendChild(usageLabel);
+      }
 
-        cell.addEventListener('click', () => {
-          const source = prompt(`MV${mv.mv} Window ${win.window} - Source:`, win.source || '');
-          if (source === null) return;
-          win.source = source;
-          win.label = source;
-          Store.set(`multiviewer.${mvIdx}.windows.${wIdx}`, { ...win });
-          App.renderCurrentTab();
-        });
+      cardSection.appendChild(header);
 
-        grid.appendChild(cell);
+      // Render both sides
+      const sidesContainer = document.createElement('div');
+      sidesContainer.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+
+      cardMvs.forEach(mv => {
+        const sideEl = renderMvSide(mv, cardMvs);
+        sidesContainer.appendChild(sideEl);
       });
 
-      mvSection.appendChild(grid);
-
-      // Detail table (collapsible)
-      const detailToggle = document.createElement('button');
-      detailToggle.className = 'btn';
-      detailToggle.textContent = 'Show/Hide Detail Table';
-      detailToggle.style.cssText = 'margin:8px 0;font-size:11px;';
-
-      const detailDiv = document.createElement('div');
-      detailDiv.style.display = 'none';
-
-      detailToggle.addEventListener('click', () => {
-        detailDiv.style.display = detailDiv.style.display === 'none' ? 'block' : 'none';
-      });
-
-      mvSection.appendChild(detailToggle);
-
-      const columns = [
-        { key: '_rowNum', label: 'Win', width: '35px' },
-        { key: 'source', label: 'Source', type: 'select', options: () => Utils.getSourceOptions() },
-        { key: 'label', label: 'Label' },
-      ];
-
-      Utils.renderEditableTable(detailDiv, columns, `multiviewer.${mvIdx}.windows`, mv.windows);
-      mvSection.appendChild(detailDiv);
-
-      wrapper.appendChild(mvSection);
+      cardSection.appendChild(sidesContainer);
+      wrapper.appendChild(cardSection);
     });
 
     return wrapper;
+  }
+
+  // Find which pages use a specific MV card
+  function findMvUsage(cardId) {
+    const usage = [];
+
+    // Check PROD Digital PXMs
+    if (Store.data.prodDigital && Store.data.prodDigital.pxms) {
+      Store.data.prodDigital.pxms.forEach(pxm => {
+        if (pxm.assignmentType === 'mv' && pxm.mvId) {
+          const [card] = pxm.mvId.split('-');
+          if (parseInt(card) === parseInt(cardId)) {
+            usage.push('PROD Digital');
+          }
+        }
+      });
+    }
+
+    // Check other walls
+    if (Store.data.monitorWallsV2) {
+      const wallNames = { 'p2p3': 'P2-P3', 'evs': 'EVS', 'aud': 'AUD' };
+      Object.entries(Store.data.monitorWallsV2).forEach(([wallKey, wallData]) => {
+        if (wallData.monitors) {
+          wallData.monitors.forEach(mon => {
+            if (mon.mvId) {
+              const [card] = mon.mvId.split('-');
+              if (parseInt(card) === parseInt(cardId)) {
+                usage.push(wallNames[wallKey] || wallKey);
+              }
+            }
+          });
+        }
+      });
+    }
+
+    return [...new Set(usage)];
+  }
+
+  // Render a single MV side
+  function renderMvSide(mv, cardMvs) {
+    const mvIdx = mv._idx;
+    const side = mv.side;
+    const pairedMv = cardMvs.find(m => m.side !== side);
+
+    const container = document.createElement('div');
+    container.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:8px;';
+
+    // Side header
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;';
+
+    const sideLabel = document.createElement('span');
+    sideLabel.style.cssText = 'font-weight:600;font-size:11px;color:var(--text-primary);';
+    sideLabel.textContent = `Side ${side} (${mv.id})`;
+    header.appendChild(sideLabel);
+
+    // Check for staged change
+    const stagedLayouts = (typeof KaleidoClient !== 'undefined') ? KaleidoClient.getStagedLayouts() : {};
+    const isStaged = stagedLayouts[mv.id] !== undefined;
+
+    // Layout selector
+    const layoutSelect = document.createElement('select');
+    layoutSelect.style.cssText = `flex:1;padding:3px 6px;font-size:10px;background:var(--bg-secondary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:3px;color:var(--text-primary);min-width:80px;`;
+
+    if (isStaged) {
+      layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
+    }
+
+    // Calculate available inputs for side 2
+    let availableInputs = 9;
+    if (side === 2 && pairedMv && pairedMv.layout) {
+      const pairedLayout = LAYOUTS[pairedMv.layout];
+      availableInputs = pairedLayout ? 9 - pairedLayout.positions : 9;
+    }
+
+    // Add layout options
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = '-- None --';
+    if (!mv.layout) noneOpt.selected = true;
+    layoutSelect.appendChild(noneOpt);
+
+    Object.entries(LAYOUTS).forEach(([key, l]) => {
+      if (side === 2 && l.positions > availableInputs) return;
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = `${l.name} (${l.positions})`;
+      if (mv.layout === key) opt.selected = true;
+      layoutSelect.appendChild(opt);
+    });
+
+    layoutSelect.addEventListener('change', async () => {
+      const newLayout = layoutSelect.value;
+      const oldLayout = mv.layout;
+
+      Store.data.prodDigital.multiviewers[mvIdx].layout = newLayout || null;
+      Store.set(`prodDigital.multiviewers.${mvIdx}.layout`, newLayout || null);
+
+      // Handle Kaleido trigger
+      if (typeof KaleidoClient !== 'undefined' && newLayout && mv.cardId) {
+        await KaleidoClient.handleLayoutChange(mv.id, oldLayout || '', newLayout, mv.cardId);
+      }
+
+      App.renderCurrentTab();
+    });
+
+    header.appendChild(layoutSelect);
+
+    if (side === 2 && pairedMv && pairedMv.layout) {
+      const availInfo = document.createElement('span');
+      availInfo.style.cssText = 'font-size:9px;color:var(--text-muted);';
+      availInfo.textContent = `(${availableInputs} avail)`;
+      header.appendChild(availInfo);
+    }
+
+    container.appendChild(header);
+
+    // Layout grid
+    const layout = mv.layout ? LAYOUTS[mv.layout] : null;
+    if (layout) {
+      const grid = document.createElement('div');
+      grid.style.cssText = `
+        display: grid;
+        grid-template-areas: ${layout.template};
+        grid-template-columns: ${layout.colSizes};
+        grid-template-rows: ${layout.rowSizes};
+        gap: 2px;
+        height: 100px;
+      `;
+
+      layout.cells.forEach(cell => {
+        const cellEl = document.createElement('div');
+        const sourceValue = mv.inputs ? mv.inputs[cell.pos - 1] || '' : '';
+        const baseBg = cell.vip ? 'linear-gradient(135deg, #3b4a6b 0%, #2a3a5b 100%)' : '#252836';
+
+        cellEl.style.cssText = `
+          grid-area: ${cell.area};
+          background: ${baseBg};
+          border-radius: 2px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          font-size: 9px;
+          color: ${sourceValue ? '#34d399' : (cell.vip ? '#5b9aff' : 'var(--text-secondary)')};
+          cursor: pointer;
+          padding: 2px;
+          transition: all 0.15s ease;
+        `;
+
+        const displayLabel = `${mv.cardId}-${cell.pos}`;
+        if (sourceValue) {
+          const srcName = document.createElement('div');
+          srcName.style.cssText = 'font-size:9px;text-align:center;line-height:1.1;';
+          srcName.textContent = sourceValue;
+          cellEl.appendChild(srcName);
+          const posLabel = document.createElement('div');
+          posLabel.style.cssText = 'font-size:7px;color:var(--text-muted);';
+          posLabel.textContent = displayLabel;
+          cellEl.appendChild(posLabel);
+        } else {
+          cellEl.textContent = displayLabel;
+        }
+
+        // Click to edit source
+        cellEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showSourcePicker(cellEl, (source) => {
+            if (!Store.data.prodDigital.multiviewers[mvIdx].inputs) {
+              Store.data.prodDigital.multiviewers[mvIdx].inputs = Array(9).fill('');
+            }
+            Store.data.prodDigital.multiviewers[mvIdx].inputs[cell.pos - 1] = source;
+            Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+            App.renderCurrentTab();
+          });
+        });
+
+        // Drag and drop
+        cellEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          cellEl.style.background = 'linear-gradient(135deg, #4a6b3b 0%, #3a5b2a 100%)';
+        });
+        cellEl.addEventListener('dragleave', () => {
+          cellEl.style.background = baseBg;
+        });
+        cellEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          cellEl.style.background = baseBg;
+          const source = e.dataTransfer.getData('text/plain');
+          if (source) {
+            if (!Store.data.prodDigital.multiviewers[mvIdx].inputs) {
+              Store.data.prodDigital.multiviewers[mvIdx].inputs = Array(9).fill('');
+            }
+            Store.data.prodDigital.multiviewers[mvIdx].inputs[cell.pos - 1] = source;
+            Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+            App.renderCurrentTab();
+          }
+        });
+
+        grid.appendChild(cellEl);
+      });
+
+      container.appendChild(grid);
+    } else {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'height:100px;display:flex;align-items:center;justify-content:center;background:#1a1a1a;border-radius:3px;font-size:10px;color:var(--text-muted);';
+      empty.textContent = 'Select a layout';
+      container.appendChild(empty);
+    }
+
+    return container;
+  }
+
+  // Source picker popup
+  function showSourcePicker(anchorEl, onSelect) {
+    const existing = document.querySelector('.source-picker-popup');
+    if (existing) existing.remove();
+
+    const sources = getAllSourceOptions();
+
+    const popup = document.createElement('div');
+    popup.className = 'source-picker-popup';
+    popup.style.cssText = `
+      position: fixed;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      min-width: 180px;
+      display: flex;
+      flex-direction: column;
+    `;
+
+    const filterWrapper = document.createElement('div');
+    filterWrapper.style.cssText = 'padding:6px;border-bottom:1px solid var(--border);';
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.placeholder = 'Filter sources...';
+    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
+    filterWrapper.appendChild(filterInput);
+    popup.appendChild(filterWrapper);
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.style.cssText = 'max-height:200px;overflow-y:auto;';
+
+    let currentFiltered = sources;
+
+    function renderOptions(filterText = '') {
+      optionsContainer.innerHTML = '';
+      const terms = filterText.toLowerCase().trim().split(/\s+/).filter(t => t);
+
+      const clearOpt = document.createElement('div');
+      clearOpt.style.cssText = 'padding:6px 10px;cursor:pointer;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);';
+      clearOpt.textContent = '-- Clear --';
+      clearOpt.addEventListener('click', () => { onSelect(''); popup.remove(); });
+      clearOpt.addEventListener('mouseenter', () => clearOpt.style.background = 'var(--bg-secondary)');
+      clearOpt.addEventListener('mouseleave', () => clearOpt.style.background = '');
+      optionsContainer.appendChild(clearOpt);
+
+      currentFiltered = terms.length > 0
+        ? sources.filter(src => terms.every(t => src.label.toLowerCase().includes(t)))
+        : sources;
+
+      currentFiltered.forEach((src, i) => {
+        const isFirst = i === 0 && terms.length > 0;
+        const opt = document.createElement('div');
+        opt.style.cssText = `padding:6px 10px;cursor:pointer;font-size:11px;color:var(--text-primary);${isFirst ? 'background:var(--accent-blue);color:white;' : ''}`;
+        opt.textContent = src.label;
+        if (!isFirst) {
+          opt.addEventListener('mouseenter', () => opt.style.background = 'var(--bg-secondary)');
+          opt.addEventListener('mouseleave', () => opt.style.background = '');
+        }
+        opt.addEventListener('click', () => { onSelect(src.value); popup.remove(); });
+        optionsContainer.appendChild(opt);
+      });
+    }
+
+    renderOptions();
+    popup.appendChild(optionsContainer);
+
+    filterInput.addEventListener('input', () => renderOptions(filterInput.value));
+    filterInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && currentFiltered.length > 0) {
+        e.preventDefault();
+        onSelect(currentFiltered[0].value);
+        popup.remove();
+      }
+    });
+
+    const rect = anchorEl.getBoundingClientRect();
+    popup.style.left = Math.min(rect.left, window.innerWidth - 190) + 'px';
+    popup.style.top = Math.min(rect.bottom + 2, window.innerHeight - 260) + 'px';
+
+    document.body.appendChild(popup);
+    setTimeout(() => filterInput.focus(), 10);
+
+    const closeHandler = (e) => {
+      if (!popup.contains(e.target)) {
+        popup.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 10);
+
+    document.addEventListener('keydown', function keyHandler(e) {
+      if (e.key === 'Escape') {
+        popup.remove();
+        document.removeEventListener('keydown', keyHandler);
+      }
+    });
   }
 
   return { render };
