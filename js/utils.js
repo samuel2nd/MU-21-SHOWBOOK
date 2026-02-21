@@ -111,6 +111,91 @@ const Utils = (() => {
       .map(d => ({ value: d.deviceName, label: d.deviceName }));
   }
 
+  // Get TAC panel options
+  function getTacOptions() {
+    return Store.data.sheet8.tacPanels || ['TAC-A', 'TAC-B', 'TAC-C', 'TAC-D', 'TAC-E', 'TAC-F', 'TAC-G', 'TAC-H', 'S09', 'S10'];
+  }
+
+  // Get fiber strand options (1-24 per TAC panel)
+  function getFiberStrandOptions() {
+    return Array.from({ length: 24 }, (_, i) => String(i + 1));
+  }
+
+  // Get coax mult options (1-40)
+  function getMultOptions() {
+    return Array.from({ length: 40 }, (_, i) => String(i + 1));
+  }
+
+  // Get coax output options (1-16 typical)
+  function getCoaxOptions() {
+    return Array.from({ length: 40 }, (_, i) => String(i + 1));
+  }
+
+  // Create a filterable dropdown (select with datalist for typing)
+  function createFilterDropdown(options, currentValue, onChange, placeholder = '') {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:relative;';
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = currentValue || '';
+    inp.placeholder = placeholder;
+    inp.style.cssText = 'width:100%;';
+
+    const dlId = 'dl-' + Math.random().toString(36).substr(2, 9);
+    inp.setAttribute('list', dlId);
+
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
+    options.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = typeof opt === 'object' ? opt.value : opt;
+      dl.appendChild(o);
+    });
+
+    inp.addEventListener('change', () => onChange(inp.value));
+    wrapper.appendChild(inp);
+    wrapper.appendChild(dl);
+
+    return wrapper;
+  }
+
+  // Sync fiber assignment to FIBER TAC page
+  function syncToFiberTac(tacPanel, strand, source, dest) {
+    if (!tacPanel || !strand) return;
+    const strandNum = parseInt(strand);
+    if (isNaN(strandNum) || strandNum < 1 || strandNum > 24) return;
+
+    const panelData = Store.data.fiberTac[tacPanel];
+    if (!panelData) return;
+
+    const portIdx = strandNum - 1;
+    if (source !== undefined) {
+      panelData[portIdx].source = source;
+      Store.set(`fiberTac.${tacPanel}.${portIdx}.source`, source);
+    }
+    if (dest !== undefined) {
+      panelData[portIdx].dest = dest;
+      Store.set(`fiberTac.${tacPanel}.${portIdx}.dest`, dest);
+    }
+  }
+
+  // Sync coax mult assignment to COAX MULTS page
+  function syncToCoaxMult(multNum, source, destIndex = 0) {
+    if (!multNum) return;
+    const num = parseInt(multNum);
+    if (isNaN(num) || num < 1 || num > 40) return;
+
+    const multIdx = num - 1;
+    const multData = Store.data.coax.mults[multIdx];
+    if (!multData) return;
+
+    if (source !== undefined) {
+      multData.source = source;
+      Store.set(`coax.mults.${multIdx}.source`, source);
+    }
+  }
+
   // Create a section header
   function sectionHeader(text) {
     const h = document.createElement('h3');
@@ -215,6 +300,13 @@ const Utils = (() => {
     renderEditableTable,
     getSourceOptions,
     getDeviceOptions,
+    getTacOptions,
+    getFiberStrandOptions,
+    getMultOptions,
+    getCoaxOptions,
+    createFilterDropdown,
+    syncToFiberTac,
+    syncToCoaxMult,
     sectionHeader,
     tabPage,
     debounce,

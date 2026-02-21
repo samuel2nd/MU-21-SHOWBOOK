@@ -116,8 +116,8 @@ const VideoIoTab = (() => {
       // TAC (dropdown for TAC panels)
       tr.appendChild(makeTacSelect(row, idx, 'fiberRtrOut', 'tac'));
 
-      // FIB-A (strand assignment)
-      tr.appendChild(makeTextInput(row, idx, 'fiberRtrOut', 'fibA', 'Strand'));
+      // FIB-A (strand dropdown with sync)
+      tr.appendChild(makeFibInput(row, idx, 'fiberRtrOut', 'fibA'));
 
       tbody.appendChild(tr);
     });
@@ -161,11 +161,11 @@ const VideoIoTab = (() => {
       // Destination
       tr.appendChild(makeTextInput(row, idx, 'coaxRtrOut', 'destination'));
 
-      // MULT
-      tr.appendChild(makeTextInput(row, idx, 'coaxRtrOut', 'mult', 'Mult'));
+      // MULT (dropdown with sync)
+      tr.appendChild(makeMultInput(row, idx, 'coaxRtrOut', 'mult'));
 
-      // COAX
-      tr.appendChild(makeTextInput(row, idx, 'coaxRtrOut', 'coax', 'Coax #'));
+      // COAX (dropdown)
+      tr.appendChild(makeCoaxInput(row, idx, 'coaxRtrOut', 'coax'));
 
       tbody.appendChild(tr);
     });
@@ -212,11 +212,11 @@ const VideoIoTab = (() => {
       tdDest.style.color = 'var(--text-secondary)';
       tr.appendChild(tdDest);
 
-      // MULT
-      tr.appendChild(makeTextInput(row, idx, 'coaxIoTieLines', 'mult', 'Mult'));
+      // MULT (dropdown with sync)
+      tr.appendChild(makeMultInput(row, idx, 'coaxIoTieLines', 'mult'));
 
-      // COAX
-      tr.appendChild(makeTextInput(row, idx, 'coaxIoTieLines', 'coax', 'Coax #'));
+      // COAX (dropdown)
+      tr.appendChild(makeCoaxInput(row, idx, 'coaxIoTieLines', 'coax'));
 
       tbody.appendChild(tr);
     });
@@ -279,31 +279,40 @@ const VideoIoTab = (() => {
     const assignmentRow = document.createElement('div');
     assignmentRow.style.cssText = 'display:flex;align-items:center;gap:16px;margin-bottom:8px;padding:8px;background:var(--bg-secondary);border-radius:4px;';
 
-    // TAC dropdown
+    // TAC dropdown with filter
     const tacGroup = document.createElement('div');
     tacGroup.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const tacLabel = document.createElement('label');
     tacLabel.textContent = 'TAC:';
     tacLabel.style.cssText = 'font-size:12px;color:var(--text-secondary);';
-    const tacSelect = document.createElement('select');
-    tacSelect.style.cssText = 'padding:4px 8px;';
-    tacSelect.innerHTML = '<option value="">--</option>';
-    (Store.data.sheet8.tacPanels || []).forEach(tac => {
+    const tacInput = document.createElement('input');
+    tacInput.type = 'text';
+    tacInput.value = data.tac || '';
+    tacInput.placeholder = 'TAC';
+    tacInput.style.cssText = 'width:80px;padding:4px 8px;';
+    const tacDlId = `jfsmux-tac-${storePath}`;
+    tacInput.setAttribute('list', tacDlId);
+    const tacDl = document.createElement('datalist');
+    tacDl.id = tacDlId;
+    Utils.getTacOptions().forEach(tac => {
       const opt = document.createElement('option');
       opt.value = tac;
-      opt.textContent = tac;
-      if (data.tac === tac) opt.selected = true;
-      tacSelect.appendChild(opt);
+      tacDl.appendChild(opt);
     });
-    tacSelect.addEventListener('change', () => {
-      data.tac = tacSelect.value;
-      Store.set(`videoIo.${storePath}.tac`, tacSelect.value);
+    tacInput.addEventListener('change', () => {
+      data.tac = tacInput.value;
+      Store.set(`videoIo.${storePath}.tac`, tacInput.value);
+      // Sync to FIBER TAC
+      if (data.tac && data.fibA) {
+        Utils.syncToFiberTac(data.tac, data.fibA, `JFS MUX ${storePath === 'jfsMux1' ? '1' : '2'}`, '');
+      }
     });
     tacGroup.appendChild(tacLabel);
-    tacGroup.appendChild(tacSelect);
+    tacGroup.appendChild(tacInput);
+    tacGroup.appendChild(tacDl);
     assignmentRow.appendChild(tacGroup);
 
-    // FIB-A (strand) input
+    // FIB-A dropdown with filter
     const fibGroup = document.createElement('div');
     fibGroup.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const fibLabel = document.createElement('label');
@@ -312,14 +321,28 @@ const VideoIoTab = (() => {
     const fibInput = document.createElement('input');
     fibInput.type = 'text';
     fibInput.value = data.fibA || '';
-    fibInput.placeholder = 'Strand';
-    fibInput.style.cssText = 'width:70px;padding:4px 8px;';
+    fibInput.placeholder = '1-24';
+    fibInput.style.cssText = 'width:60px;padding:4px 8px;';
+    const fibDlId = `jfsmux-fib-${storePath}`;
+    fibInput.setAttribute('list', fibDlId);
+    const fibDl = document.createElement('datalist');
+    fibDl.id = fibDlId;
+    Utils.getFiberStrandOptions().forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      fibDl.appendChild(opt);
+    });
     fibInput.addEventListener('change', () => {
       data.fibA = fibInput.value;
       Store.set(`videoIo.${storePath}.fibA`, fibInput.value);
+      // Sync to FIBER TAC
+      if (data.tac && data.fibA) {
+        Utils.syncToFiberTac(data.tac, data.fibA, `JFS MUX ${storePath === 'jfsMux1' ? '1' : '2'}`, '');
+      }
     });
     fibGroup.appendChild(fibLabel);
     fibGroup.appendChild(fibInput);
+    fibGroup.appendChild(fibDl);
     assignmentRow.appendChild(fibGroup);
 
     parent.appendChild(assignmentRow);
@@ -445,23 +468,131 @@ const VideoIoTab = (() => {
     return td;
   }
 
-  // Helper: TAC panel select
+  // Helper: TAC dropdown with filter and sync
   function makeTacSelect(row, idx, section, key) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
-    (Store.data.sheet8.tacPanels || []).forEach(tac => {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = 'TAC';
+    inp.style.width = '70px';
+
+    const dlId = `tac-${section}-${idx}`;
+    inp.setAttribute('list', dlId);
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
+    Utils.getTacOptions().forEach(tac => {
       const opt = document.createElement('option');
       opt.value = tac;
-      opt.textContent = tac;
-      if (row[key] === tac) opt.selected = true;
-      sel.appendChild(opt);
+      dl.appendChild(opt);
     });
-    sel.addEventListener('change', () => {
-      row[key] = sel.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, sel.value);
+
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
+      // Sync to FIBER TAC if both TAC and FIB-A are set
+      if (row.tac && row.fibA) {
+        Utils.syncToFiberTac(row.tac, row.fibA, row.source || '', row.destination || '');
+      }
     });
-    td.appendChild(sel);
+
+    td.appendChild(inp);
+    td.appendChild(dl);
+    return td;
+  }
+
+  // Helper: FIB-A dropdown with filter and sync
+  function makeFibInput(row, idx, section, key, placeholder = 'Strand') {
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = placeholder;
+    inp.style.width = '50px';
+
+    const dlId = `fib-${section}-${idx}-${key}`;
+    inp.setAttribute('list', dlId);
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
+    Utils.getFiberStrandOptions().forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      dl.appendChild(opt);
+    });
+
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
+      // Sync to FIBER TAC if both TAC and this FIB are set
+      if (row.tac && inp.value) {
+        Utils.syncToFiberTac(row.tac, inp.value, row.source || '', row.destination || '');
+      }
+    });
+
+    td.appendChild(inp);
+    td.appendChild(dl);
+    return td;
+  }
+
+  // Helper: MULT dropdown with filter and sync
+  function makeMultInput(row, idx, section, key, placeholder = 'Mult') {
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = placeholder;
+    inp.style.width = '50px';
+
+    const dlId = `mult-${section}-${idx}`;
+    inp.setAttribute('list', dlId);
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
+    Utils.getMultOptions().forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      dl.appendChild(opt);
+    });
+
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
+      // Sync to COAX MULTS
+      if (inp.value) {
+        Utils.syncToCoaxMult(inp.value, row.source || '');
+      }
+    });
+
+    td.appendChild(inp);
+    td.appendChild(dl);
+    return td;
+  }
+
+  // Helper: COAX dropdown with filter
+  function makeCoaxInput(row, idx, section, key, placeholder = 'Coax #') {
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = row[key] || '';
+    inp.placeholder = placeholder;
+    inp.style.width = '50px';
+
+    const dlId = `coax-${section}-${idx}`;
+    inp.setAttribute('list', dlId);
+    const dl = document.createElement('datalist');
+    dl.id = dlId;
+    Utils.getCoaxOptions().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      dl.appendChild(opt);
+    });
+
+    inp.addEventListener('change', () => {
+      row[key] = inp.value;
+      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
+    });
+
+    td.appendChild(inp);
+    td.appendChild(dl);
     return td;
   }
 
