@@ -103,11 +103,6 @@ const HomeTab = (() => {
         value: `${s.totalSources} / 80`,
         detail: deviceCounts.length > 0 ? deviceCounts.join(' | ') : 'No devices assigned'
       },
-      {
-        title: 'Devices',
-        value: `${s.usedDevices} / ${s.totalDevices}`,
-        detail: 'RTR I/O Master'
-      },
     ];
 
     cards.forEach(c => {
