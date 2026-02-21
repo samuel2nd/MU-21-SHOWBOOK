@@ -73,16 +73,42 @@ const Formulas = (() => {
     const activeMonitors = Object.values(Store.data.monitorWalls)
       .reduce((sum, wall) => sum + wall.filter(m => m.source).length, 0);
 
-    // CCU count: CCU entries with a device assigned
-    const ccuCount = (Store.data.ccuFsy.ccu || []).filter(c => c.device).length;
-    // FSY count: FSY entries with a format or show name assigned
-    const fsyCount = (Store.data.ccuFsy.fsy || []).filter(f => f.format || f.showName).length;
+    // Count sources by device type (based on engSource field)
+    // CCU count: sources with engSource containing "CCU"
+    const ccuCount = Store.data.sources.filter(s =>
+      s.engSource && s.engSource.toUpperCase().includes('CCU')
+    ).length;
+
+    // FSY count: sources with engSource containing "FSY" or "FS"
+    const fsyCount = Store.data.sources.filter(s =>
+      s.engSource && (s.engSource.toUpperCase().includes('FSY') || s.engSource.toUpperCase().match(/\bFS\s*\d/))
+    ).length;
+
+    // EVS count: sources with engSource containing "EVS"
+    const evsCount = Store.data.sources.filter(s =>
+      s.engSource && s.engSource.toUpperCase().includes('EVS')
+    ).length;
+
+    // VTR count: sources with engSource containing "VTR"
+    const vtrCount = Store.data.sources.filter(s =>
+      s.engSource && s.engSource.toUpperCase().includes('VTR')
+    ).length;
+
+    // GFX count: sources with engSource containing "GFX"
+    const gfxCount = Store.data.sources.filter(s =>
+      s.engSource && s.engSource.toUpperCase().includes('GFX')
+    ).length;
+
+    // CAM count: sources with engSource containing "CAM"
+    const camCount = Store.data.sources.filter(s =>
+      s.engSource && s.engSource.toUpperCase().includes('CAM')
+    ).length;
 
     return {
       totalSources, activeSources,
       totalDevices, usedDevices,
       totalMonitors, activeMonitors,
-      ccuCount, fsyCount,
+      ccuCount, fsyCount, evsCount, vtrCount, gfxCount, camCount,
     };
   }
 

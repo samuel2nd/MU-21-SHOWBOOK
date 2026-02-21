@@ -87,9 +87,29 @@ const HomeTab = (() => {
   function renderSummary(el) {
     const s = Formulas.equipmentSummary();
     el.innerHTML = '';
+
+    // Build device breakdown string - only show non-zero counts
+    const deviceCounts = [];
+    if (s.camCount) deviceCounts.push(`CAM: ${s.camCount}`);
+    if (s.ccuCount) deviceCounts.push(`CCU: ${s.ccuCount}`);
+    if (s.fsyCount) deviceCounts.push(`FSY: ${s.fsyCount}`);
+    if (s.evsCount) deviceCounts.push(`EVS: ${s.evsCount}`);
+    if (s.vtrCount) deviceCounts.push(`VTR: ${s.vtrCount}`);
+    if (s.gfxCount) deviceCounts.push(`GFX: ${s.gfxCount}`);
+
     const cards = [
-      { title: 'Sources', value: `${s.totalSources} / 80`, detail: `CCU: ${s.ccuCount} | FSY: ${s.fsyCount}` },
+      {
+        title: 'Sources',
+        value: `${s.totalSources} / 80`,
+        detail: deviceCounts.length > 0 ? deviceCounts.join(' | ') : 'No devices assigned'
+      },
+      {
+        title: 'Devices',
+        value: `${s.usedDevices} / ${s.totalDevices}`,
+        detail: 'RTR I/O Master'
+      },
     ];
+
     cards.forEach(c => {
       const card = document.createElement('div');
       card.className = 'equip-card';
