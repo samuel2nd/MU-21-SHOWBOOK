@@ -34,55 +34,44 @@ const CoaxTab = (() => {
       const multDiv = document.createElement('div');
       multDiv.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:12px;';
 
-      // Mult header with editable name and source selector
+      // Mult header with editable name
       const header = document.createElement('div');
       header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
 
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
       nameInput.value = multData.name || `MULT ${m + 1}`;
-      nameInput.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-orange);background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 6px;width:80px;';
+      nameInput.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-orange);background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 6px;width:100px;cursor:pointer;';
+      nameInput.title = 'Click to rename';
       nameInput.addEventListener('focus', () => {
         nameInput.style.borderColor = 'var(--accent-orange)';
         nameInput.style.background = 'var(--bg-primary)';
+        nameInput.style.cursor = 'text';
       });
       nameInput.addEventListener('blur', () => {
         nameInput.style.borderColor = 'transparent';
         nameInput.style.background = 'transparent';
-      });
-      nameInput.addEventListener('change', () => {
+        nameInput.style.cursor = 'pointer';
+        // Save on blur
+        const newName = nameInput.value.trim() || `MULT ${m + 1}`;
         ensureMultData(m);
-        Store.data.coax.multUnits[m].name = nameInput.value.trim() || `MULT ${m + 1}`;
-        Store.set(`coax.multUnits.${m}.name`, Store.data.coax.multUnits[m].name);
-        Utils.toast(`Renamed to "${nameInput.value}"`, 'success');
+        if (Store.data.coax.multUnits[m].name !== newName) {
+          Store.data.coax.multUnits[m].name = newName;
+          Store.set(`coax.multUnits.${m}.name`, newName);
+          Utils.toast(`Renamed to "${newName}"`, 'success');
+        }
       });
       header.appendChild(nameInput);
 
-      // Source input for mult
-      const sourceInput = document.createElement('input');
-      sourceInput.type = 'text';
-      sourceInput.value = multData.source || '';
-      sourceInput.placeholder = 'Source...';
-      sourceInput.style.cssText = 'flex:1;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+      // Show count of used outputs
+      const usedCount = multData.outputs ? multData.outputs.filter(o => o.dest).length : 0;
+      if (usedCount > 0) {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:10px;color:var(--text-secondary);background:var(--bg-primary);padding:2px 6px;border-radius:10px;';
+        badge.textContent = `${usedCount} used`;
+        header.appendChild(badge);
+      }
 
-      const srcDlId = `mult-src-${m}`;
-      sourceInput.setAttribute('list', srcDlId);
-      const srcDl = document.createElement('datalist');
-      srcDl.id = srcDlId;
-      Utils.getDeviceOptions().forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.value;
-        srcDl.appendChild(opt);
-      });
-
-      sourceInput.addEventListener('change', () => {
-        multData.source = sourceInput.value;
-        ensureMultData(m);
-        Store.set(`coax.multUnits.${m}.source`, sourceInput.value);
-      });
-
-      header.appendChild(sourceInput);
-      header.appendChild(srcDl);
       multDiv.appendChild(header);
 
       // Visual grid of outputs (5x3 = 15 outputs)
