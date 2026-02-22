@@ -160,8 +160,9 @@ const Utils = (() => {
     return wrapper;
   }
 
-  // Sync fiber assignment to FIBER TAC page
-  function syncToFiberTac(tacPanel, strand, source, dest) {
+  // Sync fiber assignment to FIBER TAC page with detailed source info
+  // sourceInfo: { type: 'CCU'|'FSY'|'RTR', unit: number, fibSide: 'A'|'B', showName: string, rtrRow: number }
+  function syncToFiberTac(tacPanel, strand, sourceInfo) {
     if (!tacPanel || !strand) return;
     const strandNum = parseInt(strand);
     if (isNaN(strandNum) || strandNum < 1 || strandNum > 24) return;
@@ -170,18 +171,58 @@ const Utils = (() => {
     if (!panelData) return;
 
     const portIdx = strandNum - 1;
-    if (source !== undefined) {
-      panelData[portIdx].source = source;
-      Store.set(`fiberTac.${tacPanel}.${portIdx}.source`, source);
+
+    // Build detailed source string
+    let sourceStr = '';
+    let destStr = '';
+
+    if (typeof sourceInfo === 'string') {
+      // Legacy: simple string
+      sourceStr = sourceInfo;
+    } else if (sourceInfo) {
+      if (sourceInfo.type === 'CCU') {
+        // CCU 01-A: CAM1
+        const ccuNum = String(sourceInfo.unit).padStart(2, '0');
+        sourceStr = `CCU ${ccuNum}-${sourceInfo.fibSide || 'A'}`;
+        if (sourceInfo.showName) {
+          destStr = sourceInfo.showName;
+        }
+      } else if (sourceInfo.type === 'FSY') {
+        // FS 01: CAM1
+        const fsNum = String(sourceInfo.unit).padStart(2, '0');
+        sourceStr = `FS ${fsNum}`;
+        if (sourceInfo.showName) {
+          destStr = sourceInfo.showName;
+        }
+      } else if (sourceInfo.type === 'RTR') {
+        // RTR FIB 3: PGM A
+        sourceStr = `RTR FIB ${sourceInfo.rtrRow}`;
+        if (sourceInfo.source) {
+          destStr = sourceInfo.source;
+        }
+        if (sourceInfo.dest) {
+          destStr = destStr ? `${destStr} → ${sourceInfo.dest}` : sourceInfo.dest;
+        }
+      } else if (sourceInfo.type === 'JFS') {
+        // JFS MUX 1
+        sourceStr = `JFS MUX ${sourceInfo.unit}`;
+        destStr = sourceInfo.dest || '';
+      }
     }
-    if (dest !== undefined) {
-      panelData[portIdx].dest = dest;
-      Store.set(`fiberTac.${tacPanel}.${portIdx}.dest`, dest);
+
+    if (sourceStr) {
+      panelData[portIdx].source = sourceStr;
+      Store.set(`fiberTac.${tacPanel}.${portIdx}.source`, sourceStr);
+    }
+    if (destStr) {
+      panelData[portIdx].dest = destStr;
+      Store.set(`fiberTac.${tacPanel}.${portIdx}.dest`, destStr);
     }
   }
 
-  // Sync coax mult assignment to COAX MULTS page
-  function syncToCoaxMult(multNum, source, destIndex = 0) {
+  // Sync coax mult assignment to COAX MULTS page with detailed source info
+  // sourceInfo: { type: 'FSY'|'RTR', unit: number, showName: string, source: string }
+  function syncToCoaxMult(multNum, sourceInfo) {
     if (!multNum) return;
     const num = parseInt(multNum);
     if (isNaN(num) || num < 1 || num > 40) return;
@@ -190,9 +231,32 @@ const Utils = (() => {
     const multData = Store.data.coax.mults[multIdx];
     if (!multData) return;
 
-    if (source !== undefined) {
-      multData.source = source;
-      Store.set(`coax.mults.${multIdx}.source`, source);
+    // Build detailed source string
+    let sourceStr = '';
+
+    if (typeof sourceInfo === 'string') {
+      // Legacy: simple string
+      sourceStr = sourceInfo;
+    } else if (sourceInfo) {
+      if (sourceInfo.type === 'FSY') {
+        const fsNum = String(sourceInfo.unit).padStart(2, '0');
+        sourceStr = `FS ${fsNum}`;
+        if (sourceInfo.showName) {
+          sourceStr += `: ${sourceInfo.showName}`;
+        }
+      } else if (sourceInfo.type === 'RTR') {
+        sourceStr = `RTR COAX ${sourceInfo.rtrRow}`;
+        if (sourceInfo.source) {
+          sourceStr += `: ${sourceInfo.source}`;
+        }
+      } else if (sourceInfo.source) {
+        sourceStr = sourceInfo.source;
+      }
+    }
+
+    if (sourceStr) {
+      multData.source = sourceStr;
+      Store.set(`coax.mults.${multIdx}.source`, sourceStr);
     }
   }
 

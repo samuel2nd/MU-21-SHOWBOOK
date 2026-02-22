@@ -304,7 +304,11 @@ const VideoIoTab = (() => {
       Store.set(`videoIo.${storePath}.tac`, tacInput.value);
       // Sync to FIBER TAC
       if (data.tac && data.fibA) {
-        Utils.syncToFiberTac(data.tac, data.fibA, `JFS MUX ${storePath === 'jfsMux1' ? '1' : '2'}`, '');
+        Utils.syncToFiberTac(data.tac, data.fibA, {
+          type: 'JFS',
+          unit: storePath === 'jfsMux1' ? 1 : 2,
+          dest: ''
+        });
       }
     });
     tacGroup.appendChild(tacLabel);
@@ -337,7 +341,11 @@ const VideoIoTab = (() => {
       Store.set(`videoIo.${storePath}.fibA`, fibInput.value);
       // Sync to FIBER TAC
       if (data.tac && data.fibA) {
-        Utils.syncToFiberTac(data.tac, data.fibA, `JFS MUX ${storePath === 'jfsMux1' ? '1' : '2'}`, '');
+        Utils.syncToFiberTac(data.tac, data.fibA, {
+          type: 'JFS',
+          unit: storePath === 'jfsMux1' ? 1 : 2,
+          dest: ''
+        });
       }
     });
     fibGroup.appendChild(fibLabel);
@@ -492,7 +500,12 @@ const VideoIoTab = (() => {
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
       // Sync to FIBER TAC if both TAC and FIB-A are set
       if (row.tac && row.fibA) {
-        Utils.syncToFiberTac(row.tac, row.fibA, row.source || '', row.destination || '');
+        Utils.syncToFiberTac(row.tac, row.fibA, {
+          type: 'RTR',
+          rtrRow: row.row,
+          source: row.source || '',
+          dest: row.destination || ''
+        });
       }
     });
 
@@ -525,7 +538,12 @@ const VideoIoTab = (() => {
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
       // Sync to FIBER TAC if both TAC and this FIB are set
       if (row.tac && inp.value) {
-        Utils.syncToFiberTac(row.tac, inp.value, row.source || '', row.destination || '');
+        Utils.syncToFiberTac(row.tac, inp.value, {
+          type: 'RTR',
+          rtrRow: row.row,
+          source: row.source || '',
+          dest: row.destination || ''
+        });
       }
     });
 
@@ -556,9 +574,13 @@ const VideoIoTab = (() => {
     inp.addEventListener('change', () => {
       row[key] = inp.value;
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-      // Sync to COAX MULTS
+      // Sync to COAX MULTS with detailed info
       if (inp.value) {
-        Utils.syncToCoaxMult(inp.value, row.source || '');
+        Utils.syncToCoaxMult(inp.value, {
+          type: 'RTR',
+          rtrRow: row.row,
+          source: row.source || ''
+        });
       }
     });
 

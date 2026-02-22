@@ -199,6 +199,11 @@ const CcuFsyTab = (() => {
     return td;
   }
 
+  // Helper: Get show name for a device
+  function getShowNameForDevice(deviceName) {
+    return Formulas.getSourceNamesForDevice(deviceName) || '';
+  }
+
   // Helper: TAC dropdown with filter
   function makeTacDropdown(row, idx, deviceName, section = 'ccu') {
     const td = document.createElement('td');
@@ -223,7 +228,31 @@ const CcuFsyTab = (() => {
       Store.set(`ccuFsy.${section}.${idx}.tac`, inp.value);
       // Sync to FIBER TAC if both TAC and FIB-A are set
       if (row.tac && row.fibA) {
-        Utils.syncToFiberTac(row.tac, row.fibA, deviceName, deviceName);
+        const showName = getShowNameForDevice(deviceName);
+        if (section === 'ccu') {
+          Utils.syncToFiberTac(row.tac, row.fibA, {
+            type: 'CCU',
+            unit: row.unit,
+            fibSide: 'A',
+            showName: showName
+          });
+        } else {
+          Utils.syncToFiberTac(row.tac, row.fibA, {
+            type: 'FSY',
+            unit: row.unit,
+            showName: showName
+          });
+        }
+      }
+      // Also sync FIB-B for CCU if set
+      if (section === 'ccu' && row.tac && row.fibB) {
+        const showName = getShowNameForDevice(deviceName);
+        Utils.syncToFiberTac(row.tac, row.fibB, {
+          type: 'CCU',
+          unit: row.unit,
+          fibSide: 'B',
+          showName: showName
+        });
       }
     });
 
@@ -256,7 +285,22 @@ const CcuFsyTab = (() => {
       Store.set(`ccuFsy.${section}.${idx}.${key}`, inp.value);
       // Sync to FIBER TAC if both TAC and this FIB are set
       if (row.tac && inp.value) {
-        Utils.syncToFiberTac(row.tac, inp.value, deviceName, deviceName);
+        const showName = getShowNameForDevice(deviceName);
+        if (section === 'ccu') {
+          const fibSide = key === 'fibA' ? 'A' : 'B';
+          Utils.syncToFiberTac(row.tac, inp.value, {
+            type: 'CCU',
+            unit: row.unit,
+            fibSide: fibSide,
+            showName: showName
+          });
+        } else {
+          Utils.syncToFiberTac(row.tac, inp.value, {
+            type: 'FSY',
+            unit: row.unit,
+            showName: showName
+          });
+        }
       }
     });
 
@@ -287,9 +331,14 @@ const CcuFsyTab = (() => {
     inp.addEventListener('change', () => {
       row.mult = inp.value;
       Store.set(`ccuFsy.fsy.${idx}.mult`, inp.value);
-      // Sync to COAX MULTS
+      // Sync to COAX MULTS with detailed info
       if (inp.value) {
-        Utils.syncToCoaxMult(inp.value, deviceName);
+        const showName = getShowNameForDevice(deviceName);
+        Utils.syncToCoaxMult(inp.value, {
+          type: 'FSY',
+          unit: row.unit,
+          showName: showName
+        });
       }
     });
 
