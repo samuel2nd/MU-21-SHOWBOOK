@@ -249,7 +249,7 @@ const ExportImport = (() => {
     }
   }
 
-  function newShow() {
+  async function newShow() {
     // Confirmation before wiping data
     const hasData = Store.data.sources.some(s => s.showName) || Store.data.rtrMaster.some(d => d.deviceName);
     if (hasData) {
@@ -264,8 +264,15 @@ const ExportImport = (() => {
       return;
     }
     const format = prompt('Enter show format (e.g. 1080i/59.94):') || '';
-    Store.newShow(name.trim(), format.trim());
-    Utils.toast(`New show "${name.trim()}" created`, 'success');
+
+    // Use Supabase if connected
+    if (SupabaseSync.connected) {
+      const success = await SupabaseSync.createCloudShow(name.trim(), format.trim());
+      if (!success) return;
+    } else {
+      Store.newShow(name.trim(), format.trim());
+      Utils.toast(`New show "${name.trim()}" created (local only)`, 'success');
+    }
   }
 
   return { exportJSON, exportCSV, importJSON, newShow };

@@ -81,6 +81,19 @@ const App = (() => {
       renderCurrentTab();
     });
 
+    document.getElementById('btn-share').addEventListener('click', () => {
+      SupabaseSync.copyShareUrl();
+    });
+
+    document.getElementById('btn-cloud-shows').addEventListener('click', () => {
+      showCloudShowsModal();
+    });
+
+    // Click on status indicator copies share URL
+    document.getElementById('connection-status').addEventListener('click', () => {
+      SupabaseSync.copyShareUrl();
+    });
+
     document.getElementById('btn-import').addEventListener('click', () => {
       document.getElementById('import-file-input').click();
     });
@@ -138,6 +151,94 @@ const App = (() => {
 
     // Init Supabase (async, non-blocking)
     SupabaseSync.init();
+  }
+
+  // Cloud shows modal
+  async function showCloudShowsModal() {
+    if (!SupabaseSync.connected) {
+      Utils.toast('Not connected to cloud', 'warn');
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:400px;max-width:600px;max-height:80vh;overflow-y:auto;';
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;';
+    header.innerHTML = '<h3 style="margin:0;color:var(--accent-blue);">Cloud Shows</h3>';
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '\u2715';
+    closeBtn.style.cssText = 'background:none;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    header.appendChild(closeBtn);
+    modal.appendChild(header);
+
+    // Loading
+    const listDiv = document.createElement('div');
+    listDiv.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">Loading shows...</p>';
+    modal.appendChild(listDiv);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Fetch shows
+    const shows = await SupabaseSync.listCloudShows();
+
+    if (shows.length === 0) {
+      listDiv.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">No shows in cloud yet. Create one using "+ New Show".</p>';
+    } else {
+      listDiv.innerHTML = '';
+      shows.forEach(show => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border);';
+
+        const info = document.createElement('div');
+        info.innerHTML = `
+          <div style="font-weight:600;color:var(--text-primary);">${show.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">Updated: ${new Date(show.updated_at).toLocaleString()}</div>
+        `;
+        row.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;';
+
+        const loadBtn = document.createElement('button');
+        loadBtn.textContent = 'Load';
+        loadBtn.className = 'btn btn-primary';
+        loadBtn.style.cssText = 'padding:4px 12px;font-size:12px;';
+        loadBtn.addEventListener('click', async () => {
+          await SupabaseSync.loadShow(show.name);
+          updateHeader();
+          renderCurrentTab();
+          overlay.remove();
+          Utils.toast(`Loaded "${show.name}"`, 'success');
+        });
+        actions.appendChild(loadBtn);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy Link';
+        copyBtn.className = 'btn btn-secondary';
+        copyBtn.style.cssText = 'padding:4px 12px;font-size:12px;';
+        copyBtn.addEventListener('click', async () => {
+          const url = new URL(window.location.origin + window.location.pathname);
+          url.searchParams.set('show', show.name);
+          await navigator.clipboard.writeText(url.href);
+          Utils.toast('Link copied', 'success');
+        });
+        actions.appendChild(copyBtn);
+
+        row.appendChild(actions);
+        listDiv.appendChild(row);
+      });
+    }
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
   }
 
   // Boot on DOM ready

@@ -137,6 +137,11 @@ html, body {
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.status-indicator:hover {
+  transform: scale(1.05);
 }
 .status-indicator.online {
   background: rgba(52, 211, 153, 0.15);
