@@ -1,80 +1,70 @@
 /**
  * TSL 5.0 Protocol Packet Builder
  *
- * TSL 5.0 packet structure:
- * | PBC (2 bytes LE) | FLAGS (1 byte) | SCREEN (2 bytes LE) | INDEX (2 bytes LE) | CONTROL (2 bytes LE) | TALLY (1 byte) |
+ * Matches Companion's packet format for Kaleido layout triggers.
  *
- * For Kaleido layout triggers:
- * - Left Tally ON: CONTROL=0x0004, TALLY=0x04
- * - Left Tally OFF: CONTROL=0x0004, TALLY=0x00
+ * Packet structure (12 bytes):
+ * | PBC (2 bytes LE) | FLAGS (1) | SCREEN (2 LE) | INDEX (2 LE) | CONTROL (2 LE) | TALLY (2) | LENGTH (1) |
+ *
+ * For layout triggers:
+ * - ON:  CONTROL = 0x000d (bit 0 set)
+ * - OFF: CONTROL = 0x000c (bit 0 clear)
  */
 
 const TSL5 = {
-  // Control flags
-  CONTROL_TALLY: 0x0004,
-
-  // Tally states
-  TALLY_LEFT_ON: 0x04,
-  TALLY_OFF: 0x00,
-
   /**
-   * Build a TSL 5.0 packet
-   * @param {number} screen - Screen/display number (usually 0)
-   * @param {number} index - Address index (1-based for Kaleido layouts)
-   * @param {number} control - Control word
-   * @param {number} tally - Tally state byte
-   * @returns {Buffer} - Complete TSL 5.0 packet
+   * Build a TSL 5.0 packet matching Companion's format
+   * @param {number} index - Address index for the layout
+   * @param {boolean} on - true for ON, false for OFF
+   * @returns {Buffer} - Complete TSL 5.0 packet (12 bytes)
    */
-  buildPacket(screen, index, control, tally) {
-    // Packet format: PBC (2) + FLAGS (1) + SCREEN (2) + INDEX (2) + CONTROL (2) + TALLY (1) = 10 bytes
-    const buffer = Buffer.alloc(10);
+  buildPacket(index, on) {
+    // Total: PBC(2) + FLAGS(1) + SCREEN(2) + INDEX(2) + CONTROL(2) + TALLY(2) + LENGTH(1) = 12 bytes
+    const buffer = Buffer.alloc(12);
     let offset = 0;
 
-    // PBC - Packet Byte Count (length of data after PBC, little-endian)
-    // Data length = FLAGS(1) + SCREEN(2) + INDEX(2) + CONTROL(2) + TALLY(1) = 8
-    buffer.writeUInt16LE(8, offset);
+    // PBC - Packet Byte Count (10 bytes follow after PBC)
+    buffer.writeUInt16LE(10, offset);
     offset += 2;
 
     // FLAGS - Version and flags (TSL 5.0 = 0x00)
     buffer.writeUInt8(0x00, offset);
     offset += 1;
 
-    // SCREEN - Display/screen address (little-endian)
-    buffer.writeUInt16LE(screen, offset);
+    // SCREEN - Display/screen address (0)
+    buffer.writeUInt16LE(0, offset);
     offset += 2;
 
     // INDEX - Address index (little-endian)
     buffer.writeUInt16LE(index, offset);
     offset += 2;
 
-    // CONTROL - Control word (little-endian)
-    buffer.writeUInt16LE(control, offset);
+    // CONTROL - 0x0d for ON (bit 0 set), 0x0c for OFF (bit 0 clear)
+    buffer.writeUInt16LE(on ? 0x000d : 0x000c, offset);
     offset += 2;
 
-    // TALLY - Tally state
-    buffer.writeUInt8(tally, offset);
+    // TALLY - 2 bytes of zeros
+    buffer.writeUInt16LE(0, offset);
+    offset += 2;
+
+    // LENGTH - text length (0)
+    buffer.writeUInt8(0, offset);
 
     return buffer;
   },
 
   /**
-   * Build Left Tally ON packet
-   * @param {number} index - Address index for the layout trigger
-   * @param {number} screen - Screen number (default 0)
-   * @returns {Buffer}
+   * Build ON packet for layout trigger
    */
   buildLeftTallyOn(index, screen = 0) {
-    return this.buildPacket(screen, index, this.CONTROL_TALLY, this.TALLY_LEFT_ON);
+    return this.buildPacket(index, true);
   },
 
   /**
-   * Build Left Tally OFF packet
-   * @param {number} index - Address index
-   * @param {number} screen - Screen number (default 0)
-   * @returns {Buffer}
+   * Build OFF packet for layout trigger
    */
   buildLeftTallyOff(index, screen = 0) {
-    return this.buildPacket(screen, index, this.CONTROL_TALLY, this.TALLY_OFF);
+    return this.buildPacket(index, false);
   }
 };
 

@@ -183,21 +183,23 @@ const KaleidoClient = (() => {
    * Kaleido uses 1-based indices for layout presets
    */
   function getLayoutIndex(layoutName) {
+    // TSL indices matching Kaleido configuration
     const layoutIndexMap = {
-      '9_SPLIT': 1,
-      '9_SPLIT_R': 2,
-      '9_SPLIT_L': 3,
-      '6_SPLIT_R': 4,
-      '6_SPLIT_L': 5,
-      '6_SPLIT_R_UP': 6,
-      '6_SPLIT_L_UP': 7,
-      '5_SPLIT': 8,
-      '5_SPLIT_FLIP': 9,
-      '4_SPLIT': 10,
-      'FULL_SCREEN': 11
+      '4_SPLIT': 4,
+      '5_SPLIT': 5,
+      '6_SPLIT_L': 6,
+      '6_SPLIT_R': 7,
+      '9_SPLIT': 9,
+      '9_SPLIT_L': 10,
+      '9_SPLIT_R': 11,
+      '5_SPLIT_FLIP': 15,
+      '6_SPLIT_L_UP': 16,
+      '6_SPLIT_R_UP': 17
     };
 
-    return layoutIndexMap[layoutName] || 1;
+    const index = layoutIndexMap[layoutName] || 4;
+    console.log(`[Kaleido] getLayoutIndex: layoutName="${layoutName}" -> index=${index}`);
+    return index;
   }
 
   /**

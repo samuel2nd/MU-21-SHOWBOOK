@@ -2,7 +2,7 @@
  * Kaleido Bridge Server
  *
  * HTTP server that accepts layout trigger requests and sends TSL 5.0 packets
- * to Kaleido multiviewer cards over TCP.
+ * to Kaleido multiviewer cards over UDP.
  *
  * Endpoint: POST /trigger
  * Body: { "ip": "192.168.x.x", "port": 8902, "index": 1 }
@@ -12,11 +12,18 @@
 
 const express = require('express');
 const cors = require('cors');
-const net = require('net');
+const dgram = require('dgram');
 const TSL5 = require('./tsl5');
 
 const app = express();
 const PORT = 3001;
+
+// Create a reusable UDP socket
+const udpSocket = dgram.createSocket('udp4');
+
+udpSocket.on('error', (err) => {
+  console.error('UDP socket error:', err);
+});
 
 // Middleware
 app.use(cors());
@@ -27,7 +34,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Test connection to a Kaleido card
+// Test connection to a Kaleido card (for UDP, we just verify we can send)
 app.post('/test', async (req, res) => {
   const { ip, port = 8902 } = req.body;
 
@@ -103,96 +110,79 @@ app.post('/trigger-batch', async (req, res) => {
 });
 
 /**
- * Test TCP connection to a Kaleido card
+ * Test UDP connectivity to a Kaleido card
+ * Sends a simple packet and checks for send errors
  */
 function testConnection(ip, port) {
   return new Promise((resolve) => {
-    const socket = new net.Socket();
-    const timeout = 3000;
+    // Build a simple tally off packet as a test
+    const testPacket = TSL5.buildLeftTallyOff(1);
 
-    const timer = setTimeout(() => {
-      socket.destroy();
-      resolve({ success: false, error: 'Connection timeout' });
-    }, timeout);
-
-    socket.connect(port, ip, () => {
-      clearTimeout(timer);
-      socket.end();
-      resolve({ success: true, message: `Connected to ${ip}:${port}` });
-    });
-
-    socket.on('error', (err) => {
-      clearTimeout(timer);
-      socket.destroy();
-      resolve({ success: false, error: `Connection failed: ${err.message}` });
+    udpSocket.send(testPacket, 0, testPacket.length, port, ip, (err) => {
+      if (err) {
+        resolve({ success: false, error: `Send failed: ${err.message}` });
+      } else {
+        resolve({ success: true, message: `UDP packet sent to ${ip}:${port}` });
+      }
     });
   });
 }
 
 /**
- * Send TSL 5.0 packets to trigger a layout change
+ * Send TSL 5.0 packets over UDP to trigger a layout change
  * Sends Left Tally ON, waits briefly, then sends Left Tally OFF
  */
 function triggerLayout(ip, port, index) {
   return new Promise((resolve) => {
-    const socket = new net.Socket();
-    const timeout = 5000;
+    // Build packets
+    const onPacket = TSL5.buildLeftTallyOn(index);
+    const offPacket = TSL5.buildLeftTallyOff(index);
 
-    const timer = setTimeout(() => {
-      socket.destroy();
-      resolve({ success: false, error: 'Operation timeout' });
-    }, timeout);
+    // Log packet details for debugging
+    console.log('=== TRIGGER LAYOUT ===');
+    console.log(`Target: ${ip}:${port}`);
+    console.log(`Index: ${index}`);
+    console.log(`ON packet (hex):  ${onPacket.toString('hex')}`);
+    console.log(`OFF packet (hex): ${offPacket.toString('hex')}`);
+    console.log(`ON packet bytes:  [${Array.from(onPacket).join(', ')}]`);
+    console.log(`OFF packet bytes: [${Array.from(offPacket).join(', ')}]`);
 
-    socket.connect(port, ip, async () => {
-      try {
-        // Build packets
-        const onPacket = TSL5.buildLeftTallyOn(index);
-        const offPacket = TSL5.buildLeftTallyOff(index);
-
-        // Send Left Tally ON
-        socket.write(onPacket);
-
-        // Wait 100ms
-        await delay(100);
-
-        // Send Left Tally OFF
-        socket.write(offPacket);
-
-        // Wait for data to flush
-        await delay(50);
-
-        clearTimeout(timer);
-        socket.end();
-
-        resolve({
-          success: true,
-          message: `Triggered layout index ${index} on ${ip}:${port}`
-        });
-      } catch (err) {
-        clearTimeout(timer);
-        socket.destroy();
-        resolve({ success: false, error: err.message });
+    // Send Left Tally ON
+    udpSocket.send(onPacket, 0, onPacket.length, port, ip, (err) => {
+      if (err) {
+        console.log(`ERROR sending ON: ${err.message}`);
+        resolve({ success: false, error: `Send ON failed: ${err.message}` });
+        return;
       }
-    });
+      console.log('Sent ON packet');
 
-    socket.on('error', (err) => {
-      clearTimeout(timer);
-      socket.destroy();
-      resolve({ success: false, error: `Connection failed: ${err.message}` });
+      // Wait 100ms then send OFF
+      setTimeout(() => {
+        udpSocket.send(offPacket, 0, offPacket.length, port, ip, (err) => {
+          if (err) {
+            console.log(`ERROR sending OFF: ${err.message}`);
+            resolve({ success: false, error: `Send OFF failed: ${err.message}` });
+          } else {
+            console.log('Sent OFF packet');
+            console.log('=== COMPLETE ===\n');
+            resolve({
+              success: true,
+              message: `Triggered layout index ${index} on ${ip}:${port}`
+            });
+          }
+        });
+      }, 100);
     });
   });
 }
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Start server
-app.listen(PORT, 'localhost', () => {
+// Start server (listen on all interfaces so remote browsers can connect)
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Kaleido Bridge running on http://localhost:${PORT}`);
+  console.log('Using UDP for TSL 5.0 communication');
   console.log('Endpoints:');
   console.log('  GET  /health       - Health check');
-  console.log('  POST /test         - Test connection to Kaleido card');
+  console.log('  POST /test         - Test UDP send to Kaleido card');
   console.log('  POST /trigger      - Trigger single layout change');
   console.log('  POST /trigger-batch - Trigger multiple layout changes');
 });
