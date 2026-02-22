@@ -224,34 +224,35 @@ const CcuFsyTab = (() => {
     });
 
     inp.addEventListener('change', () => {
+      const showName = getShowNameForDevice(deviceName);
+
+      // Clear old assignments first (by syncing with clear flag)
+      if (section === 'ccu') {
+        Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: 'A', clear: true });
+        Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: 'B', clear: true });
+      } else {
+        Utils.syncToFiberTac(null, null, { type: 'FSY', unit: row.unit, clear: true });
+      }
+
       row.tac = inp.value;
       Store.set(`ccuFsy.${section}.${idx}.tac`, inp.value);
-      // Sync to FIBER TAC if both TAC and FIB-A are set
+
+      // Sync new assignment if both TAC and FIB-A are set
       if (row.tac && row.fibA) {
-        const showName = getShowNameForDevice(deviceName);
         if (section === 'ccu') {
           Utils.syncToFiberTac(row.tac, row.fibA, {
-            type: 'CCU',
-            unit: row.unit,
-            fibSide: 'A',
-            showName: showName
+            type: 'CCU', unit: row.unit, fibSide: 'A', showName: showName
           });
         } else {
           Utils.syncToFiberTac(row.tac, row.fibA, {
-            type: 'FSY',
-            unit: row.unit,
-            showName: showName
+            type: 'FSY', unit: row.unit, showName: showName
           });
         }
       }
       // Also sync FIB-B for CCU if set
       if (section === 'ccu' && row.tac && row.fibB) {
-        const showName = getShowNameForDevice(deviceName);
         Utils.syncToFiberTac(row.tac, row.fibB, {
-          type: 'CCU',
-          unit: row.unit,
-          fibSide: 'B',
-          showName: showName
+          type: 'CCU', unit: row.unit, fibSide: 'B', showName: showName
         });
       }
     });
@@ -281,24 +282,28 @@ const CcuFsyTab = (() => {
     });
 
     inp.addEventListener('change', () => {
+      const showName = getShowNameForDevice(deviceName);
+      const fibSide = key === 'fibA' ? 'A' : 'B';
+
+      // Clear old assignment first
+      if (section === 'ccu') {
+        Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: fibSide, clear: true });
+      } else {
+        Utils.syncToFiberTac(null, null, { type: 'FSY', unit: row.unit, clear: true });
+      }
+
       row[key] = inp.value;
       Store.set(`ccuFsy.${section}.${idx}.${key}`, inp.value);
-      // Sync to FIBER TAC if both TAC and this FIB are set
+
+      // Sync new assignment if both TAC and this FIB are set
       if (row.tac && inp.value) {
-        const showName = getShowNameForDevice(deviceName);
         if (section === 'ccu') {
-          const fibSide = key === 'fibA' ? 'A' : 'B';
           Utils.syncToFiberTac(row.tac, inp.value, {
-            type: 'CCU',
-            unit: row.unit,
-            fibSide: fibSide,
-            showName: showName
+            type: 'CCU', unit: row.unit, fibSide: fibSide, showName: showName
           });
         } else {
           Utils.syncToFiberTac(row.tac, inp.value, {
-            type: 'FSY',
-            unit: row.unit,
-            showName: showName
+            type: 'FSY', unit: row.unit, showName: showName
           });
         }
       }

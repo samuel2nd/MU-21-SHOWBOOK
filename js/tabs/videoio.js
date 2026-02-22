@@ -496,15 +496,17 @@ const VideoIoTab = (() => {
     });
 
     inp.addEventListener('change', () => {
+      // Clear old assignment first
+      Utils.syncToFiberTac(null, null, { type: 'RTR', rtrRow: row.row, clear: true });
+
       row[key] = inp.value;
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-      // Sync to FIBER TAC if both TAC and FIB-A are set
+
+      // Sync new assignment if both TAC and FIB-A are set
       if (row.tac && row.fibA) {
         Utils.syncToFiberTac(row.tac, row.fibA, {
-          type: 'RTR',
-          rtrRow: row.row,
-          source: row.source || '',
-          dest: row.destination || ''
+          type: 'RTR', rtrRow: row.row,
+          source: row.source || '', dest: row.destination || ''
         });
       }
     });
@@ -534,15 +536,17 @@ const VideoIoTab = (() => {
     });
 
     inp.addEventListener('change', () => {
+      // Clear old assignment first
+      Utils.syncToFiberTac(null, null, { type: 'RTR', rtrRow: row.row, clear: true });
+
       row[key] = inp.value;
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-      // Sync to FIBER TAC if both TAC and this FIB are set
+
+      // Sync new assignment if both TAC and this FIB are set
       if (row.tac && inp.value) {
         Utils.syncToFiberTac(row.tac, inp.value, {
-          type: 'RTR',
-          rtrRow: row.row,
-          source: row.source || '',
-          dest: row.destination || ''
+          type: 'RTR', rtrRow: row.row,
+          source: row.source || '', dest: row.destination || ''
         });
       }
     });

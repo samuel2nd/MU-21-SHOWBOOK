@@ -160,10 +160,50 @@ const Utils = (() => {
     return wrapper;
   }
 
+  // Clear old fiber TAC assignment before setting new one
+  function clearOldFiberTacAssignment(sourceIdentifier) {
+    // Search all TAC panels for this source and clear it
+    const panels = Store.data.sheet8.tacPanels || [];
+    panels.forEach(panelName => {
+      const panelData = Store.data.fiberTac[panelName];
+      if (!panelData) return;
+      panelData.forEach((port, idx) => {
+        if (port.source && port.source.includes(sourceIdentifier)) {
+          port.source = '';
+          port.dest = '';
+          Store.set(`fiberTac.${panelName}.${idx}.source`, '');
+          Store.set(`fiberTac.${panelName}.${idx}.dest`, '');
+        }
+      });
+    });
+  }
+
   // Sync fiber assignment to FIBER TAC page with detailed source info
-  // sourceInfo: { type: 'CCU'|'FSY'|'RTR', unit: number, fibSide: 'A'|'B', showName: string, rtrRow: number }
+  // sourceInfo: { type: 'CCU'|'FSY'|'RTR', unit: number, fibSide: 'A'|'B', showName: string, rtrRow: number, clear: boolean }
   function syncToFiberTac(tacPanel, strand, sourceInfo) {
+    // Build source identifier for clearing old assignments
+    let sourceIdentifier = '';
+    if (typeof sourceInfo === 'object' && sourceInfo) {
+      if (sourceInfo.type === 'CCU') {
+        sourceIdentifier = `CCU ${String(sourceInfo.unit).padStart(2, '0')}-${sourceInfo.fibSide || 'A'}`;
+      } else if (sourceInfo.type === 'FSY') {
+        sourceIdentifier = `FS ${String(sourceInfo.unit).padStart(2, '0')}`;
+      } else if (sourceInfo.type === 'RTR') {
+        sourceIdentifier = `RTR FIB ${sourceInfo.rtrRow}`;
+      } else if (sourceInfo.type === 'JFS') {
+        sourceIdentifier = `JFS MUX ${sourceInfo.unit}`;
+      }
+    }
+
+    // Clear old assignment first
+    if (sourceIdentifier) {
+      clearOldFiberTacAssignment(sourceIdentifier);
+    }
+
+    // If clearing or no valid panel/strand, we're done
     if (!tacPanel || !strand) return;
+    if (sourceInfo && sourceInfo.clear) return;
+
     const strandNum = parseInt(strand);
     if (isNaN(strandNum) || strandNum < 1 || strandNum > 24) return;
 
@@ -181,21 +221,18 @@ const Utils = (() => {
       sourceStr = sourceInfo;
     } else if (sourceInfo) {
       if (sourceInfo.type === 'CCU') {
-        // CCU 01-A: CAM1
         const ccuNum = String(sourceInfo.unit).padStart(2, '0');
         sourceStr = `CCU ${ccuNum}-${sourceInfo.fibSide || 'A'}`;
         if (sourceInfo.showName) {
           destStr = sourceInfo.showName;
         }
       } else if (sourceInfo.type === 'FSY') {
-        // FS 01: CAM1
         const fsNum = String(sourceInfo.unit).padStart(2, '0');
         sourceStr = `FS ${fsNum}`;
         if (sourceInfo.showName) {
           destStr = sourceInfo.showName;
         }
       } else if (sourceInfo.type === 'RTR') {
-        // RTR FIB 3: PGM A
         sourceStr = `RTR FIB ${sourceInfo.rtrRow}`;
         if (sourceInfo.source) {
           destStr = sourceInfo.source;
@@ -204,7 +241,6 @@ const Utils = (() => {
           destStr = destStr ? `${destStr} → ${sourceInfo.dest}` : sourceInfo.dest;
         }
       } else if (sourceInfo.type === 'JFS') {
-        // JFS MUX 1
         sourceStr = `JFS MUX ${sourceInfo.unit}`;
         destStr = sourceInfo.dest || '';
       }
@@ -214,28 +250,60 @@ const Utils = (() => {
       panelData[portIdx].source = sourceStr;
       Store.set(`fiberTac.${tacPanel}.${portIdx}.source`, sourceStr);
     }
-    if (destStr) {
+    if (destStr !== undefined) {
       panelData[portIdx].dest = destStr;
       Store.set(`fiberTac.${tacPanel}.${portIdx}.dest`, destStr);
     }
   }
 
+  // Clear old coax mult assignment before setting new one
+  function clearOldCoaxMultAssignment(sourceIdentifier) {
+    // Search all mult units for this source and clear it
+    if (!Store.data.coax.multUnits) return;
+    Store.data.coax.multUnits.forEach((mult, multIdx) => {
+      if (!mult.outputs) return;
+      mult.outputs.forEach((output, outIdx) => {
+        if (output.dest && output.dest.includes(sourceIdentifier)) {
+          output.dest = '';
+          Store.set(`coax.multUnits.${multIdx}.outputs.${outIdx}.dest`, '');
+        }
+      });
+    });
+  }
+
   // Sync coax mult assignment to COAX MULTS page with detailed source info
-  // sourceInfo: { type: 'FSY'|'RTR', unit: number, showName: string, source: string }
+  // sourceInfo: { type: 'FSY'|'RTR', unit: number, showName: string, source: string, clear: boolean }
   function syncToCoaxMult(multNum, sourceInfo) {
+    // Build source identifier for clearing old assignments
+    let sourceIdentifier = '';
+    if (typeof sourceInfo === 'object' && sourceInfo) {
+      if (sourceInfo.type === 'FSY') {
+        sourceIdentifier = `FS ${String(sourceInfo.unit).padStart(2, '0')}`;
+      } else if (sourceInfo.type === 'RTR') {
+        sourceIdentifier = `RTR COAX ${sourceInfo.rtrRow}`;
+      }
+    }
+
+    // Clear old assignment first
+    if (sourceIdentifier) {
+      clearOldCoaxMultAssignment(sourceIdentifier);
+    }
+
+    // If clearing or no valid mult, we're done
     if (!multNum) return;
+    if (sourceInfo && sourceInfo.clear) return;
+
     const num = parseInt(multNum);
     if (isNaN(num) || num < 1 || num > 40) return;
 
+    // Also update the old coax.mults structure for backwards compatibility
     const multIdx = num - 1;
     const multData = Store.data.coax.mults[multIdx];
-    if (!multData) return;
 
     // Build detailed source string
     let sourceStr = '';
 
     if (typeof sourceInfo === 'string') {
-      // Legacy: simple string
       sourceStr = sourceInfo;
     } else if (sourceInfo) {
       if (sourceInfo.type === 'FSY') {
@@ -254,7 +322,7 @@ const Utils = (() => {
       }
     }
 
-    if (sourceStr) {
+    if (sourceStr && multData) {
       multData.source = sourceStr;
       Store.set(`coax.mults.${multIdx}.source`, sourceStr);
     }
