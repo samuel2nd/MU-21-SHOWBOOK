@@ -11,13 +11,22 @@ const KaleidoClient = (() => {
   let lastError = null;
 
   /**
-   * Get the bridge URL from config or store
+   * Get the bridge URL from localStorage (per-browser setting, not synced)
    */
   function getBridgeUrl() {
-    if (Store.data.kaleidoConfig && Store.data.kaleidoConfig.bridgeUrl) {
-      return Store.data.kaleidoConfig.bridgeUrl;
+    // Use localStorage so each computer can have its own bridge URL
+    const localUrl = localStorage.getItem('kaleidoBridgeUrl');
+    if (localUrl) {
+      return localUrl;
     }
     return 'http://localhost:3001';
+  }
+
+  /**
+   * Set the bridge URL (stored locally per browser)
+   */
+  function setBridgeUrl(url) {
+    localStorage.setItem('kaleidoBridgeUrl', url);
   }
 
   /**
@@ -303,6 +312,7 @@ const KaleidoClient = (() => {
     getLayoutIndex,
     getCardConfig,
     getConnectionStatus,
+    setBridgeUrl,
     getBridgeUrl
   };
 })();

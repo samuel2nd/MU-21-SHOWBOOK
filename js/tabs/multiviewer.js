@@ -124,10 +124,11 @@ const MultiviewerTab = (() => {
     urlLabel.textContent = 'Bridge URL:';
     const urlInput = document.createElement('input');
     urlInput.type = 'text';
-    urlInput.value = Store.data.kaleidoConfig.bridgeUrl || 'http://localhost:3001';
+    // Use localStorage so each computer has its own bridge URL (not synced)
+    urlInput.value = localStorage.getItem('kaleidoBridgeUrl') || 'http://localhost:3001';
     urlInput.style.cssText = 'flex:1;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);max-width:300px;';
     urlInput.addEventListener('change', () => {
-      Store.set('kaleidoConfig.bridgeUrl', urlInput.value);
+      KaleidoClient.setBridgeUrl(urlInput.value);
     });
     urlRow.appendChild(urlLabel);
     urlRow.appendChild(urlInput);
