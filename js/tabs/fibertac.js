@@ -13,10 +13,40 @@ const FiberTacTab = (() => {
       const panelDiv = document.createElement('div');
       panelDiv.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:12px;';
 
-      // Panel header
+      // Panel header with editable name
       const header = document.createElement('div');
-      header.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-blue);margin-bottom:10px;';
-      header.textContent = panelName;
+      header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = panelName;
+      nameInput.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-blue);background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 6px;width:80px;';
+      nameInput.addEventListener('focus', () => {
+        nameInput.style.borderColor = 'var(--accent-blue)';
+        nameInput.style.background = 'var(--bg-primary)';
+      });
+      nameInput.addEventListener('blur', () => {
+        nameInput.style.borderColor = 'transparent';
+        nameInput.style.background = 'transparent';
+      });
+      nameInput.addEventListener('change', () => {
+        const oldName = panelName;
+        const newName = nameInput.value.trim() || oldName;
+        if (newName !== oldName) {
+          renameTacPanel(oldName, newName);
+          App.renderCurrentTab();
+        }
+      });
+      header.appendChild(nameInput);
+
+      const portCount = panelData.filter(p => p.source).length;
+      if (portCount > 0) {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size:10px;color:var(--text-secondary);background:var(--bg-primary);padding:2px 6px;border-radius:10px;';
+        badge.textContent = `${portCount} used`;
+        header.appendChild(badge);
+      }
+
       panelDiv.appendChild(header);
 
       const panelData = Store.data.fiberTac[panelName];
@@ -299,6 +329,47 @@ const FiberTacTab = (() => {
       if (e.target === overlay) overlay.remove();
     });
     document.body.appendChild(overlay);
+  }
+
+  function renameTacPanel(oldName, newName) {
+    // Update sheet8.tacPanels array
+    const panels = Store.data.sheet8.tacPanels || [];
+    const idx = panels.indexOf(oldName);
+    if (idx !== -1) {
+      panels[idx] = newName;
+      Store.set('sheet8.tacPanels', panels);
+    }
+
+    // Move fiberTac data to new key
+    if (Store.data.fiberTac[oldName]) {
+      Store.data.fiberTac[newName] = Store.data.fiberTac[oldName];
+      delete Store.data.fiberTac[oldName];
+      Store.set(`fiberTac.${newName}`, Store.data.fiberTac[newName]);
+    }
+
+    // Update references in CCU/FSY
+    Store.data.ccuFsy.ccu.forEach((ccu, i) => {
+      if (ccu.tac === oldName) {
+        ccu.tac = newName;
+        Store.set(`ccuFsy.ccu.${i}.tac`, newName);
+      }
+    });
+    Store.data.ccuFsy.fsy.forEach((fsy, i) => {
+      if (fsy.tac === oldName) {
+        fsy.tac = newName;
+        Store.set(`ccuFsy.fsy.${i}.tac`, newName);
+      }
+    });
+
+    // Update references in VIDEO I/O
+    Store.data.videoIo.fiberRtrOut.forEach((row, i) => {
+      if (row.tac === oldName) {
+        row.tac = newName;
+        Store.set(`videoIo.fiberRtrOut.${i}.tac`, newName);
+      }
+    });
+
+    Utils.toast(`Renamed "${oldName}" to "${newName}"`, 'success');
   }
 
   function applyAssignment(panelName, idx, item) {

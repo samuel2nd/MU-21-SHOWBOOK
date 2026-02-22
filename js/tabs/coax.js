@@ -10,6 +10,7 @@ const CoaxTab = (() => {
     if (!Store.data.coax.multUnits) {
       Store.data.coax.multUnits = Array.from({ length: NUM_MULTS }, (_, i) => ({
         mult: i + 1,
+        name: `MULT ${i + 1}`,
         source: '',
         outputs: Array.from({ length: OUTPUTS_PER_MULT }, (_, j) => ({
           output: j + 1,
@@ -33,14 +34,29 @@ const CoaxTab = (() => {
       const multDiv = document.createElement('div');
       multDiv.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:12px;';
 
-      // Mult header with source selector
+      // Mult header with editable name and source selector
       const header = document.createElement('div');
-      header.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;';
+      header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
 
-      const title = document.createElement('span');
-      title.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-orange);';
-      title.textContent = `MULT ${m + 1}`;
-      header.appendChild(title);
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = multData.name || `MULT ${m + 1}`;
+      nameInput.style.cssText = 'font-weight:700;font-size:14px;color:var(--accent-orange);background:transparent;border:1px solid transparent;border-radius:4px;padding:2px 6px;width:80px;';
+      nameInput.addEventListener('focus', () => {
+        nameInput.style.borderColor = 'var(--accent-orange)';
+        nameInput.style.background = 'var(--bg-primary)';
+      });
+      nameInput.addEventListener('blur', () => {
+        nameInput.style.borderColor = 'transparent';
+        nameInput.style.background = 'transparent';
+      });
+      nameInput.addEventListener('change', () => {
+        ensureMultData(m);
+        Store.data.coax.multUnits[m].name = nameInput.value.trim() || `MULT ${m + 1}`;
+        Store.set(`coax.multUnits.${m}.name`, Store.data.coax.multUnits[m].name);
+        Utils.toast(`Renamed to "${nameInput.value}"`, 'success');
+      });
+      header.appendChild(nameInput);
 
       // Source input for mult
       const sourceInput = document.createElement('input');
@@ -116,6 +132,7 @@ const CoaxTab = (() => {
     if (!Store.data.coax.multUnits) {
       Store.data.coax.multUnits = Array.from({ length: NUM_MULTS }, (_, i) => ({
         mult: i + 1,
+        name: `MULT ${i + 1}`,
         source: '',
         outputs: Array.from({ length: OUTPUTS_PER_MULT }, (_, j) => ({ output: j + 1, dest: '', notes: '' }))
       }));
@@ -123,6 +140,7 @@ const CoaxTab = (() => {
     if (!Store.data.coax.multUnits[multIdx]) {
       Store.data.coax.multUnits[multIdx] = {
         mult: multIdx + 1,
+        name: `MULT ${multIdx + 1}`,
         source: '',
         outputs: Array.from({ length: OUTPUTS_PER_MULT }, (_, j) => ({ output: j + 1, dest: '', notes: '' }))
       };
@@ -138,9 +156,10 @@ const CoaxTab = (() => {
     modal.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:400px;max-width:500px;max-height:80vh;overflow-y:auto;';
 
     // Header
+    const multName = multData.name || `MULT ${multIdx + 1}`;
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;';
-    header.innerHTML = `<h3 style="margin:0;color:var(--accent-orange);">MULT ${multIdx + 1} — Output ${outputIdx + 1}</h3>`;
+    header.innerHTML = `<h3 style="margin:0;color:var(--accent-orange);">${multName} — Output ${outputIdx + 1}</h3>`;
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.cssText = 'background:none;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;';
