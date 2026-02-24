@@ -254,6 +254,9 @@ const Store = (() => {
       [288,'IN288','FUTURE INPUT (NO CARD)',''],
       // ── Extended devices (SHOW sources, ISOs, REMIs, audio-only, etc.) ──
       // Device IDs from NV9000 XML export - gaps in IDs are normal
+      [862,'Out 574','FUTURE OUT (No Card)','',''],
+      [863,'Out 575','FUTURE OUT (No Card)','',''],
+      [864,'Out 576','FUTURE OUT (No Card)','',''],
       [865,'SHOW 01','Show cam with under cam audio','',''],
       [866,'SHOW 02','Show cam with under cam audio','',''],
       [867,'SHOW 03','Show cam with under cam audio','',''],

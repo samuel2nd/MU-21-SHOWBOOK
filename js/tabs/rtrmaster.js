@@ -96,10 +96,10 @@ const RtrMasterTab = (() => {
     data.forEach((row, idx) => {
       const tr = document.createElement('tr');
 
-      // Row number
+      // Device ID (row number from data, not array index)
       const tdNum = document.createElement('td');
       tdNum.className = 'row-num';
-      tdNum.textContent = idx + 1;
+      tdNum.textContent = row.row;
       tr.appendChild(tdNum);
 
       // Device Name — with duplicate detection
