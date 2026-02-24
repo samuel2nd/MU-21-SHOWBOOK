@@ -41,7 +41,43 @@ const RtrMasterTab = (() => {
     container.appendChild(page);
   }
 
+  // Build lookup map: "SHOW 01" -> source config from SOURCE page
+  function getSourceConfigMap() {
+    const map = {};
+    if (Store.data.sources) {
+      Store.data.sources.forEach((src, idx) => {
+        // Source number 1 = "SHOW 01", etc.
+        const showName = `SHOW ${String(idx + 1).padStart(2, '0')}`;
+        if (src.engSource || src.audioSource) {
+          map[showName.toLowerCase()] = src;
+        }
+      });
+    }
+    return map;
+  }
+
+  // Get computed video/audio for a SHOW device from SOURCE page config
+  function getComputedLevels(deviceName, sourceConfigMap) {
+    const key = (deviceName || '').trim().toLowerCase();
+    const srcConfig = sourceConfigMap[key];
+    if (!srcConfig) return null;
+
+    // Lookup video from engSource
+    const videoDevice = srcConfig.engSource ? Formulas.rtrMasterLookup(srcConfig.engSource) : null;
+    // Lookup audio from audioSource
+    const audioDevice = srcConfig.audioSource ? Formulas.rtrMasterLookup(srcConfig.audioSource) : null;
+
+    return {
+      videoLevel: videoDevice ? videoDevice.videoLevel : '',
+      audio: audioDevice ? audioDevice.audio : Array(16).fill(''),
+      isComputed: true
+    };
+  }
+
   function renderTable(page, data, storePath) {
+    // Build source config map for SHOW devices
+    const sourceConfigMap = getSourceConfigMap();
+
     // Validation warnings
     const warnings = validate(data);
     if (warnings.length > 0) {
@@ -130,23 +166,49 @@ const RtrMasterTab = (() => {
 
       // Description
       tr.appendChild(makeInputTd(row, 'deviceDesc', idx, storePath, 'Description...', 64));
-      // Video Level
-      tr.appendChild(makeInputTd(row, 'videoLevel', idx, storePath, 'Video lvl...', 20));
 
-      // 16 audio channels
+      // Check if this is a SHOW device with computed levels from SOURCE page
+      const computed = getComputedLevels(row.deviceName, sourceConfigMap);
+
+      // Video Level - computed or editable
+      if (computed) {
+        const td = document.createElement('td');
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = computed.videoLevel || '';
+        inp.style.backgroundColor = 'rgba(0, 200, 83, 0.1)';
+        inp.style.color = 'var(--accent-green)';
+        inp.readOnly = true;
+        inp.title = 'Computed from SOURCE page configuration';
+        td.appendChild(inp);
+        tr.appendChild(td);
+      } else {
+        tr.appendChild(makeInputTd(row, 'videoLevel', idx, storePath, 'Video lvl...', 20));
+      }
+
+      // 16 audio channels - computed or editable
       for (let a = 0; a < 16; a++) {
         const td = document.createElement('td');
         const inp = document.createElement('input');
         inp.type = 'text';
-        inp.value = row.audio[a] || '';
-        inp.placeholder = '';
         inp.style.width = '45px';
         inp.maxLength = 20;
-        const audioIdx = a;
-        inp.addEventListener('change', () => {
-          row.audio[audioIdx] = inp.value;
-          Store.set(`${storePath}.${idx}.audio`, [...row.audio]);
-        });
+
+        if (computed) {
+          inp.value = computed.audio[a] || '';
+          inp.style.backgroundColor = 'rgba(0, 200, 83, 0.1)';
+          inp.style.color = 'var(--accent-green)';
+          inp.readOnly = true;
+          inp.title = 'Computed from SOURCE page configuration';
+        } else {
+          inp.value = row.audio[a] || '';
+          inp.placeholder = '';
+          const audioIdx = a;
+          inp.addEventListener('change', () => {
+            row.audio[audioIdx] = inp.value;
+            Store.set(`${storePath}.${idx}.audio`, [...row.audio]);
+          });
+        }
         td.appendChild(inp);
         tr.appendChild(td);
       }
