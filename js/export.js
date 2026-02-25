@@ -52,10 +52,32 @@ const ExportImport = (() => {
         rows = data.rtrOutputs.map(d => [d.row, d.deviceName, d.deviceDesc, d.videoLevel, ...d.audio]);
         break;
       case 'txpgmgfx':
-        headers = ['Section', 'Row', 'Device', 'Source', 'Notes'];
-        ['tx', 'remi', 'cg', 'pgm'].forEach(sec => {
-          data.txPgmGfx[sec].forEach(r => rows.push([sec.toUpperCase(), r.row, r.device, r.source, r.notes]));
+        // TX section
+        rows.push(['=== TRANSMISSION ===']);
+        rows.push(['TX', 'DA INPUT', 'UMD NAME', 'ENG SOURCE', 'AUDIO SOURCE', 'FRAMESYNC', 'OUTPUT', 'I/O COAX 1', 'I/O COAX 2', 'I/O COAX 3', 'I/O COAX 4', 'I/O RTR OUT']);
+        data.txPgmGfx.tx.forEach(r => {
+          const routingInfo = Formulas.getTxRoutingInfo(r.umdName || `TX${r.row} DA`);
+          rows.push([
+            r.row, r.daInput, r.umdName, r.engSource, r.audioSource, r.framesync, r.output,
+            r.ioCoax1 ? 'Y' : '', r.ioCoax2 ? 'Y' : '', r.ioCoax3 ? 'Y' : '', r.ioCoax4 ? 'Y' : '', routingInfo
+          ]);
         });
+        // CG section
+        rows.push([]);
+        rows.push(['=== GRAPHICS: CG ===']);
+        rows.push(['CG', 'DA INPUT', 'UMD NAME', 'ENG SOURCE', 'KEY IN']);
+        data.txPgmGfx.cg.forEach(r => rows.push([r.row, r.daInput, r.umdName, r.engSource, r.keyIn]));
+        // Canvas section
+        rows.push([]);
+        rows.push(['=== GRAPHICS: CANVAS ===']);
+        rows.push(['#', 'RTR IN', 'UMD NAME', 'ENG SOURCE']);
+        data.txPgmGfx.canvas.forEach(r => rows.push([r.row, r.rtrIn, r.umdName, r.engSource]));
+        // PGM section
+        rows.push([]);
+        rows.push(['=== PROGRAM ===']);
+        rows.push(['#', 'DA INPUT', 'UMD NAME', 'ENG SOURCE', 'AUDIO SOURCE']);
+        data.txPgmGfx.pgm.forEach(r => rows.push([r.row, r.daInput, r.umdName, r.engSource, r.audioSource]));
+        headers = null; // Custom headers already in rows
         break;
       case 'ccufsy':
         headers = ['Type', 'Unit', 'Device', 'Coax', 'TAC', 'FIB-A', 'FIB-B', 'Show Name', 'Lens B', 'Lens S', 'Lens W', 'Lens Dolly', 'Lens Hand', 'Format', 'Mult', 'Fixed', 'JS', 'Notes'];
@@ -135,10 +157,9 @@ const ExportImport = (() => {
         }
     }
 
-    const csvContent = [
-      headers.map(csvEscape).join(','),
-      ...rows.map(r => r.map(csvEscape).join(',')),
-    ].join('\n');
+    const csvContent = headers
+      ? [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n')
+      : rows.map(r => r.map(csvEscape).join(',')).join('\n');
 
     const showName = data.show.name || 'untitled';
     const safeName = showName.replace(/[^a-zA-Z0-9_-]/g, '_');

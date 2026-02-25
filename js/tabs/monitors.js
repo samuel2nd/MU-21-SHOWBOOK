@@ -446,8 +446,8 @@ const MonitorsTab = (() => {
     // Grid content
     const gridEl = document.createElement('div');
 
-    if (isDirectSource || monConfig.directSource) {
-      // Full screen display
+    if (isDirectSource) {
+      // Full screen display (only when NOT assigned to an MV)
       const directBg = 'linear-gradient(135deg, #2d4a3e 0%, #1a2e1a 100%)';
       gridEl.style.cssText = `
         display: flex;
@@ -464,12 +464,23 @@ const MonitorsTab = (() => {
       `;
       gridEl.textContent = monData.directSource || 'FULL';
 
-      // Click to select
+      // Click to select - allow MV or source selection
       gridEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        showSourcePicker(gridEl, (source) => {
-          monData.directSource = source;
-          monData.assignmentType = 'source';
+        showPicker(gridEl, monData, (val) => {
+          if (val.startsWith('SRC:')) {
+            monData.assignmentType = 'source';
+            monData.directSource = val.replace('SRC:', '');
+            monData.mvId = null;
+          } else if (val) {
+            monData.assignmentType = 'mv';
+            monData.mvId = val;
+            monData.directSource = '';
+          } else {
+            monData.assignmentType = 'source';
+            monData.mvId = null;
+            monData.directSource = '';
+          }
           Store.set(`monitorWallsV2.${wallKey}.monitors.${idx}`, monData);
           App.renderCurrentTab();
         });

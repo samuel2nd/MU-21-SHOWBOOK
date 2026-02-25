@@ -6,8 +6,10 @@
 // CREATE TABLE shows (
 //   name TEXT PRIMARY KEY,
 //   data JSONB NOT NULL,
-//   updated_at TIMESTAMPTZ DEFAULT NOW()
+//   updated_at TIMESTAMPTZ DEFAULT NOW(),
+//   session_id TEXT  -- Used to filter out own real-time updates
 // );
+// To add session_id to existing table: ALTER TABLE shows ADD COLUMN session_id TEXT;
 //
 // Enable real-time: ALTER PUBLICATION supabase_realtime ADD TABLE shows;
 // Enable RLS with public access for anon:
@@ -21,6 +23,9 @@ const SupabaseSync = (() => {
   let currentShowName = null;
   let saveTimeout = null;
   let isLoadingRemote = false;
+
+  // Unique session ID to filter out our own real-time updates
+  const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   function isConfigured() {
     return typeof SUPABASE_CONFIG !== 'undefined' &&
@@ -148,7 +153,8 @@ const SupabaseSync = (() => {
         .upsert({
           name: currentShowName,
           data: showData,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          session_id: sessionId  // Track which session made this change
         }, { onConflict: 'name' });
 
       if (error) throw error;
@@ -231,13 +237,17 @@ const SupabaseSync = (() => {
   function handleRemoteChange(payload) {
     if (!payload || !payload.data) return;
 
-    // Check if this change came from us (compare timestamps)
-    const remoteData = payload.data;
-    const localData = Store.exportData();
+    // Ignore updates from our own session
+    if (payload.session_id === sessionId) {
+      console.log('Ignoring own session update');
+      return;
+    }
 
-    // Simple check - if show names match and data is different, apply it
+    const remoteData = payload.data;
+
+    // Apply remote changes if show names match
     if (remoteData.show?.name === currentShowName) {
-      console.log('Received remote update, applying...');
+      console.log('Received remote update from another device, applying...');
       isLoadingRemote = true;
       Store.loadShow(remoteData);
       isLoadingRemote = false;

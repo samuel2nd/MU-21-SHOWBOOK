@@ -3,29 +3,36 @@ const HomeTab = (() => {
   function render(container) {
     const page = Utils.tabPage('HOME', 'MU-21 Showbook');
 
-    // Show info form
-    const form = document.createElement('div');
-    form.className = 'home-form';
-    form.innerHTML = `
-      <label>Show Name <span style="color:var(--accent-red)">*</span></label>
-      <input type="text" id="home-show-name" value="" placeholder="Enter show name..." maxlength="100" required>
-      <label>Format</label>
-      <select id="home-show-format">
-        <option value="">--</option>
-        <option value="1080p/59.94">1080p/59.94</option>
-        <option value="1080i/59.94">1080i/59.94</option>
-        <option value="720p/59.94">720p/59.94</option>
-      </select>
-    `;
-    page.appendChild(form);
+    // Top row: Show info + Equipment summary in matching boxes
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display:flex;gap:12px;margin-bottom:12px;align-items:stretch;';
 
-    // Set values safely via DOM property (not innerHTML)
-    form.querySelector('#home-show-name').value = Store.data.show.name || '';
-    form.querySelector('#home-show-format').value = Store.data.show.format || '';
+    // Show info box
+    const showBox = document.createElement('div');
+    showBox.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;';
+    showBox.innerHTML = `
+      <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">SHOW INFO</div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <label style="font-size:11px;color:var(--text-secondary);">Name</label>
+        <input type="text" id="home-show-name" value="" placeholder="Enter show name..." maxlength="100" style="padding:4px 8px;font-size:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);width:160px;">
+        <label style="font-size:11px;color:var(--text-secondary);">Format</label>
+        <select id="home-show-format" style="padding:4px 8px;font-size:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <option value="">--</option>
+          <option value="1080p/59.94">1080p/59.94</option>
+          <option value="1080i/59.94">1080i/59.94</option>
+          <option value="720p/59.94">720p/59.94</option>
+        </select>
+      </div>
+    `;
+    topRow.appendChild(showBox);
+
+    // Set values safely via DOM property
+    showBox.querySelector('#home-show-name').value = Store.data.show.name || '';
+    showBox.querySelector('#home-show-format').value = Store.data.show.format || '';
 
     // Bind show name/format
-    const nameInput = form.querySelector('#home-show-name');
-    const formatInput = form.querySelector('#home-show-format');
+    const nameInput = showBox.querySelector('#home-show-name');
+    const formatInput = showBox.querySelector('#home-show-format');
     nameInput.addEventListener('change', () => {
       Store.set('show.name', nameInput.value);
       App.updateHeader();
@@ -35,40 +42,52 @@ const HomeTab = (() => {
       App.updateHeader();
     });
 
-    // Equipment summary
-    page.appendChild(Utils.sectionHeader('Equipment Summary'));
+    // Equipment summary box (matching style)
+    const summaryBox = document.createElement('div');
+    summaryBox.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;';
+    summaryBox.innerHTML = `<div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">EQUIPMENT SUMMARY</div>`;
     const summary = document.createElement('div');
-    summary.className = 'equip-summary';
     summary.id = 'home-equip-summary';
-    page.appendChild(summary);
+    summary.style.cssText = 'display:flex;gap:16px;align-items:center;';
+    summaryBox.appendChild(summary);
     renderSummary(summary);
+    topRow.appendChild(summaryBox);
+
+    page.appendChild(topRow);
 
     // Nav grid
     page.appendChild(Utils.sectionHeader('Quick Navigation'));
     const grid = document.createElement('div');
     grid.className = 'home-grid';
 
+    // Match sidebar order exactly
     const tabs = [
+      // INPUT
       { tab: 'source', label: 'SOURCE', cat: 'input' },
       { tab: 'txpgmgfx', label: 'TX/PGM/GFX', cat: 'input' },
       { tab: 'ccufsy', label: 'CCU/FSY INPUT', cat: 'input' },
-      { tab: 'rtrmaster', label: 'RTR I/O MASTER', cat: 'lookup' },
-      { tab: 'sheet8', label: 'Sheet8 (Ref Data)', cat: 'lookup' },
+      // OUTPUT
       { tab: 'engineer', label: 'ENGINEER', cat: 'output' },
       { tab: 'swrio', label: 'SWR I/O', cat: 'output' },
+      // PHYSICAL
       { tab: 'videoio', label: 'VIDEO I/O', cat: 'physical' },
       { tab: 'fibertac', label: 'FIBER TAC', cat: 'physical' },
       { tab: 'coax', label: 'COAX MULTS/MUX', cat: 'physical' },
       { tab: 'audiomult', label: 'AUDIO MULT', cat: 'physical' },
       { tab: 'networkio', label: 'NETWORK I/O', cat: 'physical' },
+      // MONITOR WALLS
       { tab: 'monitors-prod-digital', label: 'PROD Digital', cat: 'monitor' },
       { tab: 'monitors-prod-print', label: 'PROD Print', cat: 'monitor' },
       { tab: 'monitors-p2p3', label: 'P2-P3', cat: 'monitor' },
       { tab: 'monitors-evs', label: 'EVS', cat: 'monitor' },
       { tab: 'monitors-aud', label: 'AUD', cat: 'monitor' },
+      // CONFIG
       { tab: 'evsconfig', label: 'EVS CONFIG', cat: 'config' },
       { tab: 'multiviewer', label: 'MULTIVIEWER', cat: 'config' },
       { tab: 'routerpanel', label: 'ROUTER PANELS', cat: 'config' },
+      // LOOKUP
+      { tab: 'rtrmaster', label: 'RTR I/O MASTER', cat: 'lookup' },
+      { tab: 'sheet8', label: 'Sheet8 (Ref Data)', cat: 'lookup' },
     ];
 
     tabs.forEach(t => {
@@ -88,7 +107,13 @@ const HomeTab = (() => {
     const s = Formulas.equipmentSummary();
     el.innerHTML = '';
 
-    // Build device breakdown string - only show non-zero counts
+    // Sources count
+    const srcSpan = document.createElement('span');
+    srcSpan.style.cssText = 'font-size:12px;color:var(--text-primary);';
+    srcSpan.innerHTML = `<strong style="color:var(--accent-blue);">${s.totalSources}</strong> / 80 Sources`;
+    el.appendChild(srcSpan);
+
+    // Device breakdown - only show non-zero counts
     const deviceCounts = [];
     if (s.camCount) deviceCounts.push(`CAM: ${s.camCount}`);
     if (s.ccuCount) deviceCounts.push(`CCU: ${s.ccuCount}`);
@@ -97,23 +122,12 @@ const HomeTab = (() => {
     if (s.vtrCount) deviceCounts.push(`VTR: ${s.vtrCount}`);
     if (s.gfxCount) deviceCounts.push(`GFX: ${s.gfxCount}`);
 
-    const cards = [
-      {
-        title: 'Sources',
-        value: `${s.totalSources} / 80`,
-        detail: deviceCounts.length > 0 ? deviceCounts.join(' | ') : 'No devices assigned'
-      },
-    ];
-
-    cards.forEach(c => {
-      const card = document.createElement('div');
-      card.className = 'equip-card';
-      const t = document.createElement('div'); t.className = 'equip-title'; t.textContent = c.title;
-      const v = document.createElement('div'); v.className = 'equip-value'; v.textContent = c.value;
-      const d = document.createElement('div'); d.className = 'equip-detail'; d.textContent = c.detail;
-      card.appendChild(t); card.appendChild(v); card.appendChild(d);
-      el.appendChild(card);
-    });
+    if (deviceCounts.length > 0) {
+      const detailSpan = document.createElement('span');
+      detailSpan.style.cssText = 'font-size:11px;color:var(--text-secondary);';
+      detailSpan.textContent = deviceCounts.join(' | ');
+      el.appendChild(detailSpan);
+    }
   }
 
   return { render };

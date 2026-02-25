@@ -88,10 +88,16 @@ const VideoIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Source', 'Destination', 'TAC', 'FIB-A'].forEach(lbl => {
+    [
+      { label: '#', width: '25px' },
+      { label: 'Source', width: '80px' },
+      { label: 'Dest', width: '80px' },
+      { label: 'TAC', width: '55px' },
+      { label: 'FIB', width: '35px' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '30px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -136,10 +142,16 @@ const VideoIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Source', 'Destination', 'MULT', 'COAX'].forEach(lbl => {
+    [
+      { label: '#', width: '25px' },
+      { label: 'Source', width: '80px' },
+      { label: 'Dest', width: '80px' },
+      { label: 'MULT', width: '40px' },
+      { label: 'COAX', width: '40px' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '30px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -184,10 +196,16 @@ const VideoIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Source', 'Destination', 'MULT', 'COAX'].forEach(lbl => {
+    [
+      { label: '#', width: '25px' },
+      { label: 'Source', width: '80px' },
+      { label: 'Dest', width: '80px' },
+      { label: 'MULT', width: '40px' },
+      { label: 'COAX', width: '40px' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '30px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -235,10 +253,14 @@ const VideoIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Source', 'Destination'].forEach(lbl => {
+    [
+      { label: '#', width: '25px' },
+      { label: 'Source', width: '90px' },
+      { label: 'Dest', width: '90px' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '30px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -360,11 +382,15 @@ const VideoIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Source', 'Destination', 'FAXED'].forEach(lbl => {
+    [
+      { label: '#', width: '25px' },
+      { label: 'Source', width: '80px' },
+      { label: 'Dest', width: '80px' },
+      { label: 'FXD', width: '35px' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '30px';
-      if (lbl === 'FAXED') th.style.width = '50px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -483,7 +509,7 @@ const VideoIoTab = (() => {
     inp.type = 'text';
     inp.value = row[key] || '';
     inp.placeholder = 'TAC';
-    inp.style.width = '70px';
+    inp.style.width = '100%';
 
     const dlId = `tac-${section}-${idx}`;
     inp.setAttribute('list', dlId);
@@ -523,7 +549,7 @@ const VideoIoTab = (() => {
     inp.type = 'text';
     inp.value = row[key] || '';
     inp.placeholder = placeholder;
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `fib-${section}-${idx}-${key}`;
     inp.setAttribute('list', dlId);
@@ -563,7 +589,7 @@ const VideoIoTab = (() => {
     inp.type = 'text';
     inp.value = row[key] || '';
     inp.placeholder = placeholder;
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `mult-${section}-${idx}`;
     inp.setAttribute('list', dlId);
@@ -600,7 +626,7 @@ const VideoIoTab = (() => {
     inp.type = 'text';
     inp.value = row[key] || '';
     inp.placeholder = placeholder;
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `coax-${section}-${idx}`;
     inp.setAttribute('list', dlId);

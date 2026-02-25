@@ -111,7 +111,7 @@ const SwrIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Default Show', 'Show'].forEach(lbl => {
+    ['#', 'Default', 'UMD'].forEach(lbl => {
       const th = document.createElement('th');
       th.textContent = lbl;
       if (lbl === '#') th.style.width = '35px';
@@ -130,24 +130,24 @@ const SwrIoTab = (() => {
       tdNum.textContent = row.row;
       tr.appendChild(tdNum);
 
-      // Default Show (fixed - read only)
+      // Default (fixed - read only)
       const tdDefault = document.createElement('td');
       tdDefault.textContent = row.defaultShow || '';
       tdDefault.style.color = 'var(--text-secondary)';
       tr.appendChild(tdDefault);
 
-      // Show (editable - user can override)
-      const tdShow = document.createElement('td');
-      const inpShow = document.createElement('input');
-      inpShow.type = 'text';
-      inpShow.value = row.show || '';
-      inpShow.placeholder = row.defaultShow || '';
-      inpShow.addEventListener('change', () => {
-        row.show = inpShow.value;
-        Store.set(`swrIo.outputs.${idx}.show`, inpShow.value);
+      // UMD (editable - user can override)
+      const tdUmd = document.createElement('td');
+      const inpUmd = document.createElement('input');
+      inpUmd.type = 'text';
+      inpUmd.value = row.umd || row.show || '';
+      inpUmd.placeholder = row.defaultShow || '';
+      inpUmd.addEventListener('change', () => {
+        row.umd = inpUmd.value;
+        Store.set(`swrIo.outputs.${idx}.umd`, inpUmd.value);
       });
-      tdShow.appendChild(inpShow);
-      tr.appendChild(tdShow);
+      tdUmd.appendChild(inpUmd);
+      tr.appendChild(tdUmd);
 
       tbody.appendChild(tr);
     });
@@ -166,7 +166,7 @@ const SwrIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Default', 'Show'].forEach(lbl => {
+    ['#', 'Default', 'UMD'].forEach(lbl => {
       const th = document.createElement('th');
       th.textContent = lbl;
       if (lbl === '#') th.style.width = '35px';
@@ -191,18 +191,18 @@ const SwrIoTab = (() => {
       tdDefault.style.color = 'var(--text-secondary)';
       tr.appendChild(tdDefault);
 
-      // Show (editable)
-      const tdShow = document.createElement('td');
-      const inpShow = document.createElement('input');
-      inpShow.type = 'text';
-      inpShow.value = row.show || '';
-      inpShow.placeholder = row.default || '';
-      inpShow.addEventListener('change', () => {
-        row.show = inpShow.value;
-        Store.set(`swrIo.tally.${idx}.show`, inpShow.value);
+      // UMD (editable)
+      const tdUmd = document.createElement('td');
+      const inpUmd = document.createElement('input');
+      inpUmd.type = 'text';
+      inpUmd.value = row.umd || row.show || '';
+      inpUmd.placeholder = row.default || '';
+      inpUmd.addEventListener('change', () => {
+        row.umd = inpUmd.value;
+        Store.set(`swrIo.tally.${idx}.umd`, inpUmd.value);
       });
-      tdShow.appendChild(inpShow);
-      tr.appendChild(tdShow);
+      tdUmd.appendChild(inpUmd);
+      tr.appendChild(tdUmd);
 
       tbody.appendChild(tr);
     });
@@ -220,7 +220,7 @@ const SwrIoTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Default', 'Show'].forEach(lbl => {
+    ['#', 'Default', 'UMD'].forEach(lbl => {
       const th = document.createElement('th');
       th.textContent = lbl;
       if (lbl === '#') th.style.width = '35px';
@@ -245,18 +245,18 @@ const SwrIoTab = (() => {
       tdDefault.style.color = 'var(--text-secondary)';
       tr.appendChild(tdDefault);
 
-      // Show (editable)
-      const tdShow = document.createElement('td');
-      const inpShow = document.createElement('input');
-      inpShow.type = 'text';
-      inpShow.value = row.show || '';
-      inpShow.placeholder = row.default || '';
-      inpShow.addEventListener('change', () => {
-        row.show = inpShow.value;
-        Store.set(`swrIo.gpi.${idx}.show`, inpShow.value);
+      // UMD (editable)
+      const tdUmd = document.createElement('td');
+      const inpUmd = document.createElement('input');
+      inpUmd.type = 'text';
+      inpUmd.value = row.umd || row.show || '';
+      inpUmd.placeholder = row.default || '';
+      inpUmd.addEventListener('change', () => {
+        row.umd = inpUmd.value;
+        Store.set(`swrIo.gpi.${idx}.umd`, inpUmd.value);
       });
-      tdShow.appendChild(inpShow);
-      tr.appendChild(tdShow);
+      tdUmd.appendChild(inpUmd);
+      tr.appendChild(tdUmd);
 
       tbody.appendChild(tr);
     });

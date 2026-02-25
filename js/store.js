@@ -797,7 +797,7 @@ const Store = (() => {
       'ME4 PVW', 'ME4 A', 'ME4 B', 'ME4 C', 'ME4 D',
       'AUX 1', 'AUX 2', 'AUX 3', 'AUX 4', 'AUX 5', 'AUX 6', 'AUX 7', 'AUX 8',
       'AUX 9', 'AUX 10', 'AUX 11', 'AUX 12',
-      'IS 1', 'IS 1', 'IS 3', 'IS 4', 'IS 5', 'IS 6', 'IS 7', 'IS 8', 'IS 9', 'IS 10'
+      'IS 1', 'IS 2', 'IS 3', 'IS 4', 'IS 5', 'IS 6', 'IS 7', 'IS 8', 'IS 9', 'IS 10'
     ];
     const outputs = Array.from({ length: 46 }, (_, i) => ({
       row: i + 1,
@@ -1048,10 +1048,39 @@ const Store = (() => {
         active: false,
       })),
       txPgmGfx: {
-        tx: Array.from({ length: 8 }, (_, i) => ({ row: i + 1, device: '', source: i === 0 ? 'TX1 DA' : i === 1 ? 'TX2 DA' : '', fiberPanel: '', fiberPort: '', notes: '' })),
-        remi: Array.from({ length: 12 }, (_, i) => ({ row: i + 1, device: '', source: '', notes: '' })),
-        cg: Array.from({ length: 6 }, (_, i) => ({ row: i + 1, device: '', source: '', notes: '' })),
-        pgm: [{ row: 1, device: '', source: '', notes: '' }],
+        tx: Array.from({ length: 8 }, (_, i) => ({
+          row: i + 1,
+          daInput: i === 0 ? 'DA 2-2B' : i === 1 ? 'DA 2-2C' : '',
+          umdName: `TX${i + 1} DA`,
+          engSource: i === 0 ? 'TX1 PGM' : i === 1 ? 'TX2 PGM' : '',
+          audioSource: i === 0 ? 'CNSL TX1' : i === 1 ? 'CNSL TX2' : '',
+          framesync: '',
+          output: '',
+          ioCoax1: false,
+          ioCoax2: false,
+          ioCoax3: false,
+          ioCoax4: false
+        })),
+        cg: Array.from({ length: 6 }, (_, i) => ({
+          row: i + 1,
+          daInput: '',
+          umdName: `CG ${i + 1}`,
+          engSource: `CG ${i + 1}`,
+          keyIn: `SWITCHER IN ${61 + i * 2}`
+        })),
+        canvas: Array.from({ length: 8 }, (_, i) => ({
+          row: i + 1,
+          rtrIn: i < 2 ? `RTR IN ${73 + i}` : `RTR IN ${244 + i}`,
+          umdName: `CANVAS ${i + 1}`,
+          engSource: `CANVAS ${i + 1}`
+        })),
+        pgm: Array.from({ length: 4 }, (_, i) => ({
+          row: i + 1,
+          daInput: '',
+          umdName: i === 0 ? 'PGM DA' : i === 1 ? 'CLEAN' : '',
+          engSource: i === 0 ? 'PGM A' : i === 1 ? 'CLEAN' : '',
+          audioSource: ''
+        })),
       },
       ccuFsy: {
         ccu: Array.from({ length: 12 }, (_, i) => ({
@@ -1096,8 +1125,13 @@ const Store = (() => {
       fiberTac: {},
       swrIo: defaultSwrIo(),
       networkIo: {
+        // Legacy patches (for migration)
         patchA: Array.from({ length: 24 }, (_, i) => ({ port: i + 1, device: '', ip: '', vlan: '', notes: '' })),
         patchB: Array.from({ length: 24 }, (_, i) => ({ port: i + 1, device: '', ip: '', vlan: '', notes: '' })),
+        // New patch areas
+        io: Array.from({ length: 24 }, (_, i) => ({ port: i + 1, device: '', notes: '' })),
+        truckBench: Array.from({ length: 24 }, (_, i) => ({ port: i + 1, device: '', notes: '' })),
+        aboveTape: Array.from({ length: 12 }, (_, i) => ({ port: i + 13, device: '', notes: '' })),
       },
       evsConfig: defaultEvsConfig(),
       monitorWalls: {
@@ -1117,12 +1151,20 @@ const Store = (() => {
         mux: Array.from({ length: 20 }, (_, i) => ({ row: i + 1, unit: '', input: '', output: '', notes: '' })),
       },
       audioMult: {
+        // Legacy DT data (for migration)
         dt1: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
         dt2: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
         dt3: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
         dt4: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
         dt5: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
         dt6: Array.from({ length: 24 }, (_, i) => ({ row: i + 1, source: '', dest: '', notes: '' })),
+        // New DT-12 panels A-F (12 channels each)
+        dtA: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
+        dtB: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
+        dtC: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
+        dtD: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
+        dtE: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
+        dtF: Array.from({ length: 12 }, (_, i) => ({ port: i + 1, source: '', dest: '' })),
       },
       routerPanels: {
         form: Array.from({ length: 20 }, (_, i) => ({ row: i + 1, panelName: '', location: '', type: '', levels: '', notes: '' })),
@@ -1178,6 +1220,81 @@ const Store = (() => {
               data.sources[i] = { ...defaultSources[i], ...data.sources[i] };
             }
           }
+        }
+        // Migrate txPgmGfx to new structure
+        if (data.txPgmGfx) {
+          const defaults = emptyShow().txPgmGfx;
+          // Migrate TX rows
+          if (data.txPgmGfx.tx) {
+            for (let i = 0; i < 8; i++) {
+              if (data.txPgmGfx.tx[i]) {
+                // Migrate old field names if present
+                const old = data.txPgmGfx.tx[i];
+                data.txPgmGfx.tx[i] = {
+                  ...defaults.tx[i],
+                  ...old,
+                  daInput: old.daInput || old.device || defaults.tx[i].daInput,
+                  engSource: old.engSource || old.source || defaults.tx[i].engSource,
+                  audioSource: old.audioSource || old.audioPick || defaults.tx[i].audioSource,
+                };
+                delete data.txPgmGfx.tx[i].audioPick; // Remove old field
+                delete data.txPgmGfx.tx[i].ioRtrOut; // Remove, now computed
+              } else {
+                data.txPgmGfx.tx[i] = defaults.tx[i];
+              }
+            }
+          } else {
+            data.txPgmGfx.tx = defaults.tx;
+          }
+          // Migrate CG rows
+          if (data.txPgmGfx.cg) {
+            for (let i = 0; i < 6; i++) {
+              if (data.txPgmGfx.cg[i]) {
+                const old = data.txPgmGfx.cg[i];
+                data.txPgmGfx.cg[i] = {
+                  ...defaults.cg[i],
+                  ...old,
+                  daInput: old.daInput || old.device || defaults.cg[i].daInput,
+                  engSource: old.engSource || old.source || defaults.cg[i].engSource,
+                };
+              } else {
+                data.txPgmGfx.cg[i] = defaults.cg[i];
+              }
+            }
+          } else {
+            data.txPgmGfx.cg = defaults.cg;
+          }
+          // Ensure canvas section exists
+          if (!data.txPgmGfx.canvas) {
+            data.txPgmGfx.canvas = defaults.canvas;
+          } else {
+            for (let i = 0; i < 8; i++) {
+              data.txPgmGfx.canvas[i] = { ...defaults.canvas[i], ...(data.txPgmGfx.canvas[i] || {}) };
+            }
+          }
+          // Migrate PGM rows (now 4 rows instead of 1)
+          if (!data.txPgmGfx.pgm || data.txPgmGfx.pgm.length < 4) {
+            const oldPgm = data.txPgmGfx.pgm || [];
+            data.txPgmGfx.pgm = defaults.pgm.map((def, i) => ({
+              ...def,
+              ...(oldPgm[i] || {}),
+              audioSource: (oldPgm[i] && (oldPgm[i].audioSource || oldPgm[i].audioPick)) || def.audioSource,
+            }));
+          } else {
+            for (let i = 0; i < 4; i++) {
+              const old = data.txPgmGfx.pgm[i] || {};
+              data.txPgmGfx.pgm[i] = {
+                ...defaults.pgm[i],
+                ...old,
+                daInput: old.daInput || old.device || defaults.pgm[i].daInput,
+                engSource: old.engSource || old.source || defaults.pgm[i].engSource,
+                audioSource: old.audioSource || old.audioPick || defaults.pgm[i].audioSource,
+              };
+              delete data.txPgmGfx.pgm[i].audioPick; // Remove old field
+            }
+          }
+          // Remove old remi section if it exists (no longer used)
+          delete data.txPgmGfx.remi;
         }
       }
     } catch (e) {

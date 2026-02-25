@@ -147,6 +147,61 @@ const Formulas = (() => {
     return lines;
   }
 
+  // Get routing info for a TX UMD name from VIDEO I/O page
+  // Returns a comma-separated list of where this TX is assigned (Fiber RTR, Coax RTR, JFS MUX, Tie Lines)
+  function getTxRoutingInfo(txUmdName) {
+    if (!txUmdName) return '';
+    const routes = [];
+    const videoIo = Store.data.videoIo;
+
+    // Check Fiber RTR Outputs
+    if (videoIo.fiberRtrOut) {
+      videoIo.fiberRtrOut.forEach((row, idx) => {
+        if (row.source && row.source.toUpperCase().includes(txUmdName.toUpperCase())) {
+          routes.push(`FIB-${row.row}${row.destination ? ': ' + row.destination : ''}`);
+        }
+      });
+    }
+
+    // Check Coax RTR Outputs
+    if (videoIo.coaxRtrOut) {
+      videoIo.coaxRtrOut.forEach((row, idx) => {
+        if (row.source && row.source.toUpperCase().includes(txUmdName.toUpperCase())) {
+          routes.push(`COAX-${row.row}${row.destination ? ': ' + row.destination : ''}`);
+        }
+      });
+    }
+
+    // Check I/O Tie Lines
+    if (videoIo.coaxIoTieLines) {
+      videoIo.coaxIoTieLines.forEach((row, idx) => {
+        if (row.source && row.source.toUpperCase().includes(txUmdName.toUpperCase())) {
+          routes.push(`TIE-${row.row}${row.destination ? ': ' + row.destination : ''}`);
+        }
+      });
+    }
+
+    // Check JFS MUX 1
+    if (videoIo.jfsMux1 && videoIo.jfsMux1.rows) {
+      videoIo.jfsMux1.rows.forEach((row, idx) => {
+        if (row.source && row.source.toUpperCase().includes(txUmdName.toUpperCase())) {
+          routes.push(`MUX1-${row.row}${row.destination ? ': ' + row.destination : ''}`);
+        }
+      });
+    }
+
+    // Check JFS MUX 2
+    if (videoIo.jfsMux2 && videoIo.jfsMux2.rows) {
+      videoIo.jfsMux2.rows.forEach((row, idx) => {
+        if (row.source && row.source.toUpperCase().includes(txUmdName.toUpperCase())) {
+          routes.push(`MUX2-${row.row}${row.destination ? ': ' + row.destination : ''}`);
+        }
+      });
+    }
+
+    return routes.join(', ');
+  }
+
   return {
     rtrMasterLookup,
     getVideoLevel,
@@ -160,5 +215,6 @@ const Formulas = (() => {
     generateNv9000Export,
     getSourceNamesForDevice,
     getSourceDeviceForFs,
+    getTxRoutingInfo,
   };
 })();

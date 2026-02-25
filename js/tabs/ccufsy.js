@@ -21,11 +21,23 @@ const CcuFsyTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Device', 'TAC', 'FIB-A', 'FIB-B', 'Show Name', 'B', 'S', 'W', 'DOLLY', 'HAND', 'Notes'].forEach(lbl => {
+    [
+      { label: '#', width: '35px' },
+      { label: 'Device', width: '70px' },
+      { label: 'TAC', width: '65px' },
+      { label: 'FIB-A', width: '50px' },
+      { label: 'FIB-B', width: '50px' },
+      { label: 'Show Name', width: '100px' },
+      { label: 'B', width: '30px' },
+      { label: 'S', width: '30px' },
+      { label: 'W', width: '30px' },
+      { label: 'DOLLY', width: '40px' },
+      { label: 'HAND', width: '40px' },
+      { label: 'Notes', width: 'auto' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '35px';
-      if (['B', 'S', 'W', 'DOLLY', 'HAND'].includes(lbl)) th.style.width = '40px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -84,10 +96,22 @@ const CcuFsyTab = (() => {
 
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
-    ['#', 'Format', 'TAC', 'FIB-A', 'Show Name', 'Source', 'MULT', 'COAX', 'Fixed', 'JS', 'Notes'].forEach(lbl => {
+    [
+      { label: '#', width: '35px' },
+      { label: 'Format', width: '90px' },
+      { label: 'TAC', width: '65px' },
+      { label: 'FIB-A', width: '50px' },
+      { label: 'Show Name', width: '100px' },
+      { label: 'Source', width: '70px' },
+      { label: 'MULT', width: '50px' },
+      { label: 'COAX', width: '50px' },
+      { label: 'Fixed', width: '60px' },
+      { label: 'JS', width: '50px' },
+      { label: 'Notes', width: 'auto' }
+    ].forEach(col => {
       const th = document.createElement('th');
-      th.textContent = lbl;
-      if (lbl === '#') th.style.width = '35px';
+      th.textContent = col.label;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -211,7 +235,7 @@ const CcuFsyTab = (() => {
     inp.type = 'text';
     inp.value = row.tac || '';
     inp.placeholder = 'TAC';
-    inp.style.width = '70px';
+    inp.style.width = '100%';
 
     const dlId = `tac-${section}-${idx}`;
     inp.setAttribute('list', dlId);
@@ -269,7 +293,7 @@ const CcuFsyTab = (() => {
     inp.type = 'text';
     inp.value = row[key] || '';
     inp.placeholder = '1-24';
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `fib-${section}-${idx}-${key}`;
     inp.setAttribute('list', dlId);
@@ -321,7 +345,7 @@ const CcuFsyTab = (() => {
     inp.type = 'text';
     inp.value = row.mult || '';
     inp.placeholder = '1-40';
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `mult-fsy-${idx}`;
     inp.setAttribute('list', dlId);
@@ -359,7 +383,7 @@ const CcuFsyTab = (() => {
     inp.type = 'text';
     inp.value = row.coax || '';
     inp.placeholder = '1-40';
-    inp.style.width = '50px';
+    inp.style.width = '100%';
 
     const dlId = `coax-fsy-${idx}`;
     inp.setAttribute('list', dlId);

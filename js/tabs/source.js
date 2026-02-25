@@ -426,14 +426,14 @@ const SourceTab = (() => {
     const hr = document.createElement('tr');
     [
       { label: '#', width: '35px' },
-      { label: 'Show Name' },
-      { label: 'UMD Name' },
-      { label: 'Eng Source' },
-      { label: 'Audio Source' },
+      { label: 'Show Name', width: '120px' },
+      { label: 'UMD Name', width: '100px' },
+      { label: 'Eng Source', width: '100px' },
+      { label: 'Audio Source', width: '100px' },
     ].forEach(col => {
       const th = document.createElement('th');
       th.textContent = col.label;
-      if (col.width) th.style.width = col.width;
+      th.style.width = col.width;
       hr.appendChild(th);
     });
     thead.appendChild(hr);
