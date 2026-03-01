@@ -153,6 +153,44 @@ const EngineerTab = (() => {
   function render(container) {
     const page = Utils.tabPage('ENGINEER', 'NV9000 Router Configuration and Tallyman UMD Updater');
 
+    // === NV9000 ROUTER BRIDGE SECTION ===
+    page.appendChild(Utils.sectionHeader('NV9000 Router Bridge'));
+    const nv9000Controls = document.createElement('div');
+    nv9000Controls.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:20px;';
+    nv9000Controls.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:12px;font-weight:600;color:var(--accent-blue);">Bridge Status:</span>
+          <span id="nv9000-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="btn-nv9000-test-bridge" class="btn" style="padding:6px 12px;font-size:11px;">Test Bridge</button>
+          <button id="btn-nv9000-test-router" class="btn" style="padding:6px 12px;font-size:11px;">Test NV9000</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <label style="font-size:11px;color:var(--text-secondary);min-width:70px;">Bridge URL:</label>
+        <input id="nv9000-bridge-url" type="text" value="${NV9000Client.getBridgeUrl()}"
+               style="flex:1;max-width:250px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input id="nv9000-test-source" type="text" placeholder="Source (e.g., CCU 01)"
+                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <span style="color:var(--text-muted);">→</span>
+          <input id="nv9000-test-dest" type="text" placeholder="Dest (e.g., MV 1-1)"
+                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <button id="btn-nv9000-test-route" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Execute Route</button>
+          <span id="nv9000-route-result" style="font-size:10px;color:var(--text-muted);"></span>
+        </div>
+      </div>
+    `;
+    page.appendChild(nv9000Controls);
+
+    // Initialize NV9000 controls
+    setTimeout(() => initNV9000Controls(), 100);
+
     // === NV9000 CONFIG SECTION ===
     page.appendChild(Utils.sectionHeader('NV9000 Router Configuration Export'));
     const nvTable = document.createElement('table');
@@ -255,43 +293,6 @@ const EngineerTab = (() => {
 
     // Initialize Tallyman controls
     setTimeout(() => initTallymanControls(), 100);
-
-    // === NV9000 ROUTER BRIDGE SECTION ===
-    const nv9000Controls = document.createElement('div');
-    nv9000Controls.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:20px;';
-    nv9000Controls.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:12px;font-weight:600;color:var(--accent-blue);">NV9000 Router Bridge:</span>
-          <span id="nv9000-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button id="btn-nv9000-test-bridge" class="btn" style="padding:6px 12px;font-size:11px;">Test Bridge</button>
-          <button id="btn-nv9000-test-router" class="btn" style="padding:6px 12px;font-size:11px;">Test NV9000</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <label style="font-size:11px;color:var(--text-secondary);min-width:70px;">Bridge URL:</label>
-        <input id="nv9000-bridge-url" type="text" value="${NV9000Client.getBridgeUrl()}"
-               style="flex:1;max-width:250px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-      </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input id="nv9000-test-source" type="text" placeholder="Source (e.g., CCU 01)"
-                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-          <span style="color:var(--text-muted);">→</span>
-          <input id="nv9000-test-dest" type="text" placeholder="Dest (e.g., MV 1-1)"
-                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-          <button id="btn-nv9000-test-route" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Execute Route</button>
-          <span id="nv9000-route-result" style="font-size:10px;color:var(--text-muted);"></span>
-        </div>
-      </div>
-    `;
-    page.appendChild(nv9000Controls);
-
-    // Initialize NV9000 controls
-    setTimeout(() => initNV9000Controls(), 100);
 
     // Render each UMD group
     Object.keys(umdGroups).forEach(groupKey => {
