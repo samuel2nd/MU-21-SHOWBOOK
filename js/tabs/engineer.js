@@ -234,6 +234,28 @@ const EngineerTab = (() => {
     title.style.cssText = 'text-align:center;margin-bottom:20px;color:var(--text-primary);';
     page.appendChild(title);
 
+    // Tallyman Bridge Controls
+    const tallymanControls = document.createElement('div');
+    tallymanControls.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:20px;';
+    tallymanControls.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:12px;color:var(--text-secondary);">Tallyman Bridge:</span>
+          <span id="tallyman-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
+          <span style="font-size:11px;color:var(--text-muted);">Target: 192.168.23.20:8902</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="btn-tallyman-test" class="btn" style="padding:6px 12px;font-size:11px;">Test Connection</button>
+          <button id="btn-tallyman-sync" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Sync All UMDs</button>
+        </div>
+      </div>
+      <div id="tallyman-last-sync" style="margin-top:8px;font-size:10px;color:var(--text-muted);"></div>
+    `;
+    page.appendChild(tallymanControls);
+
+    // Initialize Tallyman controls
+    setTimeout(() => initTallymanControls(), 100);
+
     // Render each UMD group
     Object.keys(umdGroups).forEach(groupKey => {
       const group = umdGroups[groupKey];
@@ -343,6 +365,59 @@ const EngineerTab = (() => {
 
     section.appendChild(columnsDiv);
     return section;
+  }
+
+  async function initTallymanControls() {
+    const statusEl = document.getElementById('tallyman-status');
+    const lastSyncEl = document.getElementById('tallyman-last-sync');
+    const testBtn = document.getElementById('btn-tallyman-test');
+    const syncBtn = document.getElementById('btn-tallyman-sync');
+
+    if (!statusEl) return;
+
+    // Check connection status
+    async function updateStatus() {
+      const health = await TallymanBridge.checkHealth();
+      if (health && health.status === 'ok') {
+        statusEl.textContent = 'Connected';
+        statusEl.style.background = 'rgba(52, 211, 153, 0.15)';
+        statusEl.style.color = 'var(--accent-green)';
+      } else {
+        statusEl.textContent = 'Offline';
+        statusEl.style.background = 'rgba(251, 191, 36, 0.15)';
+        statusEl.style.color = 'var(--accent-orange)';
+      }
+    }
+
+    await updateStatus();
+
+    // Update last sync display
+    function updateLastSync() {
+      const state = TallymanBridge.getState();
+      if (state.lastSyncTime) {
+        lastSyncEl.textContent = `Last sync: ${state.lastSyncTime.toLocaleTimeString()}`;
+      }
+    }
+
+    // Test button
+    testBtn.addEventListener('click', async () => {
+      testBtn.textContent = 'Testing...';
+      testBtn.disabled = true;
+      await updateStatus();
+      testBtn.textContent = 'Test Connection';
+      testBtn.disabled = false;
+    });
+
+    // Sync button
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.textContent = 'Syncing...';
+      syncBtn.disabled = true;
+      await TallymanBridge.syncAll();
+      await updateStatus();
+      updateLastSync();
+      syncBtn.textContent = 'Sync All UMDs';
+      syncBtn.disabled = false;
+    });
   }
 
   function exportUmdCsv() {
