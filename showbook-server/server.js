@@ -45,5 +45,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('Kaleido Bridge:  http://localhost:3001');
   console.log('Tallyman Bridge: http://localhost:3002');
+  console.log('NV9000 Bridge:   http://localhost:3003');
   console.log('========================================');
 });
