@@ -115,7 +115,7 @@ const AudioMultTab = (() => {
     sourceInput.type = 'text';
     sourceInput.value = port.source || '';
     sourceInput.placeholder = 'Source...';
-    sourceInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    sourceInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
     sourceDiv.appendChild(sourceInput);
     form.appendChild(sourceDiv);
 
@@ -126,7 +126,7 @@ const AudioMultTab = (() => {
     destInput.type = 'text';
     destInput.value = port.dest || '';
     destInput.placeholder = 'Destination...';
-    destInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    destInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
     destDiv.appendChild(destInput);
     form.appendChild(destDiv);
 

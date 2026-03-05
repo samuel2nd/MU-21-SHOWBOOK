@@ -726,7 +726,7 @@ const ProdDigitalTab = (() => {
       select.style.cssText = `
         width: 100%;
         padding: 6px 8px;
-        background: var(--bg-input);
+        background: var(--bg-primary);
         border: 1px solid var(--border);
         border-radius: 4px;
         color: var(--text-primary);

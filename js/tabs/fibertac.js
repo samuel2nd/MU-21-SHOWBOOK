@@ -211,11 +211,11 @@ const FiberTacTab = (() => {
         inputDiv.innerHTML = `
           <div style="margin-bottom:8px;">
             <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Source</label>
-            <input type="text" id="other-source" value="${port.source || ''}" style="width:100%;padding:6px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
+            <input type="text" id="other-source" value="${port.source || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
           </div>
           <div>
             <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Destination / Notes</label>
-            <input type="text" id="other-dest" value="${port.dest || ''}" style="width:100%;padding:6px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
+            <input type="text" id="other-dest" value="${port.dest || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
           </div>
         `;
         listContainer.appendChild(inputDiv);

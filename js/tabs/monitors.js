@@ -114,7 +114,7 @@ const MonitorsTab = (() => {
       gridRows: '1fr',
     },
     'video': {
-      title: 'MU-21 VIDEO POSITION MONITOR WALL',
+      title: 'MU-21 VIDEO MONITOR WALL',
       monitors: [
         // Top row - MV outputs (32x4 MV card 26, 3 outputs used)
         { id: 'vid-mv1', label: 'VID MV 1', defaultMv: '26-1', defaultLayout: '9_SPLIT', row: 1, fixedLayout: true, inputStart: 1 },
