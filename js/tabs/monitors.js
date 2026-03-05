@@ -467,11 +467,25 @@ const MonitorsTab = (() => {
       // Click to select - allow MV or source selection
       gridEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        showPicker(gridEl, monData, (val) => {
+        showPicker(gridEl, monData, async (val) => {
           if (val.startsWith('SRC:')) {
+            const source = val.replace('SRC:', '');
             monData.assignmentType = 'source';
-            monData.directSource = val.replace('SRC:', '');
+            monData.directSource = source;
             monData.mvId = null;
+
+            // Trigger NV9000 route for direct source
+            if (source) {
+              const destName = monConfig.label;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                if (result.staged) {
+                  Utils.toast(`Staged: ${source} → ${destName}`, 'info');
+                } else {
+                  Utils.toast(`Routed: ${source} → ${destName}`, 'success');
+                }
+              }
+            }
           } else if (val) {
             monData.assignmentType = 'mv';
             monData.mvId = val;
@@ -494,7 +508,7 @@ const MonitorsTab = (() => {
       gridEl.addEventListener('dragleave', () => {
         gridEl.style.boxShadow = 'none';
       });
-      gridEl.addEventListener('drop', (e) => {
+      gridEl.addEventListener('drop', async (e) => {
         e.preventDefault();
         gridEl.style.boxShadow = 'none';
         const source = e.dataTransfer.getData('text/plain');
@@ -502,6 +516,18 @@ const MonitorsTab = (() => {
           monData.directSource = source;
           monData.assignmentType = 'source';
           Store.set(`monitorWallsV2.${wallKey}.monitors.${idx}`, monData);
+
+          // Trigger NV9000 route for direct source monitor
+          const destName = monConfig.label;
+          const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${source} → ${destName}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${source} → ${destName}`, 'success');
+            }
+          }
+
           App.renderCurrentTab();
         }
       });
@@ -554,9 +580,23 @@ const MonitorsTab = (() => {
         // Click to select
         cellEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          showSourcePicker(cellEl, (source) => {
+          showSourcePicker(cellEl, async (source) => {
             mv.inputs[cell.pos - 1] = source;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+
+            // Trigger NV9000 route if source selected
+            if (source && mv.id) {
+              const destName = `MV ${mv.id.replace('-', '-')}`;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                if (result.staged) {
+                  Utils.toast(`Staged: ${source} → ${destName}`, 'info');
+                } else {
+                  Utils.toast(`Routed: ${source} → ${destName}`, 'success');
+                }
+              }
+            }
+
             App.renderCurrentTab();
           });
         });
@@ -571,7 +611,7 @@ const MonitorsTab = (() => {
           cellEl.style.background = baseBg;
           cellEl.style.boxShadow = 'none';
         });
-        cellEl.addEventListener('drop', (e) => {
+        cellEl.addEventListener('drop', async (e) => {
           e.preventDefault();
           cellEl.style.background = baseBg;
           cellEl.style.boxShadow = 'none';
@@ -579,6 +619,20 @@ const MonitorsTab = (() => {
           if (source) {
             mv.inputs[cell.pos - 1] = source;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+
+            // Trigger NV9000 route
+            if (mv.id) {
+              const destName = `MV ${mv.id.replace('-', '-')}`;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                if (result.staged) {
+                  Utils.toast(`Staged: ${source} → ${destName}`, 'info');
+                } else {
+                  Utils.toast(`Routed: ${source} → ${destName}`, 'success');
+                }
+              }
+            }
+
             App.renderCurrentTab();
           }
         });

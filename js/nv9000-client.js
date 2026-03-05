@@ -14,6 +14,9 @@ const NV9000Client = (() => {
   const STORAGE_KEY = 'nv9000BridgeUrl';
   const DEFAULT_BRIDGE_URL = 'http://localhost:3003';
 
+  // Staged routes storage
+  let stagedRoutes = {};  // { 'destName': { source: 'srcName', destination: 'destName', sourceId, destId } }
+
   // ============================================================
   // CONFIGURATION
   // ============================================================
@@ -24,6 +27,126 @@ const NV9000Client = (() => {
 
   function setBridgeUrl(url) {
     localStorage.setItem(STORAGE_KEY, url);
+  }
+
+  // ============================================================
+  // TRIGGER MODE (STAGED / IMMEDIATE)
+  // ============================================================
+
+  // Global mode (fallback)
+  function getTriggerMode() {
+    return localStorage.getItem('nv9000TriggerMode') || 'immediate';
+  }
+
+  function setTriggerMode(mode) {
+    localStorage.setItem('nv9000TriggerMode', mode);
+  }
+
+  // Per-page modes
+  function getPageMode(page) {
+    const pageMode = localStorage.getItem(`nv9000Mode_${page}`);
+    return pageMode || 'global'; // 'global', 'staged', or 'immediate'
+  }
+
+  function setPageMode(page, mode) {
+    localStorage.setItem(`nv9000Mode_${page}`, mode);
+  }
+
+  // Get effective mode for a page
+  function getEffectiveMode(page) {
+    const pageMode = getPageMode(page);
+    if (pageMode === 'global') {
+      return getTriggerMode();
+    }
+    return pageMode;
+  }
+
+  // ============================================================
+  // STAGED ROUTES
+  // ============================================================
+
+  function getStagedRoutes() {
+    return { ...stagedRoutes };
+  }
+
+  function stageRoute(sourceName, destName) {
+    const sourceId = getSourceId(sourceName);
+    const destId = getDestinationId(destName);
+
+    if (!sourceId || !destId) {
+      console.warn(`[NV9000] Cannot stage invalid route: ${sourceName} -> ${destName}`);
+      return false;
+    }
+
+    stagedRoutes[destName] = {
+      source: sourceName,
+      destination: destName,
+      sourceId,
+      destId
+    };
+
+    console.log(`[NV9000] Staged: ${sourceName} -> ${destName}`);
+    return true;
+  }
+
+  function unstageRoute(destName) {
+    delete stagedRoutes[destName];
+  }
+
+  function clearStagedRoutes() {
+    stagedRoutes = {};
+  }
+
+  async function triggerAllStaged() {
+    const routes = Object.values(stagedRoutes);
+    if (routes.length === 0) {
+      return { success: true, message: 'No routes to execute' };
+    }
+
+    console.log(`[NV9000] Triggering ${routes.length} staged routes`);
+
+    const resolvedRoutes = routes.map(r => ({
+      source: r.sourceId,
+      destination: r.destId
+    }));
+
+    try {
+      const response = await fetch(`${getBridgeUrl()}/route-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ routes: resolvedRoutes })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        clearStagedRoutes();
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`[NV9000] Trigger error:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Handle a route based on current trigger mode
+   * @param {string} sourceName - Source device name
+   * @param {string} destName - Destination device name
+   * @param {string} page - Page identifier for per-page mode (optional)
+   * @returns {Promise<object>} - Result with { success, staged }
+   */
+  async function handleRoute(sourceName, destName, page = null) {
+    const mode = page ? getEffectiveMode(page) : getTriggerMode();
+
+    if (mode === 'staged') {
+      const staged = stageRoute(sourceName, destName);
+      return { success: staged, staged: true };
+    } else {
+      const result = await route(sourceName, destName);
+      return { ...result, staged: false };
+    }
   }
 
   // ============================================================
@@ -262,6 +385,11 @@ const NV9000Client = (() => {
     // Configuration
     getBridgeUrl,
     setBridgeUrl,
+    getTriggerMode,
+    setTriggerMode,
+    getPageMode,
+    setPageMode,
+    getEffectiveMode,
 
     // ID Lookups
     getSourceId,
@@ -273,6 +401,14 @@ const NV9000Client = (() => {
     route,
     routeById,
     routeBatch,
+    handleRoute,
+
+    // Staged Routes
+    getStagedRoutes,
+    stageRoute,
+    unstageRoute,
+    clearStagedRoutes,
+    triggerAllStaged,
 
     // Connection
     checkConnection,

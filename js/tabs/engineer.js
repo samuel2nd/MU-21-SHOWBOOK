@@ -150,6 +150,124 @@ const EngineerTab = (() => {
     return ''; // No UMD assigned
   }
 
+  // Staged Routes Panel for NV9000
+  function renderStagedRoutesPanel() {
+    const stagedRoutes = NV9000Client.getStagedRoutes();
+    const entries = Object.entries(stagedRoutes);
+    const mode = NV9000Client.getTriggerMode();
+
+    // Only show in staged mode
+    if (mode !== 'staged') {
+      const hidden = document.createElement('div');
+      hidden.id = 'nv9000-staged-panel';
+      hidden.style.cssText = 'margin-bottom:16px;padding:8px 12px;background:var(--bg-secondary);border-radius:6px;font-size:11px;color:var(--text-muted);';
+      hidden.textContent = 'Staged routes panel hidden (Mode: Immediate)';
+      return hidden;
+    }
+
+    const section = document.createElement('div');
+    section.id = 'nv9000-staged-panel';
+    section.style.cssText = `
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid ${entries.length > 0 ? 'var(--accent-orange)' : 'var(--border)'};
+    `;
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+
+    const title = document.createElement('h3');
+    title.style.cssText = 'margin:0;font-size:12px;color:var(--accent-orange);';
+    title.textContent = `STAGED ROUTER ROUTES (${entries.length})`;
+    header.appendChild(title);
+
+    if (entries.length > 0) {
+      const btnGroup = document.createElement('div');
+      btnGroup.style.cssText = 'display:flex;gap:6px;';
+
+      const triggerBtn = document.createElement('button');
+      triggerBtn.id = 'btn-nv9000-take-all';
+      triggerBtn.className = 'btn';
+      triggerBtn.style.cssText = 'padding:4px 12px;font-size:11px;background:var(--accent-orange);color:#000;font-weight:700;';
+      triggerBtn.textContent = 'TAKE ALL';
+      triggerBtn.addEventListener('click', async () => {
+        triggerBtn.disabled = true;
+        triggerBtn.textContent = 'Taking...';
+        const result = await NV9000Client.triggerAllStaged();
+        if (result.success) {
+          triggerBtn.textContent = 'Done!';
+          triggerBtn.style.background = '#22c55e';
+          Utils.toast(`${entries.length} routes executed`, 'success');
+          setTimeout(() => App.renderCurrentTab(), 1000);
+        } else {
+          triggerBtn.textContent = 'Failed';
+          triggerBtn.style.background = '#ef4444';
+          Utils.toast(`Route error: ${result.error}`, 'error');
+          setTimeout(() => {
+            triggerBtn.disabled = false;
+            triggerBtn.textContent = 'TAKE ALL';
+            triggerBtn.style.background = 'var(--accent-orange)';
+          }, 2000);
+        }
+      });
+      btnGroup.appendChild(triggerBtn);
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'btn';
+      clearBtn.style.cssText = 'padding:4px 8px;font-size:10px;';
+      clearBtn.textContent = 'Clear All';
+      clearBtn.addEventListener('click', () => {
+        NV9000Client.clearStagedRoutes();
+        App.renderCurrentTab();
+      });
+      btnGroup.appendChild(clearBtn);
+
+      header.appendChild(btnGroup);
+    }
+
+    section.appendChild(header);
+
+    // Staged items list
+    if (entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:11px;color:var(--text-muted);';
+      empty.textContent = 'No staged routes. Make routes from Video I/O or Monitor Wall pages to stage them here.';
+      section.appendChild(empty);
+    } else {
+      const list = document.createElement('div');
+      list.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+      entries.forEach(([destName, staged]) => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-primary);border-radius:3px;font-size:10px;border:1px solid var(--accent-orange);';
+
+        const info = document.createElement('span');
+        info.style.cssText = 'color:var(--text-primary);';
+        info.innerHTML = `<span style="color:var(--accent-cyan)">${staged.source}</span> → <span style="color:var(--accent-orange)">${staged.destination}</span>`;
+        item.appendChild(info);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.style.cssText = 'background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;padding:0 2px;line-height:1;';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove';
+        removeBtn.addEventListener('click', () => {
+          NV9000Client.unstageRoute(destName);
+          App.renderCurrentTab();
+        });
+        item.appendChild(removeBtn);
+
+        list.appendChild(item);
+      });
+
+      section.appendChild(list);
+    }
+
+    return section;
+  }
+
   function render(container) {
     const page = Utils.tabPage('ENGINEER', 'NV9000 Router Configuration and Tallyman UMD Updater');
 
@@ -168,10 +286,35 @@ const EngineerTab = (() => {
           <button id="btn-nv9000-test-router" class="btn" style="padding:6px 12px;font-size:11px;">Test NV9000</button>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
         <label style="font-size:11px;color:var(--text-secondary);min-width:70px;">Bridge URL:</label>
         <input id="nv9000-bridge-url" type="text" value="${NV9000Client.getBridgeUrl()}"
                style="flex:1;max-width:250px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:10px;color:var(--text-secondary);">Global Mode:</span>
+          <select id="nv9000-trigger-mode" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <option value="immediate" ${NV9000Client.getTriggerMode() === 'immediate' ? 'selected' : ''}>Immediate</option>
+            <option value="staged" ${NV9000Client.getTriggerMode() === 'staged' ? 'selected' : ''}>Staged</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:10px;color:var(--text-secondary);">Video I/O:</span>
+          <select id="nv9000-mode-videoio" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <option value="global" ${NV9000Client.getPageMode('videoio') === 'global' ? 'selected' : ''}>Global</option>
+            <option value="immediate" ${NV9000Client.getPageMode('videoio') === 'immediate' ? 'selected' : ''}>Immediate</option>
+            <option value="staged" ${NV9000Client.getPageMode('videoio') === 'staged' ? 'selected' : ''}>Staged</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="font-size:10px;color:var(--text-secondary);">Monitor Walls:</span>
+          <select id="nv9000-mode-monitors" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <option value="global" ${NV9000Client.getPageMode('monitors') === 'global' ? 'selected' : ''}>Global</option>
+            <option value="immediate" ${NV9000Client.getPageMode('monitors') === 'immediate' ? 'selected' : ''}>Immediate</option>
+            <option value="staged" ${NV9000Client.getPageMode('monitors') === 'staged' ? 'selected' : ''}>Staged</option>
+          </select>
+        </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
         <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
@@ -193,6 +336,9 @@ const EngineerTab = (() => {
       </div>
     `;
     page.appendChild(nv9000Controls);
+
+    // Staged Routes Panel
+    page.appendChild(renderStagedRoutesPanel());
 
     // Initialize NV9000 controls
     setTimeout(() => initNV9000Controls(), 100);
@@ -577,6 +723,30 @@ const EngineerTab = (() => {
       NV9000Client.setBridgeUrl(bridgeUrlInput.value);
       updateBridgeStatus();
     });
+
+    // Trigger mode change
+    const triggerModeSelect = document.getElementById('nv9000-trigger-mode');
+    if (triggerModeSelect) {
+      triggerModeSelect.addEventListener('change', () => {
+        NV9000Client.setTriggerMode(triggerModeSelect.value);
+        App.renderCurrentTab();
+      });
+    }
+
+    // Per-page mode changes
+    const videoioModeSelect = document.getElementById('nv9000-mode-videoio');
+    if (videoioModeSelect) {
+      videoioModeSelect.addEventListener('change', () => {
+        NV9000Client.setPageMode('videoio', videoioModeSelect.value);
+      });
+    }
+
+    const monitorsModeSelect = document.getElementById('nv9000-mode-monitors');
+    if (monitorsModeSelect) {
+      monitorsModeSelect.addEventListener('change', () => {
+        NV9000Client.setPageMode('monitors', monitorsModeSelect.value);
+      });
+    }
 
     // Test Bridge button
     testBridgeBtn.addEventListener('click', async () => {

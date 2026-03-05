@@ -478,9 +478,21 @@ const VideoIoTab = (() => {
       opt.value = o.value;
       dl.appendChild(opt);
     });
-    inp.addEventListener('change', () => {
+    inp.addEventListener('change', async () => {
       row[key] = inp.value;
       Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
+
+      // Trigger NV9000 route if source and destination are set
+      if (key === 'source' && inp.value && row.destination) {
+        const result = await NV9000Client.handleRoute(inp.value, row.destination, 'videoio');
+        if (result.success) {
+          if (result.staged) {
+            Utils.toast(`Staged: ${inp.value} → ${row.destination}`, 'info');
+          } else {
+            Utils.toast(`Routed: ${inp.value} → ${row.destination}`, 'success');
+          }
+        }
+      }
     });
     td.appendChild(inp);
     td.appendChild(dl);
