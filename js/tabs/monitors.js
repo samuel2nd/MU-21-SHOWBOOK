@@ -87,14 +87,14 @@ const MonitorsTab = (() => {
       title: 'MU-21 EVS MONITOR WALL',
       monitors: [
         // FEVS Row (MV displays)
-        { id: 'fevs-mon1', label: 'FEVS MON1', defaultMv: '10-1', defaultLayout: '9_SPLIT_L', row: 1 },
-        { id: 'fevs-mon2', label: 'FEVS MON2', defaultMv: '11-1', defaultLayout: '9_SPLIT', row: 1 },
-        { id: 'fevs-mon3', label: 'FEVS MON3', defaultMv: '12-1', defaultLayout: '9_SPLIT_R', row: 1 },
+        { id: 'fevs-mon1', label: 'FEVSMON1', defaultMv: '10-1', defaultLayout: '9_SPLIT_L', row: 1 },
+        { id: 'fevs-mon2', label: 'FEVSMON2', defaultMv: '11-1', defaultLayout: '9_SPLIT', row: 1 },
+        { id: 'fevs-mon3', label: 'FEVSMON3', defaultMv: '12-1', defaultLayout: '9_SPLIT_R', row: 1 },
         // REVS Row (Full screen)
-        { id: 'revs-mon1', label: 'REVS MON1', defaultMv: null, directSource: true, row: 2 },
-        { id: 'revs-mon2', label: 'REVS MON2', defaultMv: null, directSource: true, row: 2 },
-        { id: 'revs-mon3', label: 'REVS MON3', defaultMv: null, directSource: true, row: 2 },
-        { id: 'revs-mon4', label: 'REVS MON4', defaultMv: null, directSource: true, row: 2 },
+        { id: 'revs-mon1', label: 'REVSMON1', defaultMv: null, directSource: true, row: 2 },
+        { id: 'revs-mon2', label: 'REVSMON2', defaultMv: null, directSource: true, row: 2 },
+        { id: 'revs-mon3', label: 'REVSMON3', defaultMv: null, directSource: true, row: 2 },
+        { id: 'revs-mon4', label: 'REVSMON4', defaultMv: null, directSource: true, row: 2 },
       ],
       gridTemplate: `
         "fevs1 fevs2 fevs3"

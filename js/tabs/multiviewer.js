@@ -476,6 +476,21 @@ const MultiviewerTab = (() => {
     return sources;
   }
 
+  // Get paired MV (the other side of the same card)
+  function getPairedMv(mvId) {
+    if (!mvId || !Store.data.prodDigital || !Store.data.prodDigital.multiviewers) return null;
+    const [cardId, side] = mvId.split('-');
+    const pairedSide = side === '1' ? '2' : '1';
+    const pairedId = `${cardId}-${pairedSide}`;
+    return Store.data.prodDigital.multiviewers.find(m => m.id === pairedId);
+  }
+
+  // Get input offset for side 2 (starts after side 1's inputs)
+  function getSide2InputOffset(side1Layout) {
+    const layoutDef = LAYOUTS[side1Layout];
+    return layoutDef ? layoutDef.positions : 0;
+  }
+
   // MV Cards Section - mirrors monitor wall MVs
   function renderMvWindowsSection() {
     const wrapper = document.createElement('div');
@@ -669,9 +684,16 @@ const MultiviewerTab = (() => {
         height: 100px;
       `;
 
+      // Calculate input offset for side 2
+      const pairedMv = getPairedMv(mv.id);
+      const inputOffset = (mv.side === 2 && pairedMv && pairedMv.layout)
+        ? getSide2InputOffset(pairedMv.layout)
+        : 0;
+
       layout.cells.forEach(cell => {
         const cellEl = document.createElement('div');
         const sourceValue = mv.inputs ? mv.inputs[cell.pos - 1] || '' : '';
+        const actualInputNum = cell.pos + inputOffset;
         const baseBg = cell.vip ? 'linear-gradient(135deg, #3b4a6b 0%, #2a3a5b 100%)' : '#252836';
 
         cellEl.style.cssText = `
@@ -689,7 +711,7 @@ const MultiviewerTab = (() => {
           transition: all 0.15s ease;
         `;
 
-        const displayLabel = `${mv.cardId}-${cell.pos}`;
+        const displayLabel = `${mv.cardId}-${actualInputNum}`;
         if (sourceValue) {
           const srcName = document.createElement('div');
           srcName.style.cssText = 'font-size:9px;text-align:center;line-height:1.1;';
@@ -706,12 +728,24 @@ const MultiviewerTab = (() => {
         // Click to edit source
         cellEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          showSourcePicker(cellEl, (source) => {
+          showSourcePicker(cellEl, async (source) => {
             if (!Store.data.prodDigital.multiviewers[mvIdx].inputs) {
               Store.data.prodDigital.multiviewers[mvIdx].inputs = Array(9).fill('');
             }
             Store.data.prodDigital.multiviewers[mvIdx].inputs[cell.pos - 1] = source;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+
+            // Trigger NV9000 route if source and cardId are valid
+            if (source && mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                Utils.toast(result.staged ? `Staged: ${source} → ${destName}` : `Routed: ${source} → ${destName}`, 'success');
+              } else if (result.error) {
+                Utils.toast(`Route failed: ${result.error}`, 'error');
+              }
+            }
+
             App.renderCurrentTab();
           });
         });
@@ -724,7 +758,7 @@ const MultiviewerTab = (() => {
         cellEl.addEventListener('dragleave', () => {
           cellEl.style.background = baseBg;
         });
-        cellEl.addEventListener('drop', (e) => {
+        cellEl.addEventListener('drop', async (e) => {
           e.preventDefault();
           cellEl.style.background = baseBg;
           const source = e.dataTransfer.getData('text/plain');
@@ -734,6 +768,18 @@ const MultiviewerTab = (() => {
             }
             Store.data.prodDigital.multiviewers[mvIdx].inputs[cell.pos - 1] = source;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+
+            // Trigger NV9000 route if cardId is valid
+            if (mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                Utils.toast(result.staged ? `Staged: ${source} → ${destName}` : `Routed: ${source} → ${destName}`, 'success');
+              } else if (result.error) {
+                Utils.toast(`Route failed: ${result.error}`, 'error');
+              }
+            }
+
             App.renderCurrentTab();
           }
         });
