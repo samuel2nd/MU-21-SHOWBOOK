@@ -97,19 +97,14 @@ const MultiviewerTab = (() => {
     modeLabel.textContent = 'Mode:';
     modeWrapper.appendChild(modeLabel);
 
-    const modeSelect = document.createElement('select');
-    modeSelect.style.cssText = 'padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
-    ['staged', 'immediate'].forEach(mode => {
-      const opt = document.createElement('option');
-      opt.value = mode;
-      opt.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
-      if (KaleidoClient.getTriggerMode() === mode) opt.selected = true;
-      modeSelect.appendChild(opt);
-    });
-    modeSelect.addEventListener('change', () => {
-      KaleidoClient.setTriggerMode(modeSelect.value);
+    const modeOptions = [
+      { value: 'staged', label: 'Staged' },
+      { value: 'immediate', label: 'Immediate' }
+    ];
+    const modeSelect = Utils.createDarkDropdown(modeOptions, KaleidoClient.getTriggerMode(), (val) => {
+      KaleidoClient.setTriggerMode(val);
       App.renderCurrentTab();
-    });
+    }, { placeholder: 'Mode', width: '90px' });
     modeWrapper.appendChild(modeSelect);
     controls.appendChild(modeWrapper);
 
@@ -614,14 +609,6 @@ const MultiviewerTab = (() => {
     const stagedLayouts = (typeof KaleidoClient !== 'undefined') ? KaleidoClient.getStagedLayouts() : {};
     const isStaged = stagedLayouts[mv.id] !== undefined;
 
-    // Layout selector
-    const layoutSelect = document.createElement('select');
-    layoutSelect.style.cssText = `flex:1;padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:3px;color:var(--text-primary);min-width:80px;`;
-
-    if (isStaged) {
-      layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
-    }
-
     // Calculate available inputs for side 2
     let availableInputs = 9;
     if (side === 2 && pairedMv && pairedMv.layout) {
@@ -629,24 +616,15 @@ const MultiviewerTab = (() => {
       availableInputs = pairedLayout ? 9 - pairedLayout.positions : 9;
     }
 
-    // Add layout options
-    const noneOpt = document.createElement('option');
-    noneOpt.value = '';
-    noneOpt.textContent = '-- None --';
-    if (!mv.layout) noneOpt.selected = true;
-    layoutSelect.appendChild(noneOpt);
-
+    // Build layout options
+    const layoutOptions = [{ value: '', label: '-- None --' }];
     Object.entries(LAYOUTS).forEach(([key, l]) => {
       if (side === 2 && l.positions > availableInputs) return;
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = `${l.name} (${l.positions})`;
-      if (mv.layout === key) opt.selected = true;
-      layoutSelect.appendChild(opt);
+      layoutOptions.push({ value: key, label: `${l.name} (${l.positions})` });
     });
 
-    layoutSelect.addEventListener('change', async () => {
-      const newLayout = layoutSelect.value;
+    // Layout selector
+    const layoutSelect = Utils.createDarkDropdown(layoutOptions, mv.layout || '', async (newLayout) => {
       const oldLayout = mv.layout;
 
       Store.data.prodDigital.multiviewers[mvIdx].layout = newLayout || null;

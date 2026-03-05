@@ -4,6 +4,107 @@
 
 const Utils = (() => {
 
+  // Dark dropdown for inline use in tables (simpler, no filter for small cells)
+  function createDarkDropdownInline(options, currentValue, onChange) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:relative;width:100%;';
+
+    // Find current label
+    const currentOpt = options.find(o => o.value === currentValue);
+    const displayLabel = currentOpt ? currentOpt.label : (currentValue || '--');
+
+    // The visible "button" that shows current value
+    const display = document.createElement('div');
+    display.style.cssText = `
+      padding: 4px 20px 4px 6px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-primary);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      min-height: 18px;
+    `;
+    display.innerHTML = `
+      <span class="dropdown-value">${displayLabel}</span>
+      <span style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:7px;color:var(--text-muted);">▼</span>
+    `;
+    wrapper.appendChild(display);
+
+    // The dropdown popup
+    const popup = document.createElement('div');
+    popup.className = 'dark-dropdown-popup';
+    popup.style.cssText = `
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 100%;
+      max-height: 180px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    `;
+
+    // Render options
+    options.forEach(opt => {
+      const item = document.createElement('div');
+      item.style.cssText = `
+        padding: 5px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        color: var(--text-primary);
+        white-space: nowrap;
+      `;
+      item.textContent = opt.label;
+      if (opt.value === currentValue) {
+        item.style.background = 'var(--accent-blue)';
+        item.style.color = '#fff';
+      }
+      item.addEventListener('mouseenter', () => {
+        if (opt.value !== currentValue) item.style.background = 'var(--bg-hover)';
+      });
+      item.addEventListener('mouseleave', () => {
+        if (opt.value !== currentValue) item.style.background = '';
+      });
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        display.querySelector('.dropdown-value').textContent = opt.label;
+        popup.style.display = 'none';
+        onChange(opt.value);
+      });
+      popup.appendChild(item);
+    });
+
+    display.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other dropdowns
+      document.querySelectorAll('.dark-dropdown-popup').forEach(p => {
+        if (p !== popup) p.style.display = 'none';
+      });
+      const isOpen = popup.style.display === 'block';
+      popup.style.display = isOpen ? 'none' : 'block';
+    });
+
+    // Close on click outside
+    const closeHandler = (e) => {
+      if (!wrapper.contains(e.target)) {
+        popup.style.display = 'none';
+      }
+    };
+    document.addEventListener('click', closeHandler);
+
+    wrapper.appendChild(popup);
+    return wrapper;
+  }
+
   // Build an editable table from column definitions and data array
   // columns: [{ key, label, width?, type?, options?, computed?, readonly? }]
   // dataPath: dot-separated path into Store for the array
@@ -51,26 +152,14 @@ const Utils = (() => {
           td.appendChild(cb);
           td.style.textAlign = 'center';
         } else if (col.type === 'select') {
-          const sel = document.createElement('select');
-          sel.innerHTML = '<option value="">--</option>';
+          // Dark dropdown instead of native select
           const opts = typeof col.options === 'function' ? col.options() : (col.options || []);
-          opts.forEach(o => {
-            const opt = document.createElement('option');
-            if (typeof o === 'object') {
-              opt.value = o.value;
-              opt.textContent = o.label;
-            } else {
-              opt.value = o;
-              opt.textContent = o;
-            }
-            if (rowData[col.key] === opt.value) opt.selected = true;
-            sel.appendChild(opt);
+          const allOpts = [{ value: '', label: '--' }, ...opts.map(o => typeof o === 'object' ? o : { value: o, label: o })];
+          const dropdown = createDarkDropdownInline(allOpts, rowData[col.key] || '', (val) => {
+            rowData[col.key] = val;
+            Store.set(`${dataPath}.${rowIdx}.${col.key}`, val);
           });
-          sel.addEventListener('change', () => {
-            rowData[col.key] = sel.value;
-            Store.set(`${dataPath}.${rowIdx}.${col.key}`, sel.value);
-          });
-          td.appendChild(sel);
+          td.appendChild(dropdown);
         } else {
           // text input
           const inp = document.createElement('input');
@@ -411,6 +500,160 @@ const Utils = (() => {
     td.title = '';
   }
 
+  // Dark dropdown picker (replaces native select with custom dark popup)
+  function createDarkDropdown(options, currentValue, onChange, config = {}) {
+    const { placeholder = '-- Select --', width = '100%' } = config;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `position:relative;width:${width};`;
+
+    // The visible "button" that shows current value
+    const display = document.createElement('div');
+    display.style.cssText = `
+      padding: 4px 24px 4px 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-primary);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    `;
+    display.innerHTML = `
+      <span class="dropdown-value">${currentValue || placeholder}</span>
+      <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:8px;color:var(--text-muted);">▼</span>
+    `;
+    wrapper.appendChild(display);
+
+    // The dropdown popup
+    const popup = document.createElement('div');
+    popup.className = 'dark-dropdown-popup';
+    popup.style.cssText = `
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    `;
+
+    // Filter input
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.placeholder = 'Filter...';
+    filterInput.style.cssText = `
+      width: 100%;
+      padding: 6px 8px;
+      background: var(--bg-secondary);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 11px;
+      box-sizing: border-box;
+      outline: none;
+    `;
+    popup.appendChild(filterInput);
+
+    // Options container
+    const optionsContainer = document.createElement('div');
+    popup.appendChild(optionsContainer);
+
+    function renderOptions(filter = '') {
+      optionsContainer.innerHTML = '';
+      const filterLower = filter.toLowerCase();
+      const filtered = options.filter(opt => {
+        if (opt.disabled) return true; // Keep separators
+        const val = typeof opt === 'object' ? opt.label || opt.value : opt;
+        return val.toLowerCase().includes(filterLower);
+      });
+
+      filtered.forEach(opt => {
+        const value = typeof opt === 'object' ? opt.value : opt;
+        const label = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+        const disabled = opt.disabled || false;
+
+        const item = document.createElement('div');
+        if (disabled) {
+          // Separator/disabled item
+          item.style.cssText = `
+            padding: 4px 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            cursor: default;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+          `;
+          item.textContent = label;
+        } else {
+          item.style.cssText = `
+            padding: 6px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: background 0.1s;
+          `;
+          item.textContent = label;
+          if (value === currentValue) {
+            item.style.background = 'var(--bg-tertiary)';
+          }
+          item.addEventListener('mouseenter', () => item.style.background = 'var(--bg-hover)');
+          item.addEventListener('mouseleave', () => item.style.background = value === currentValue ? 'var(--bg-tertiary)' : '');
+          item.addEventListener('click', () => {
+            display.querySelector('.dropdown-value').textContent = label || placeholder;
+            popup.style.display = 'none';
+            currentValue = value;
+            onChange(value);
+          });
+        }
+        optionsContainer.appendChild(item);
+      });
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:8px;font-size:10px;color:var(--text-muted);text-align:center;';
+        empty.textContent = 'No matches';
+        optionsContainer.appendChild(empty);
+      }
+    }
+
+    filterInput.addEventListener('input', () => renderOptions(filterInput.value));
+
+    display.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other dropdowns
+      document.querySelectorAll('.dark-dropdown-popup').forEach(p => {
+        if (p !== popup) p.style.display = 'none';
+      });
+      const isOpen = popup.style.display === 'block';
+      popup.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) {
+        filterInput.value = '';
+        renderOptions();
+        filterInput.focus();
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) {
+        popup.style.display = 'none';
+      }
+    });
+
+    wrapper.appendChild(popup);
+    return wrapper;
+  }
+
   // Toast notification
   function toast(message, type = 'info') {
     let container = document.getElementById('toast-container');
@@ -437,6 +680,7 @@ const Utils = (() => {
     getMultOptions,
     getCoaxOptions,
     createFilterDropdown,
+    createDarkDropdown,
     syncToFiberTac,
     syncToCoaxMult,
     sectionHeader,

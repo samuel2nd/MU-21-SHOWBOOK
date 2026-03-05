@@ -323,71 +323,55 @@ const TxPgmGfxTab = (() => {
     return td;
   }
 
-  // Helper: audio source dropdown
+  // Helper: audio source dropdown (dark)
   function createAudioSourceCell(row, key, rowIdx, storePath) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
-    (Store.data.sheet8.audioSources || []).forEach(src => {
-      const opt = document.createElement('option');
-      opt.value = src;
-      opt.textContent = src;
-      if (row[key] === src) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    if (row[key] && !(Store.data.sheet8.audioSources || []).includes(row[key])) {
-      const orphanOpt = document.createElement('option');
-      orphanOpt.value = row[key];
-      orphanOpt.textContent = row[key];
-      orphanOpt.selected = true;
-      sel.insertBefore(orphanOpt, sel.children[1]);
+    const sources = Store.data.sheet8.audioSources || [];
+    const options = [{ value: '', label: '--' }];
+    // Add orphan if current value isn't in list
+    if (row[key] && !sources.includes(row[key])) {
+      options.push({ value: row[key], label: row[key] });
     }
-    sel.addEventListener('change', () => {
-      row[key] = sel.value;
-      Store.set(`${storePath}.${rowIdx}.${key}`, sel.value);
+    sources.forEach(src => {
+      options.push({ value: src, label: src });
     });
-    td.appendChild(sel);
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      row[key] = val;
+      Store.set(`${storePath}.${rowIdx}.${key}`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: framesync dropdown
+  // Helper: framesync dropdown (dark)
   function createFramesyncCell(row, rowIdx) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
+    const options = [{ value: '', label: '--' }];
     getFsOptions().forEach(fs => {
-      const opt = document.createElement('option');
-      opt.value = fs;
-      opt.textContent = fs;
-      if (row.framesync === fs) opt.selected = true;
-      sel.appendChild(opt);
+      options.push({ value: fs, label: fs });
     });
-    sel.addEventListener('change', () => {
-      row.framesync = sel.value;
-      Store.set(`txPgmGfx.tx.${rowIdx}.framesync`, sel.value);
-      syncToFsy(sel.value, row);
-    });
-    td.appendChild(sel);
+    const dropdown = Utils.createDarkDropdown(options, row.framesync || '', (val) => {
+      row.framesync = val;
+      Store.set(`txPgmGfx.tx.${rowIdx}.framesync`, val);
+      syncToFsy(val, row);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: output format dropdown
+  // Helper: output format dropdown (dark)
   function createOutputFormatCell(row, key, rowIdx, storePath) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
-    (Store.data.sheet8.videoFormats || []).forEach(fmt => {
-      const opt = document.createElement('option');
-      opt.value = fmt;
-      opt.textContent = fmt;
-      if (row[key] === fmt) opt.selected = true;
-      sel.appendChild(opt);
+    const formats = Store.data.sheet8.videoFormats || [];
+    const options = [{ value: '', label: '--' }];
+    formats.forEach(fmt => {
+      options.push({ value: fmt, label: fmt });
     });
-    sel.addEventListener('change', () => {
-      row[key] = sel.value;
-      Store.set(`${storePath}.${rowIdx}.${key}`, sel.value);
-    });
-    td.appendChild(sel);
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      row[key] = val;
+      Store.set(`${storePath}.${rowIdx}.${key}`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 

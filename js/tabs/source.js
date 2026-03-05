@@ -138,9 +138,15 @@ const SourceTab = (() => {
     nameEnd.max = '80';
     nameEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
-    const nameColSelect = document.createElement('select');
-    nameColSelect.style.cssText = 'padding:4px 6px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
-    nameColSelect.innerHTML = '<option value="showName">Show</option><option value="umdName">UMD</option><option value="both">Both</option>';
+    let nameColValue = 'showName';
+    const nameColOptions = [
+      { value: 'showName', label: 'Show' },
+      { value: 'umdName', label: 'UMD' },
+      { value: 'both', label: 'Both' }
+    ];
+    const nameColSelect = Utils.createDarkDropdown(nameColOptions, nameColValue, (val) => {
+      nameColValue = val;
+    }, { placeholder: 'Show', width: '70px' });
 
     const nameBtn = document.createElement('button');
     nameBtn.className = 'btn btn-primary';
@@ -176,7 +182,7 @@ const SourceTab = (() => {
 
       const startRow = Math.max(1, Math.min(80, parseInt(nameStart.value) || 1));
       const endRow = Math.max(startRow, Math.min(80, parseInt(nameEnd.value) || startRow));
-      const col = nameColSelect.value;
+      const col = nameColValue;
 
       let num = 1;
       for (let i = startRow - 1; i < endRow; i++) {
@@ -205,15 +211,15 @@ const SourceTab = (() => {
     const engRow = document.createElement('div');
     engRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
 
-    const engSelect = document.createElement('select');
-    engSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
-    engSelect.innerHTML = '<option value="">Start device...</option>';
+    let engSelectValue = '';
+    const engOptions = [{ value: '', label: 'Start device...' }];
     allDevices.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = d;
-      engSelect.appendChild(opt);
+      engOptions.push({ value: d, label: d });
     });
+    const engSelect = Utils.createDarkDropdown(engOptions, engSelectValue, (val) => {
+      engSelectValue = val;
+      updateEngPreview();
+    }, { placeholder: 'Start device...', width: '140px' });
 
     const engCount = document.createElement('input');
     engCount.type = 'number';
@@ -259,7 +265,7 @@ const SourceTab = (() => {
 
     // Update eng preview
     const updateEngPreview = () => {
-      const device = engSelect.value;
+      const device = engSelectValue;
       const count = parseInt(engCount.value) || 1;
       if (!device) {
         engPreview.textContent = 'Select a device to see sequence';
@@ -271,12 +277,11 @@ const SourceTab = (() => {
         engPreview.textContent += ` (${seq.length} found)`;
       }
     };
-    engSelect.addEventListener('change', updateEngPreview);
     engCount.addEventListener('input', updateEngPreview);
 
     // Fill handler
     engBtn.addEventListener('click', () => {
-      const device = engSelect.value;
+      const device = engSelectValue;
       if (!device) { Utils.toast('Select a starting device', 'warn'); return; }
 
       const count = parseInt(engCount.value) || 1;
@@ -310,15 +315,14 @@ const SourceTab = (() => {
     const audioRow = document.createElement('div');
     audioRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
 
-    const audioSelect = document.createElement('select');
-    audioSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
-    audioSelect.innerHTML = '<option value="">Select...</option>';
+    let audioSelectValue = '';
+    const audioSelectOptions = [{ value: '', label: 'Select...' }];
     audioSources.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = s;
-      audioSelect.appendChild(opt);
+      audioSelectOptions.push({ value: s, label: s });
     });
+    const audioSelect = Utils.createDarkDropdown(audioSelectOptions, audioSelectValue, (val) => {
+      audioSelectValue = val;
+    }, { placeholder: 'Select...', width: '140px' });
 
     const audioStart = document.createElement('input');
     audioStart.type = 'number';
@@ -357,7 +361,7 @@ const SourceTab = (() => {
 
     // Fill handler
     audioBtn.addEventListener('click', () => {
-      const source = audioSelect.value;
+      const source = audioSelectValue;
       if (!source) { Utils.toast('Select an audio source', 'warn'); return; }
 
       const startRow = Math.max(1, Math.min(80, parseInt(audioStart.value) || 1));
@@ -524,30 +528,22 @@ const SourceTab = (() => {
       tdEng.appendChild(dl);
       tr.appendChild(tdEng);
 
-      // Audio Source dropdown from Sheet8 (lookup happens in RTR I/O Master)
+      // Audio Source dropdown (dark) from Sheet8
       const tdAudio = document.createElement('td');
-      const selAudio = document.createElement('select');
-      selAudio.innerHTML = '<option value="">--</option>';
-      (Store.data.sheet8.audioSources || []).forEach(src => {
-        const opt = document.createElement('option');
-        opt.value = src;
-        opt.textContent = src;
-        if (rowData.audioSource === src) opt.selected = true;
-        selAudio.appendChild(opt);
-      });
-      // If current value not in list, add it so it's preserved
-      if (rowData.audioSource && !(Store.data.sheet8.audioSources || []).includes(rowData.audioSource)) {
-        const orphanOpt = document.createElement('option');
-        orphanOpt.value = rowData.audioSource;
-        orphanOpt.textContent = rowData.audioSource;
-        orphanOpt.selected = true;
-        selAudio.insertBefore(orphanOpt, selAudio.children[1]);
+      const audioSources = Store.data.sheet8.audioSources || [];
+      const audioOptions = [{ value: '', label: '--' }];
+      // Add orphan if current value isn't in list
+      if (rowData.audioSource && !audioSources.includes(rowData.audioSource)) {
+        audioOptions.push({ value: rowData.audioSource, label: rowData.audioSource });
       }
-      selAudio.addEventListener('change', () => {
-        rowData.audioSource = selAudio.value;
-        Store.set(`sources.${globalIdx}.audioSource`, selAudio.value);
+      audioSources.forEach(src => {
+        audioOptions.push({ value: src, label: src });
       });
-      tdAudio.appendChild(selAudio);
+      const audioDropdown = Utils.createDarkDropdown(audioOptions, rowData.audioSource || '', (val) => {
+        rowData.audioSource = val;
+        Store.set(`sources.${globalIdx}.audioSource`, val);
+      }, { placeholder: '--' });
+      tdAudio.appendChild(audioDropdown);
       tr.appendChild(tdAudio);
 
       tbody.appendChild(tr);

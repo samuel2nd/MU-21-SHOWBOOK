@@ -203,23 +203,19 @@ const CcuFsyTab = (() => {
     return td;
   }
 
-  // Helper: Format dropdown
+  // Helper: Format dropdown (dark)
   function makeFormatDropdown(row, idx) {
     const td = document.createElement('td');
-    const sel = document.createElement('select');
-    sel.innerHTML = '<option value="">--</option>';
-    (Store.data.sheet8.videoFormats || []).forEach(fmt => {
-      const opt = document.createElement('option');
-      opt.value = fmt;
-      opt.textContent = fmt;
-      if (row.format === fmt) opt.selected = true;
-      sel.appendChild(opt);
+    const formats = Store.data.sheet8.videoFormats || [];
+    const options = [{ value: '', label: '--' }];
+    formats.forEach(fmt => {
+      options.push({ value: fmt, label: fmt });
     });
-    sel.addEventListener('change', () => {
-      row.format = sel.value;
-      Store.set(`ccuFsy.fsy.${idx}.format`, sel.value);
-    });
-    td.appendChild(sel);
+    const dropdown = Utils.createDarkDropdown(options, row.format || '', (val) => {
+      row.format = val;
+      Store.set(`ccuFsy.fsy.${idx}.format`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
