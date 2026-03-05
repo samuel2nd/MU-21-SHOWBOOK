@@ -134,13 +134,29 @@ const MonitorsTab = (() => {
     },
   };
 
-  // Ensure prodDigital data exists (initialize if needed)
+  // Ensure prodDigital data exists and has card 26 MVs
   function ensureProdDigitalData() {
     if (!Store.data.prodDigital) {
       // Initialize from ProdDigitalTab if available, otherwise create basic structure
       if (typeof ProdDigitalTab !== 'undefined' && ProdDigitalTab.getDefaultProdDigitalData) {
         Store.data.prodDigital = ProdDigitalTab.getDefaultProdDigitalData();
         Store.save();
+      }
+    } else if (Store.data.prodDigital.multiviewers) {
+      // Ensure card 26 MVs exist (32x4 MV for VIDEO position)
+      const has26 = Store.data.prodDigital.multiviewers.some(m => m.cardId === 26);
+      if (!has26) {
+        for (let output = 1; output <= 4; output++) {
+          Store.data.prodDigital.multiviewers.push({
+            id: `26-${output}`,
+            cardId: 26,
+            side: output,
+            layout: '9_SPLIT',
+            inputs: Array(9).fill(''),
+          });
+        }
+        Store.save();
+        console.log('[Monitors] Added MV card 26 (32x4 VIDEO MV)');
       }
     }
   }
