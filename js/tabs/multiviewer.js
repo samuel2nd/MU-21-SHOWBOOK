@@ -506,7 +506,7 @@ const MultiviewerTab = (() => {
 
     const multiviewers = Store.data.prodDigital.multiviewers;
 
-    // Group by card (1-22)
+    // Group by card (1-22, plus card 26 for VIDEO)
     const cards = {};
     multiviewers.forEach((mv, idx) => {
       const cardId = mv.cardId;
@@ -574,7 +574,7 @@ const MultiviewerTab = (() => {
 
     // Check other walls
     if (Store.data.monitorWallsV2) {
-      const wallNames = { 'p2p3': 'P2-P3', 'evs': 'EVS', 'aud': 'AUD' };
+      const wallNames = { 'p2p3': 'P2-P3', 'evs': 'EVS', 'aud': 'AUD', 'video': 'VIDEO' };
       Object.entries(Store.data.monitorWallsV2).forEach(([wallKey, wallData]) => {
         if (wallData.monitors) {
           wallData.monitors.forEach(mon => {

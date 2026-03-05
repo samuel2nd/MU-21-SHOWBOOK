@@ -332,6 +332,24 @@ const ProdDigitalTab = (() => {
       });
     }
 
+    // Ensure card 26 MVs exist (32x4 MV for VIDEO position - 4 outputs)
+    if (data.multiviewers) {
+      const has26 = data.multiviewers.some(m => m.cardId === 26);
+      if (!has26) {
+        for (let output = 1; output <= 4; output++) {
+          data.multiviewers.push({
+            id: `26-${output}`,
+            cardId: 26,
+            side: output,
+            layout: '9_SPLIT',
+            inputs: Array(9).fill(''),
+          });
+        }
+        needsSave = true;
+        console.log('[ProdDigital] Added MV card 26 (32x4 VIDEO MV)');
+      }
+    }
+
     return needsSave;
   }
 
