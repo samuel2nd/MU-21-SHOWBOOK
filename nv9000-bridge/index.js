@@ -22,7 +22,7 @@ const PORT = 3003;
 
 // Default NV9000 settings (local to engineering computer)
 const NV9000_BASE_URL = process.env.NV9000_URL || 'http://localhost';
-const NV9000_DISPATCH_PATH = '/nv9000status/dispatch';
+const NV9000_DISPATCH_PATH = '/dispatch/SendTake';
 
 // GWT-RPC constants from Wireshark capture
 const GWT_RPC = {
@@ -43,26 +43,29 @@ app.use(express.json());
 
 /**
  * Build a GWT-RPC SendTake packet
+ * @param {string} baseUrl - NV9000 base URL (e.g., http://localhost)
  * @param {number} sourceId - NV9000 source ID (1-288)
  * @param {number} destinationId - NV9000 destination ID (289+)
  * @returns {string} - GWT-RPC payload string
  */
-function buildSendTakePacket(sourceId, destinationId) {
-  // GWT-RPC format from Wireshark capture of NV9000 Web GUI
-  // The packet structure uses a string table with indices
+function buildSendTakePacket(baseUrl, sourceId, destinationId) {
+  // GWT-RPC format captured from NV9000 Web GUI
+  // Format: VERSION|FLAGS|STRING_COUNT|string_table...|payload_data...
   const parts = [
-    GWT_RPC.moduleBase,
-    GWT_RPC.strongName,
-    GWT_RPC.service,
-    GWT_RPC.method,
-    'java.lang.String/2004016611',
-    'com.gwtplatform.dispatch.shared.Action',
-    'nv.gwt.actions.SendTakeAction/943856818',
-    'java.util.HashMap/1797211028',
-    'java.lang.Integer/3438268394',
-    // String table indices and data
+    '7',                                              // GWT-RPC version
+    '0',                                              // flags
+    '9',                                              // string table count
+    `${baseUrl}/${GWT_RPC.moduleBase}`,               // 1: module base URL
+    GWT_RPC.strongName,                               // 2: permutation strong name
+    GWT_RPC.service,                                  // 3: service class
+    GWT_RPC.method,                                   // 4: method name
+    'java.lang.String/2004016611',                    // 5: String type
+    'com.gwtplatform.dispatch.shared.Action',         // 6: Action interface
+    'nv.gwt.actions.SendTakeAction/943856818',        // 7: SendTake action class
+    'java.util.HashMap/1797211028',                   // 8: HashMap type
+    'java.lang.Integer/3438268394',                   // 9: Integer type
+    // Payload: string table indices then route data
     '1', '2', '3', '4', '2', '5', '6', '0',
-    // Route data: 7|{DEST}|8|1|9|-1|-3|{SRC}|1|
     '7', String(destinationId),
     '8', '1',
     '9', '-1', '-3', String(sourceId), '1'
@@ -112,7 +115,8 @@ app.get('/test-nv9000', async (req, res) => {
 app.get('/debug-packet', (req, res) => {
   const source = parseInt(req.query.source) || 1;
   const destination = parseInt(req.query.destination) || 289;
-  const packet = buildSendTakePacket(source, destination);
+  const baseUrl = req.query.nv9000Url || NV9000_BASE_URL;
+  const packet = buildSendTakePacket(baseUrl, source, destination);
 
   res.json({
     source,
@@ -197,7 +201,7 @@ app.post('/route-batch', async (req, res) => {
 // ============================================================
 
 async function sendRoute(baseUrl, sourceId, destinationId) {
-  const packet = buildSendTakePacket(sourceId, destinationId);
+  const packet = buildSendTakePacket(baseUrl, sourceId, destinationId);
   const url = `${baseUrl}${NV9000_DISPATCH_PATH}`;
 
   console.log(`ROUTE [${sourceId}] -> [${destinationId}] @ ${baseUrl}`);

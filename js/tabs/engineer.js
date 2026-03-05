@@ -176,11 +176,17 @@ const EngineerTab = (() => {
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
         <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input id="nv9000-test-source" type="text" placeholder="Source (e.g., CCU 01)"
-                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <div style="position:relative;">
+            <input id="nv9000-test-source" type="text" placeholder="Source..." autocomplete="off"
+                   style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <div id="nv9000-source-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+          </div>
           <span style="color:var(--text-muted);">→</span>
-          <input id="nv9000-test-dest" type="text" placeholder="Dest (e.g., MV 1-1)"
-                 style="width:140px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <div style="position:relative;">
+            <input id="nv9000-test-dest" type="text" placeholder="Destination..." autocomplete="off"
+                   style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <div id="nv9000-dest-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+          </div>
           <button id="btn-nv9000-test-route" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Execute Route</button>
           <span id="nv9000-route-result" style="font-size:10px;color:var(--text-muted);"></span>
         </div>
@@ -465,10 +471,90 @@ const EngineerTab = (() => {
     const testRouterBtn = document.getElementById('btn-nv9000-test-router');
     const testSourceInput = document.getElementById('nv9000-test-source');
     const testDestInput = document.getElementById('nv9000-test-dest');
+    const sourceDropdown = document.getElementById('nv9000-source-dropdown');
+    const destDropdown = document.getElementById('nv9000-dest-dropdown');
     const testRouteBtn = document.getElementById('btn-nv9000-test-route');
     const routeResultEl = document.getElementById('nv9000-route-result');
 
     if (!statusEl) return;
+
+    // Get sources from rtrMaster and destinations from rtrOutputs
+    const sources = (Store.data.rtrMaster || []).map(d => d.deviceName).filter(n => n);
+    const destinations = (Store.data.rtrOutputs || []).map(d => d.deviceName).filter(n => n);
+
+    // Setup filtered dropdown for an input
+    function setupFilteredDropdown(input, dropdown, items, onSelect) {
+      let selectedIndex = -1;
+
+      function showDropdown(filter = '') {
+        const filterLower = filter.toLowerCase();
+        const filtered = items.filter(item => item.toLowerCase().includes(filterLower)).slice(0, 50);
+
+        if (filtered.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        dropdown.innerHTML = '';
+        filtered.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.textContent = item;
+          div.style.cssText = 'padding:4px 8px;font-size:11px;cursor:pointer;';
+          div.addEventListener('mouseenter', () => {
+            div.style.background = 'var(--bg-tertiary)';
+          });
+          div.addEventListener('mouseleave', () => {
+            div.style.background = idx === selectedIndex ? 'var(--bg-tertiary)' : '';
+          });
+          div.addEventListener('click', () => {
+            input.value = item;
+            dropdown.style.display = 'none';
+            if (onSelect) onSelect(item);
+          });
+          dropdown.appendChild(div);
+        });
+        dropdown.style.display = 'block';
+        selectedIndex = -1;
+      }
+
+      function hideDropdown() {
+        setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+      }
+
+      input.addEventListener('focus', () => showDropdown(input.value));
+      input.addEventListener('input', () => showDropdown(input.value));
+      input.addEventListener('blur', hideDropdown);
+
+      input.addEventListener('keydown', (e) => {
+        const children = dropdown.children;
+        if (dropdown.style.display === 'none' || children.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, children.length - 1);
+          Array.from(children).forEach((c, i) => c.style.background = i === selectedIndex ? 'var(--bg-tertiary)' : '');
+          children[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, 0);
+          Array.from(children).forEach((c, i) => c.style.background = i === selectedIndex ? 'var(--bg-tertiary)' : '');
+          children[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedIndex >= 0 && children[selectedIndex]) {
+            input.value = children[selectedIndex].textContent;
+            dropdown.style.display = 'none';
+            if (onSelect) onSelect(input.value);
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+        }
+      });
+    }
+
+    // Initialize dropdowns
+    setupFilteredDropdown(testSourceInput, sourceDropdown, sources);
+    setupFilteredDropdown(testDestInput, destDropdown, destinations);
 
     // Check bridge connection status
     async function updateBridgeStatus() {
