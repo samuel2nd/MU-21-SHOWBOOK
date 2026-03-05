@@ -301,78 +301,42 @@ const VideoIoTab = (() => {
     const assignmentRow = document.createElement('div');
     assignmentRow.style.cssText = 'display:flex;align-items:center;gap:16px;margin-bottom:8px;padding:8px;background:var(--bg-secondary);border-radius:4px;';
 
-    // TAC dropdown with filter
+    // TAC dropdown (dark)
     const tacGroup = document.createElement('div');
     tacGroup.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const tacLabel = document.createElement('label');
     tacLabel.textContent = 'TAC:';
     tacLabel.style.cssText = 'font-size:12px;color:var(--text-secondary);';
-    const tacInput = document.createElement('input');
-    tacInput.type = 'text';
-    tacInput.value = data.tac || '';
-    tacInput.placeholder = 'TAC';
-    tacInput.style.cssText = 'width:80px;padding:4px 8px;';
-    const tacDlId = `jfsmux-tac-${storePath}`;
-    tacInput.setAttribute('list', tacDlId);
-    const tacDl = document.createElement('datalist');
-    tacDl.id = tacDlId;
-    Utils.getTacOptions().forEach(tac => {
-      const opt = document.createElement('option');
-      opt.value = tac;
-      tacDl.appendChild(opt);
-    });
-    tacInput.addEventListener('change', () => {
-      data.tac = tacInput.value;
-      Store.set(`videoIo.${storePath}.tac`, tacInput.value);
-      // Sync to FIBER TAC
+    const tacOptions = [{ value: '', label: '--' }];
+    Utils.getTacOptions().forEach(tac => tacOptions.push({ value: tac, label: tac }));
+    const tacDropdown = Utils.createDarkDropdown(tacOptions, data.tac || '', (val) => {
+      data.tac = val;
+      Store.set(`videoIo.${storePath}.tac`, val);
       if (data.tac && data.fibA) {
-        Utils.syncToFiberTac(data.tac, data.fibA, {
-          type: 'JFS',
-          unit: storePath === 'jfsMux1' ? 1 : 2,
-          dest: ''
-        });
+        Utils.syncToFiberTac(data.tac, data.fibA, { type: 'JFS', unit: storePath === 'jfsMux1' ? 1 : 2, dest: '' });
       }
-    });
+    }, { placeholder: '--', width: '80px' });
     tacGroup.appendChild(tacLabel);
-    tacGroup.appendChild(tacInput);
-    tacGroup.appendChild(tacDl);
+    tacGroup.appendChild(tacDropdown);
     assignmentRow.appendChild(tacGroup);
 
-    // FIB-A dropdown with filter
+    // FIB-A dropdown (dark)
     const fibGroup = document.createElement('div');
     fibGroup.style.cssText = 'display:flex;align-items:center;gap:6px;';
     const fibLabel = document.createElement('label');
     fibLabel.textContent = 'FIB-A:';
     fibLabel.style.cssText = 'font-size:12px;color:var(--text-secondary);';
-    const fibInput = document.createElement('input');
-    fibInput.type = 'text';
-    fibInput.value = data.fibA || '';
-    fibInput.placeholder = '1-24';
-    fibInput.style.cssText = 'width:60px;padding:4px 8px;';
-    const fibDlId = `jfsmux-fib-${storePath}`;
-    fibInput.setAttribute('list', fibDlId);
-    const fibDl = document.createElement('datalist');
-    fibDl.id = fibDlId;
-    Utils.getFiberStrandOptions().forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      fibDl.appendChild(opt);
-    });
-    fibInput.addEventListener('change', () => {
-      data.fibA = fibInput.value;
-      Store.set(`videoIo.${storePath}.fibA`, fibInput.value);
-      // Sync to FIBER TAC
+    const fibOptions = [{ value: '', label: '--' }];
+    Utils.getFiberStrandOptions().forEach(s => fibOptions.push({ value: s, label: s }));
+    const fibDropdown = Utils.createDarkDropdown(fibOptions, data.fibA || '', (val) => {
+      data.fibA = val;
+      Store.set(`videoIo.${storePath}.fibA`, val);
       if (data.tac && data.fibA) {
-        Utils.syncToFiberTac(data.tac, data.fibA, {
-          type: 'JFS',
-          unit: storePath === 'jfsMux1' ? 1 : 2,
-          dest: ''
-        });
+        Utils.syncToFiberTac(data.tac, data.fibA, { type: 'JFS', unit: storePath === 'jfsMux1' ? 1 : 2, dest: '' });
       }
-    });
+    }, { placeholder: '--', width: '60px' });
     fibGroup.appendChild(fibLabel);
-    fibGroup.appendChild(fibInput);
-    fibGroup.appendChild(fibDl);
+    fibGroup.appendChild(fibDropdown);
     assignmentRow.appendChild(fibGroup);
 
     parent.appendChild(assignmentRow);
@@ -438,64 +402,60 @@ const VideoIoTab = (() => {
   // Helper for JFS MUX inputs (different store path)
   function makeJfsMuxInput(row, idx, storePath, key, placeholder = '') {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = placeholder;
     if (key === 'source') {
-      const dlId = `jfsmux-${storePath}-${idx}-${key}`;
-      inp.setAttribute('list', dlId);
-      const dl = document.createElement('datalist');
-      dl.id = dlId;
-      Utils.getDeviceOptions().forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o.value;
-        dl.appendChild(opt);
+      const deviceOpts = Utils.getDeviceOptions();
+      const options = [{ value: '', label: '--' }];
+      const validDevices = new Set(deviceOpts.map(o => o.value));
+      if (row[key] && !validDevices.has(row[key])) {
+        options.push({ value: row[key], label: row[key] });
+      }
+      deviceOpts.forEach(o => options.push({ value: o.value, label: o.label || o.value }));
+      const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+        row[key] = val;
+        Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, val);
+      }, { placeholder: '--' });
+      td.appendChild(dropdown);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = row[key] || '';
+      inp.placeholder = placeholder;
+      inp.addEventListener('change', () => {
+        row[key] = inp.value;
+        Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, inp.value);
       });
-      td.appendChild(dl);
+      td.appendChild(inp);
     }
-    inp.addEventListener('change', () => {
-      row[key] = inp.value;
-      Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, inp.value);
-    });
-    td.appendChild(inp);
     return td;
   }
 
-  // Helper: Source input with datalist (filterable) - uses RTR I/O MASTER devices
+  // Helper: Source input (dark dropdown) - uses RTR I/O MASTER devices
   function makeSourceInput(row, idx, section, key) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = '';
-    const dlId = `videoio-${section}-${idx}-${key}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
-    Utils.getDeviceOptions().forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.value;
-      dl.appendChild(opt);
+    const deviceOpts = Utils.getDeviceOptions();
+    const options = [{ value: '', label: '--' }];
+    const validDevices = new Set(deviceOpts.map(o => o.value));
+    if (row[key] && !validDevices.has(row[key])) {
+      options.push({ value: row[key], label: row[key] });
+    }
+    deviceOpts.forEach(o => {
+      options.push({ value: o.value, label: o.label || o.value });
     });
-    inp.addEventListener('change', async () => {
-      row[key] = inp.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-
-      // Trigger NV9000 route if source and destination are set
-      if (key === 'source' && inp.value && row.destination) {
-        const result = await NV9000Client.handleRoute(inp.value, row.destination, 'videoio');
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', async (val) => {
+      row[key] = val;
+      Store.set(`videoIo.${section}.${idx}.${key}`, val);
+      if (key === 'source' && val && row.destination) {
+        const result = await NV9000Client.handleRoute(val, row.destination, 'videoio');
         if (result.success) {
           if (result.staged) {
-            Utils.toast(`Staged: ${inp.value} → ${row.destination}`, 'info');
+            Utils.toast(`Staged: ${val} → ${row.destination}`, 'info');
           } else {
-            Utils.toast(`Routed: ${inp.value} → ${row.destination}`, 'success');
+            Utils.toast(`Routed: ${val} → ${row.destination}`, 'success');
           }
         }
       }
-    });
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
@@ -514,149 +474,78 @@ const VideoIoTab = (() => {
     return td;
   }
 
-  // Helper: TAC dropdown with filter and sync
+  // Helper: TAC dropdown (dark)
   function makeTacSelect(row, idx, section, key) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = 'TAC';
-    inp.style.width = '100%';
-
-    const dlId = `tac-${section}-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getTacOptions().forEach(tac => {
-      const opt = document.createElement('option');
-      opt.value = tac;
-      dl.appendChild(opt);
+      options.push({ value: tac, label: tac });
     });
-
-    inp.addEventListener('change', () => {
-      // Clear old assignment first
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
       Utils.syncToFiberTac(null, null, { type: 'RTR', rtrRow: row.row, clear: true });
-
-      row[key] = inp.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-
-      // Sync new assignment if both TAC and FIB-A are set
+      row[key] = val;
+      Store.set(`videoIo.${section}.${idx}.${key}`, val);
       if (row.tac && row.fibA) {
         Utils.syncToFiberTac(row.tac, row.fibA, {
-          type: 'RTR', rtrRow: row.row,
-          source: row.source || '', dest: row.destination || ''
+          type: 'RTR', rtrRow: row.row, source: row.source || '', dest: row.destination || ''
         });
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: FIB-A dropdown with filter and sync
-  function makeFibInput(row, idx, section, key, placeholder = 'Strand') {
+  // Helper: FIB-A dropdown (dark)
+  function makeFibInput(row, idx, section, key) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = placeholder;
-    inp.style.width = '100%';
-
-    const dlId = `fib-${section}-${idx}-${key}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getFiberStrandOptions().forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      dl.appendChild(opt);
+      options.push({ value: s, label: s });
     });
-
-    inp.addEventListener('change', () => {
-      // Clear old assignment first
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
       Utils.syncToFiberTac(null, null, { type: 'RTR', rtrRow: row.row, clear: true });
-
-      row[key] = inp.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-
-      // Sync new assignment if both TAC and this FIB are set
-      if (row.tac && inp.value) {
-        Utils.syncToFiberTac(row.tac, inp.value, {
-          type: 'RTR', rtrRow: row.row,
-          source: row.source || '', dest: row.destination || ''
+      row[key] = val;
+      Store.set(`videoIo.${section}.${idx}.${key}`, val);
+      if (row.tac && val) {
+        Utils.syncToFiberTac(row.tac, val, {
+          type: 'RTR', rtrRow: row.row, source: row.source || '', dest: row.destination || ''
         });
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: MULT dropdown with filter and sync
-  function makeMultInput(row, idx, section, key, placeholder = 'Mult') {
+  // Helper: MULT dropdown (dark)
+  function makeMultInput(row, idx, section, key) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = placeholder;
-    inp.style.width = '100%';
-
-    const dlId = `mult-${section}-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getMultOptions().forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m;
-      dl.appendChild(opt);
+      options.push({ value: m, label: m });
     });
-
-    inp.addEventListener('change', () => {
-      row[key] = inp.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-      // Sync to COAX MULTS with detailed info
-      if (inp.value) {
-        Utils.syncToCoaxMult(inp.value, {
-          type: 'RTR',
-          rtrRow: row.row,
-          source: row.source || ''
-        });
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      row[key] = val;
+      Store.set(`videoIo.${section}.${idx}.${key}`, val);
+      if (val) {
+        Utils.syncToCoaxMult(val, { type: 'RTR', rtrRow: row.row, source: row.source || '' });
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: COAX dropdown with filter
-  function makeCoaxInput(row, idx, section, key, placeholder = 'Coax #') {
+  // Helper: COAX dropdown (dark)
+  function makeCoaxInput(row, idx, section, key) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = placeholder;
-    inp.style.width = '100%';
-
-    const dlId = `coax-${section}-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getCoaxOptions().forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      dl.appendChild(opt);
+      options.push({ value: c, label: c });
     });
-
-    inp.addEventListener('change', () => {
-      row[key] = inp.value;
-      Store.set(`videoIo.${section}.${idx}.${key}`, inp.value);
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      row[key] = val;
+      Store.set(`videoIo.${section}.${idx}.${key}`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 

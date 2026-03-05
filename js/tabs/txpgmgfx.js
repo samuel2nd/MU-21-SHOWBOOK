@@ -296,30 +296,24 @@ const TxPgmGfxTab = (() => {
     return td;
   }
 
-  // Helper: device select (ENG SOURCE)
+  // Helper: device select (ENG SOURCE) - dark dropdown
   function createDeviceSelectCell(row, key, rowIdx, storePath) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = '--';
-
-    const dlId = `dev-${storePath.replace(/\./g, '-')}-${rowIdx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
-    Utils.getDeviceOptions().forEach(o => {
-      const opt = document.createElement('option');
-      opt.value = o.value || o;
-      dl.appendChild(opt);
+    const deviceOpts = Utils.getDeviceOptions();
+    const options = [{ value: '', label: '--' }];
+    // Add orphan if current value isn't in list
+    const validDevices = new Set(deviceOpts.map(o => o.value));
+    if (row[key] && !validDevices.has(row[key])) {
+      options.push({ value: row[key], label: row[key] });
+    }
+    deviceOpts.forEach(o => {
+      options.push({ value: o.value, label: o.label || o.value });
     });
-
-    inp.addEventListener('change', () => {
-      row[key] = inp.value;
-      Store.set(`${storePath}.${rowIdx}.${key}`, inp.value);
-    });
-    td.appendChild(inp);
-    td.appendChild(dl);
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      row[key] = val;
+      Store.set(`${storePath}.${rowIdx}.${key}`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 

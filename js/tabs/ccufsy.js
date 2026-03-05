@@ -224,180 +224,98 @@ const CcuFsyTab = (() => {
     return Formulas.getSourceNamesForDevice(deviceName) || '';
   }
 
-  // Helper: TAC dropdown with filter
+  // Helper: TAC dropdown (dark)
   function makeTacDropdown(row, idx, deviceName, section = 'ccu') {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row.tac || '';
-    inp.placeholder = 'TAC';
-    inp.style.width = '100%';
-
-    const dlId = `tac-${section}-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getTacOptions().forEach(tac => {
-      const opt = document.createElement('option');
-      opt.value = tac;
-      dl.appendChild(opt);
+      options.push({ value: tac, label: tac });
     });
-
-    inp.addEventListener('change', () => {
+    const dropdown = Utils.createDarkDropdown(options, row.tac || '', (val) => {
       const showName = getShowNameForDevice(deviceName);
-
-      // Clear old assignments first (by syncing with clear flag)
       if (section === 'ccu') {
         Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: 'A', clear: true });
         Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: 'B', clear: true });
       } else {
         Utils.syncToFiberTac(null, null, { type: 'FSY', unit: row.unit, clear: true });
       }
-
-      row.tac = inp.value;
-      Store.set(`ccuFsy.${section}.${idx}.tac`, inp.value);
-
-      // Sync new assignment if both TAC and FIB-A are set
+      row.tac = val;
+      Store.set(`ccuFsy.${section}.${idx}.tac`, val);
       if (row.tac && row.fibA) {
         if (section === 'ccu') {
-          Utils.syncToFiberTac(row.tac, row.fibA, {
-            type: 'CCU', unit: row.unit, fibSide: 'A', showName: showName
-          });
+          Utils.syncToFiberTac(row.tac, row.fibA, { type: 'CCU', unit: row.unit, fibSide: 'A', showName: showName });
         } else {
-          Utils.syncToFiberTac(row.tac, row.fibA, {
-            type: 'FSY', unit: row.unit, showName: showName
-          });
+          Utils.syncToFiberTac(row.tac, row.fibA, { type: 'FSY', unit: row.unit, showName: showName });
         }
       }
-      // Also sync FIB-B for CCU if set
       if (section === 'ccu' && row.tac && row.fibB) {
-        Utils.syncToFiberTac(row.tac, row.fibB, {
-          type: 'CCU', unit: row.unit, fibSide: 'B', showName: showName
-        });
+        Utils.syncToFiberTac(row.tac, row.fibB, { type: 'CCU', unit: row.unit, fibSide: 'B', showName: showName });
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: FIB dropdown with filter
+  // Helper: FIB dropdown (dark)
   function makeFibDropdown(row, idx, key, deviceName, section = 'ccu') {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row[key] || '';
-    inp.placeholder = '1-24';
-    inp.style.width = '100%';
-
-    const dlId = `fib-${section}-${idx}-${key}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getFiberStrandOptions().forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      dl.appendChild(opt);
+      options.push({ value: s, label: s });
     });
-
-    inp.addEventListener('change', () => {
+    const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
       const showName = getShowNameForDevice(deviceName);
       const fibSide = key === 'fibA' ? 'A' : 'B';
-
-      // Clear old assignment first
       if (section === 'ccu') {
         Utils.syncToFiberTac(null, null, { type: 'CCU', unit: row.unit, fibSide: fibSide, clear: true });
       } else {
         Utils.syncToFiberTac(null, null, { type: 'FSY', unit: row.unit, clear: true });
       }
-
-      row[key] = inp.value;
-      Store.set(`ccuFsy.${section}.${idx}.${key}`, inp.value);
-
-      // Sync new assignment if both TAC and this FIB are set
-      if (row.tac && inp.value) {
+      row[key] = val;
+      Store.set(`ccuFsy.${section}.${idx}.${key}`, val);
+      if (row.tac && val) {
         if (section === 'ccu') {
-          Utils.syncToFiberTac(row.tac, inp.value, {
-            type: 'CCU', unit: row.unit, fibSide: fibSide, showName: showName
-          });
+          Utils.syncToFiberTac(row.tac, val, { type: 'CCU', unit: row.unit, fibSide: fibSide, showName: showName });
         } else {
-          Utils.syncToFiberTac(row.tac, inp.value, {
-            type: 'FSY', unit: row.unit, showName: showName
-          });
+          Utils.syncToFiberTac(row.tac, val, { type: 'FSY', unit: row.unit, showName: showName });
         }
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: MULT dropdown with filter and sync
+  // Helper: MULT dropdown (dark)
   function makeMultDropdown(row, idx, deviceName) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row.mult || '';
-    inp.placeholder = '1-40';
-    inp.style.width = '100%';
-
-    const dlId = `mult-fsy-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getMultOptions().forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m;
-      dl.appendChild(opt);
+      options.push({ value: m, label: m });
     });
-
-    inp.addEventListener('change', () => {
-      row.mult = inp.value;
-      Store.set(`ccuFsy.fsy.${idx}.mult`, inp.value);
-      // Sync to COAX MULTS with detailed info
-      if (inp.value) {
+    const dropdown = Utils.createDarkDropdown(options, row.mult || '', (val) => {
+      row.mult = val;
+      Store.set(`ccuFsy.fsy.${idx}.mult`, val);
+      if (val) {
         const showName = getShowNameForDevice(deviceName);
-        Utils.syncToCoaxMult(inp.value, {
-          type: 'FSY',
-          unit: row.unit,
-          showName: showName
-        });
+        Utils.syncToCoaxMult(val, { type: 'FSY', unit: row.unit, showName: showName });
       }
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 
-  // Helper: COAX dropdown with filter
+  // Helper: COAX dropdown (dark)
   function makeCoaxDropdown(row, idx) {
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = row.coax || '';
-    inp.placeholder = '1-40';
-    inp.style.width = '100%';
-
-    const dlId = `coax-fsy-${idx}`;
-    inp.setAttribute('list', dlId);
-    const dl = document.createElement('datalist');
-    dl.id = dlId;
+    const options = [{ value: '', label: '--' }];
     Utils.getCoaxOptions().forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      dl.appendChild(opt);
+      options.push({ value: c, label: c });
     });
-
-    inp.addEventListener('change', () => {
-      row.coax = inp.value;
-      Store.set(`ccuFsy.fsy.${idx}.coax`, inp.value);
-    });
-
-    td.appendChild(inp);
-    td.appendChild(dl);
+    const dropdown = Utils.createDarkDropdown(options, row.coax || '', (val) => {
+      row.coax = val;
+      Store.set(`ccuFsy.fsy.${idx}.coax`, val);
+    }, { placeholder: '--' });
+    td.appendChild(dropdown);
     return td;
   }
 

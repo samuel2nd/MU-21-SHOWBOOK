@@ -494,38 +494,23 @@ const SourceTab = (() => {
       tdUmd.appendChild(inpUmd);
       tr.appendChild(tdUmd);
 
-      // Eng Source — filterable input with datalist
+      // Eng Source (dark dropdown)
       const tdEng = document.createElement('td');
-      const inpEng = document.createElement('input');
-      inpEng.type = 'text';
-      inpEng.value = rowData.engSource || '';
-      inpEng.placeholder = '--';
-      const dlId = `eng-source-dl-${globalIdx}`;
-      inpEng.setAttribute('list', dlId);
-      const dl = document.createElement('datalist');
-      dl.id = dlId;
       const deviceOpts = Utils.getDeviceOptions();
-      deviceOpts.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o.value;
-        dl.appendChild(opt);
-      });
-      // Orphan detection
+      const engOptions = [{ value: '', label: '--' }];
+      // Add orphan if current value isn't in list
       const validDevices = new Set(deviceOpts.map(o => o.value));
       if (rowData.engSource && !validDevices.has(rowData.engSource)) {
-        Utils.showCellWarning(tdEng, `Device "${rowData.engSource}" not found in RTR I/O Master`);
+        engOptions.push({ value: rowData.engSource, label: rowData.engSource });
       }
-      inpEng.addEventListener('change', () => {
-        rowData.engSource = inpEng.value;
-        Store.set(`sources.${globalIdx}.engSource`, inpEng.value);
-        if (inpEng.value && !validDevices.has(inpEng.value)) {
-          Utils.showCellWarning(tdEng, `Device "${inpEng.value}" not found in RTR I/O Master`);
-        } else {
-          Utils.clearCellWarning(tdEng);
-        }
+      deviceOpts.forEach(o => {
+        engOptions.push({ value: o.value, label: o.label || o.value });
       });
-      tdEng.appendChild(inpEng);
-      tdEng.appendChild(dl);
+      const engDropdown = Utils.createDarkDropdown(engOptions, rowData.engSource || '', (val) => {
+        rowData.engSource = val;
+        Store.set(`sources.${globalIdx}.engSource`, val);
+      }, { placeholder: '--' });
+      tdEng.appendChild(engDropdown);
       tr.appendChild(tdEng);
 
       // Audio Source dropdown (dark) from Sheet8
