@@ -315,71 +315,70 @@ const EngineerTab = (() => {
     // Initialize EIC QC filtering dropdowns after DOM is ready
     setTimeout(() => initEicQcControls(), 100);
 
-    // === NV9000 ROUTER BRIDGE SECTION ===
-    page.appendChild(Utils.sectionHeader('NV9000 Router Bridge'));
-    const nv9000Controls = document.createElement('div');
-    nv9000Controls.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:20px;';
-    nv9000Controls.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:12px;font-weight:600;color:var(--accent-blue);">Bridge Status:</span>
-          <span id="nv9000-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button id="btn-nv9000-test-bridge" class="btn" style="padding:6px 12px;font-size:11px;">Test Bridge</button>
-          <button id="btn-nv9000-test-router" class="btn" style="padding:6px 12px;font-size:11px;">Test NV9000</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <label style="font-size:11px;color:var(--text-secondary);min-width:70px;">Bridge URL:</label>
-        <input id="nv9000-bridge-url" type="text" value="${NV9000Client.getBridgeUrl()}"
-               style="flex:1;max-width:250px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-      </div>
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:10px;color:var(--text-secondary);">Global Mode:</span>
-          <select id="nv9000-trigger-mode" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <option value="immediate" ${NV9000Client.getTriggerMode() === 'immediate' ? 'selected' : ''}>Immediate</option>
-            <option value="staged" ${NV9000Client.getTriggerMode() === 'staged' ? 'selected' : ''}>Staged</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:10px;color:var(--text-secondary);">Video I/O:</span>
-          <select id="nv9000-mode-videoio" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <option value="global" ${NV9000Client.getPageMode('videoio') === 'global' ? 'selected' : ''}>Global</option>
-            <option value="immediate" ${NV9000Client.getPageMode('videoio') === 'immediate' ? 'selected' : ''}>Immediate</option>
-            <option value="staged" ${NV9000Client.getPageMode('videoio') === 'staged' ? 'selected' : ''}>Staged</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:10px;color:var(--text-secondary);">Monitor Walls:</span>
-          <select id="nv9000-mode-monitors" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <option value="global" ${NV9000Client.getPageMode('monitors') === 'global' ? 'selected' : ''}>Global</option>
-            <option value="immediate" ${NV9000Client.getPageMode('monitors') === 'immediate' ? 'selected' : ''}>Immediate</option>
-            <option value="staged" ${NV9000Client.getPageMode('monitors') === 'staged' ? 'selected' : ''}>Staged</option>
-          </select>
-        </div>
-      </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <div style="position:relative;">
-            <input id="nv9000-test-source" type="text" placeholder="Source..." autocomplete="off"
-                   style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <div id="nv9000-source-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+    // === NV9000 ROUTER BRIDGE SECTION (Collapsible) ===
+    const nv9000Section = Utils.collapsibleSection('NV9000 Router Bridge', 'nv9000-bridge-collapsed', (content) => {
+      content.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:12px;font-weight:600;color:var(--accent-blue);">Bridge Status:</span>
+            <span id="nv9000-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
           </div>
-          <span style="color:var(--text-muted);">→</span>
-          <div style="position:relative;">
-            <input id="nv9000-test-dest" type="text" placeholder="Destination..." autocomplete="off"
-                   style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <div id="nv9000-dest-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+          <div style="display:flex;gap:8px;">
+            <button id="btn-nv9000-test-bridge" class="btn" style="padding:6px 12px;font-size:11px;">Test Bridge</button>
+            <button id="btn-nv9000-test-router" class="btn" style="padding:6px 12px;font-size:11px;">Test NV9000</button>
           </div>
-          <button id="btn-nv9000-test-route" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Execute Route</button>
-          <span id="nv9000-route-result" style="font-size:10px;color:var(--text-muted);"></span>
         </div>
-      </div>
-    `;
-    page.appendChild(nv9000Controls);
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-size:11px;color:var(--text-secondary);min-width:70px;">Bridge URL:</label>
+          <input id="nv9000-bridge-url" type="text" value="${NV9000Client.getBridgeUrl()}"
+                 style="flex:1;max-width:250px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:10px;color:var(--text-secondary);">Global Mode:</span>
+            <select id="nv9000-trigger-mode" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <option value="immediate" ${NV9000Client.getTriggerMode() === 'immediate' ? 'selected' : ''}>Immediate</option>
+              <option value="staged" ${NV9000Client.getTriggerMode() === 'staged' ? 'selected' : ''}>Staged</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:10px;color:var(--text-secondary);">Video I/O:</span>
+            <select id="nv9000-mode-videoio" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <option value="global" ${NV9000Client.getPageMode('videoio') === 'global' ? 'selected' : ''}>Global</option>
+              <option value="immediate" ${NV9000Client.getPageMode('videoio') === 'immediate' ? 'selected' : ''}>Immediate</option>
+              <option value="staged" ${NV9000Client.getPageMode('videoio') === 'staged' ? 'selected' : ''}>Staged</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:10px;color:var(--text-secondary);">Monitor Walls:</span>
+            <select id="nv9000-mode-monitors" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <option value="global" ${NV9000Client.getPageMode('monitors') === 'global' ? 'selected' : ''}>Global</option>
+              <option value="immediate" ${NV9000Client.getPageMode('monitors') === 'immediate' ? 'selected' : ''}>Immediate</option>
+              <option value="staged" ${NV9000Client.getPageMode('monitors') === 'staged' ? 'selected' : ''}>Staged</option>
+            </select>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="position:relative;">
+              <input id="nv9000-test-source" type="text" placeholder="Source..." autocomplete="off"
+                     style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <div id="nv9000-source-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+            </div>
+            <span style="color:var(--text-muted);">→</span>
+            <div style="position:relative;">
+              <input id="nv9000-test-dest" type="text" placeholder="Destination..." autocomplete="off"
+                     style="width:180px;padding:4px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <div id="nv9000-dest-dropdown" class="nv9000-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
+            </div>
+            <button id="btn-nv9000-test-route" class="btn btn-primary" style="padding:6px 12px;font-size:11px;">Execute Route</button>
+            <span id="nv9000-route-result" style="font-size:10px;color:var(--text-muted);"></span>
+          </div>
+        </div>
+      `;
+    });
+    page.appendChild(nv9000Section);
 
     // Staged Routes Panel
     page.appendChild(renderStagedRoutesPanel());

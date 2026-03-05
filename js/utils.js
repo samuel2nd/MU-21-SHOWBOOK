@@ -671,6 +671,83 @@ const Utils = (() => {
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
   }
 
+  // Collapsible section - defaults to collapsed, persists state in localStorage
+  function collapsibleSection(title, storageKey, contentBuilder) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'margin-bottom:20px;';
+
+    // Header (clickable)
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+    `;
+
+    const arrow = document.createElement('span');
+    arrow.style.cssText = 'font-size:10px;color:var(--text-muted);transition:transform 0.2s;';
+    arrow.textContent = '▶';
+
+    const titleEl = document.createElement('span');
+    titleEl.style.cssText = 'font-weight:600;font-size:13px;color:var(--accent-blue);';
+    titleEl.textContent = title;
+
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size:9px;color:var(--text-muted);margin-left:auto;';
+    badge.textContent = 'click to expand';
+
+    header.appendChild(arrow);
+    header.appendChild(titleEl);
+    header.appendChild(badge);
+    wrapper.appendChild(header);
+
+    // Content container
+    const content = document.createElement('div');
+    content.style.cssText = 'display:none;margin-top:-1px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:16px;background:var(--bg-secondary);';
+
+    // Check localStorage for saved state (default collapsed)
+    const isExpanded = localStorage.getItem(storageKey) === 'expanded';
+
+    function toggle() {
+      const expanded = content.style.display !== 'none';
+      if (expanded) {
+        content.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+        badge.textContent = 'click to expand';
+        header.style.borderRadius = '6px';
+        localStorage.setItem(storageKey, 'collapsed');
+      } else {
+        content.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+        badge.textContent = 'click to collapse';
+        header.style.borderRadius = '6px 6px 0 0';
+        localStorage.setItem(storageKey, 'expanded');
+      }
+    }
+
+    header.addEventListener('click', toggle);
+
+    // Build content
+    contentBuilder(content);
+    wrapper.appendChild(content);
+
+    // Apply initial state
+    if (isExpanded) {
+      content.style.display = 'block';
+      arrow.style.transform = 'rotate(90deg)';
+      badge.textContent = 'click to collapse';
+      header.style.borderRadius = '6px 6px 0 0';
+    }
+
+    return wrapper;
+  }
+
   return {
     renderEditableTable,
     getSourceOptions,
@@ -692,5 +769,6 @@ const Utils = (() => {
     showCellWarning,
     clearCellWarning,
     toast,
+    collapsibleSection,
   };
 })();

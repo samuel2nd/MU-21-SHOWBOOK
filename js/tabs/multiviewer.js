@@ -24,8 +24,14 @@ const MultiviewerTab = (() => {
 
     const page = Utils.tabPage('MULTIVIEWER CONFIGURATION', '25 multiviewer outputs with Kaleido control');
 
-    // Kaleido Configuration Section
-    page.appendChild(renderKaleidoConfigSection());
+    // Kaleido Configuration Section (Collapsible)
+    const kaleidoSection = Utils.collapsibleSection('Kaleido Bridge Configuration', 'kaleido-bridge-collapsed', (content) => {
+      const inner = renderKaleidoConfigSection();
+      // Remove outer styling since collapsible provides it
+      inner.style.cssText = '';
+      content.appendChild(inner);
+    });
+    page.appendChild(kaleidoSection);
 
     // Staged Layout Changes Panel
     page.appendChild(renderStagedLayoutsPanel());
