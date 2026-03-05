@@ -190,6 +190,21 @@ const MonitorsTab = (() => {
     return Store.data.prodDigital.multiviewers.findIndex(m => m.id === mvId);
   }
 
+  // Get paired MV (the other side of the same card)
+  function getPairedMv(mvId) {
+    if (!mvId || !Store.data.prodDigital || !Store.data.prodDigital.multiviewers) return null;
+    const [cardId, side] = mvId.split('-');
+    const pairedSide = side === '1' ? '2' : '1';
+    const pairedId = `${cardId}-${pairedSide}`;
+    return Store.data.prodDigital.multiviewers.find(m => m.id === pairedId);
+  }
+
+  // Get input offset for side 2 (starts after side 1's inputs)
+  function getSide2InputOffset(side1Layout) {
+    const layoutDef = LAYOUTS[side1Layout];
+    return layoutDef ? layoutDef.positions : 0;
+  }
+
   // Ensure default layouts are applied to MVs (runs on every render)
   function ensureDefaultLayouts(wallKey) {
     const config = WALL_CONFIGS[wallKey];
@@ -542,11 +557,18 @@ const MonitorsTab = (() => {
         flex: 1;
       `;
 
+      // Calculate input offset for side 2
+      const pairedMv = getPairedMv(mv.id);
+      const inputOffset = (mv.side === 2 && pairedMv && pairedMv.layout)
+        ? getSide2InputOffset(pairedMv.layout)
+        : 0;
+
       layout.cells.forEach(cell => {
         const cellEl = document.createElement('div');
         const sourceValue = mv.inputs[cell.pos - 1] || '';
         const [cardNum] = mv.id.split('-');
-        const displayLabel = `${cardNum}-${cell.pos}`;
+        const actualInputNum = cell.pos + inputOffset;
+        const displayLabel = `${cardNum}-${actualInputNum}`;
         const baseBg = cell.vip ? 'linear-gradient(135deg, #3b4a6b 0%, #2a3a5b 100%)' : '#252836';
 
         cellEl.style.cssText = `
@@ -585,8 +607,8 @@ const MonitorsTab = (() => {
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
 
             // Trigger NV9000 route if source selected
-            if (source && mv.id) {
-              const destName = `MV ${mv.id.replace('-', '-')}`;
+            if (source && mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
               const result = await NV9000Client.handleRoute(source, destName, 'monitors');
               if (result.success) {
                 if (result.staged) {
@@ -621,8 +643,8 @@ const MonitorsTab = (() => {
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
 
             // Trigger NV9000 route
-            if (mv.id) {
-              const destName = `MV ${mv.id.replace('-', '-')}`;
+            if (mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
               const result = await NV9000Client.handleRoute(source, destName, 'monitors');
               if (result.success) {
                 if (result.staged) {

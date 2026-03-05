@@ -1131,9 +1131,23 @@ const ProdDigitalTab = (() => {
         // Click to select source
         cellEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          showSourcePicker(cellEl, (source) => {
+          showSourcePicker(cellEl, async (source) => {
             mv.inputs[cell.pos - 1] = source;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, source);
+
+            // Trigger NV9000 route if source selected
+            if (source && mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
+              const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+              if (result.success) {
+                if (result.staged) {
+                  Utils.toast(`Staged: ${source} → ${destName}`, 'info');
+                } else {
+                  Utils.toast(`Routed: ${source} → ${destName}`, 'success');
+                }
+              }
+            }
+
             App.renderCurrentTab();
           });
         });
@@ -1152,7 +1166,7 @@ const ProdDigitalTab = (() => {
           cellEl.style.boxShadow = 'none';
         });
 
-        cellEl.addEventListener('drop', (e) => {
+        cellEl.addEventListener('drop', async (e) => {
           e.preventDefault();
           cellEl.style.background = baseBg;
           cellEl.style.boxShadow = 'none';
@@ -1160,6 +1174,20 @@ const ProdDigitalTab = (() => {
           if (droppedSource) {
             mv.inputs[cell.pos - 1] = droppedSource;
             Store.set(`prodDigital.multiviewers.${mvIdx}.inputs.${cell.pos - 1}`, droppedSource);
+
+            // Trigger NV9000 route
+            if (mv.cardId) {
+              const destName = `MV ${mv.cardId}-${actualInputNum}`;
+              const result = await NV9000Client.handleRoute(droppedSource, destName, 'monitors');
+              if (result.success) {
+                if (result.staged) {
+                  Utils.toast(`Staged: ${droppedSource} → ${destName}`, 'info');
+                } else {
+                  Utils.toast(`Routed: ${droppedSource} → ${destName}`, 'success');
+                }
+              }
+            }
+
             App.renderCurrentTab();
           }
         });
