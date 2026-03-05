@@ -392,20 +392,40 @@ const MonitorsTab = (() => {
     selectBtn.textContent = displayText;
     selectBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      showPicker(selectBtn, monData, (val) => {
+      showPicker(selectBtn, monData, async (val) => {
+        let routeSource = null;
+
         if (val.startsWith('SRC:')) {
+          const source = val.replace('SRC:', '');
           monData.assignmentType = 'source';
-          monData.directSource = val.replace('SRC:', '');
+          monData.directSource = source;
           monData.mvId = null;
+          routeSource = source;
         } else if (val) {
           monData.assignmentType = 'mv';
           monData.mvId = val;
           monData.directSource = '';
+          // Route the MV output to the monitor
+          routeSource = `MV ${val}`;
         } else {
           monData.assignmentType = '';
           monData.mvId = null;
           monData.directSource = '';
         }
+
+        // Trigger NV9000 route if source selected
+        if (routeSource) {
+          const destName = monConfig.label;
+          const result = await NV9000Client.handleRoute(routeSource, destName, 'monitors');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${routeSource} → ${destName}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${routeSource} → ${destName}`, 'success');
+            }
+          }
+        }
+
         Store.set(`monitorWallsV2.${wallKey}.monitors.${idx}`, monData);
         App.renderCurrentTab();
       });

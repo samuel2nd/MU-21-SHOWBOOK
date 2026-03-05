@@ -745,23 +745,40 @@ const ProdDigitalTab = (() => {
         select.appendChild(opt);
       });
 
-      select.addEventListener('change', () => {
+      select.addEventListener('change', async () => {
         const val = select.value;
         const realIdx = data.pxms.findIndex(p => p.id === cfg.id);
+        let routeSource = null;
 
         if (val.startsWith('MV')) {
           const mvNum = parseInt(val.replace('MV', ''));
           data.pxms[realIdx].assignmentType = 'mv';
           data.pxms[realIdx].mvId = mvNum;
           data.pxms[realIdx].directSource = '';
+          routeSource = val;
         } else if (val.startsWith('SRC:')) {
+          const source = val.replace('SRC:', '');
           data.pxms[realIdx].assignmentType = 'source';
-          data.pxms[realIdx].directSource = val.replace('SRC:', '');
+          data.pxms[realIdx].directSource = source;
           data.pxms[realIdx].mvId = null;
+          routeSource = source;
         } else {
           data.pxms[realIdx].assignmentType = '';
           data.pxms[realIdx].mvId = null;
           data.pxms[realIdx].directSource = '';
+        }
+
+        // Trigger NV9000 route if source selected
+        if (routeSource) {
+          const destName = cfg.label;
+          const result = await NV9000Client.handleRoute(routeSource, destName, 'monitors');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${routeSource} → ${destName}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${routeSource} → ${destName}`, 'success');
+            }
+          }
         }
 
         Store.set(`prodDigital.pxms.${realIdx}`, data.pxms[realIdx]);
@@ -883,23 +900,42 @@ const ProdDigitalTab = (() => {
       const currentVal = pxm.assignmentType === 'mv' ? pxm.mvId :
                          pxm.assignmentType === 'source' ? `SRC:${pxm.directSource}` : '';
 
-      showPxmPicker(mvSelectBtn, currentVal, (val) => {
+      showPxmPicker(mvSelectBtn, currentVal, async (val) => {
+        let routeSource = null;
+
         if (val.startsWith('SRC:')) {
           // Direct source selected
+          const source = val.replace('SRC:', '');
           data.pxms[pxmIdx].assignmentType = 'source';
-          data.pxms[pxmIdx].directSource = val.replace('SRC:', '');
+          data.pxms[pxmIdx].directSource = source;
           data.pxms[pxmIdx].mvId = null;
+          routeSource = source;
         } else if (val) {
           // MV selected
           data.pxms[pxmIdx].assignmentType = 'mv';
           data.pxms[pxmIdx].mvId = val;
           data.pxms[pxmIdx].directSource = '';
+          routeSource = `MV ${val}`;
         } else {
           // None selected
           data.pxms[pxmIdx].assignmentType = '';
           data.pxms[pxmIdx].mvId = null;
           data.pxms[pxmIdx].directSource = '';
         }
+
+        // Trigger NV9000 route if source selected
+        if (routeSource) {
+          const destName = `PXM ${pxm.id}`;
+          const result = await NV9000Client.handleRoute(routeSource, destName, 'monitors');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${routeSource} → ${destName}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${routeSource} → ${destName}`, 'success');
+            }
+          }
+        }
+
         Store.set(`prodDigital.pxms.${pxmIdx}`, data.pxms[pxmIdx]);
         App.renderCurrentTab();
       });
@@ -1682,23 +1718,40 @@ const ProdDigitalTab = (() => {
         select.appendChild(opt);
       });
 
-      select.addEventListener('change', () => {
+      select.addEventListener('change', async () => {
         const val = select.value;
         const realIdx = data.pxms.findIndex(p => p.id === cfg.id);
+        let routeSource = null;
 
         if (val && !val.startsWith('SRC:')) {
           // MV assignment (e.g., "1-1", "1-2")
           data.pxms[realIdx].assignmentType = 'mv';
           data.pxms[realIdx].mvId = val;
           data.pxms[realIdx].directSource = '';
+          routeSource = `MV ${val}`;
         } else if (val.startsWith('SRC:')) {
+          const source = val.replace('SRC:', '');
           data.pxms[realIdx].assignmentType = 'source';
-          data.pxms[realIdx].directSource = val.replace('SRC:', '');
+          data.pxms[realIdx].directSource = source;
           data.pxms[realIdx].mvId = null;
+          routeSource = source;
         } else {
           data.pxms[realIdx].assignmentType = '';
           data.pxms[realIdx].mvId = null;
           data.pxms[realIdx].directSource = '';
+        }
+
+        // Trigger NV9000 route if source selected
+        if (routeSource) {
+          const destName = cfg.label;
+          const result = await NV9000Client.handleRoute(routeSource, destName, 'monitors');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${routeSource} → ${destName}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${routeSource} → ${destName}`, 'success');
+            }
+          }
         }
 
         Store.set(`prodDigital.pxms.${realIdx}`, data.pxms[realIdx]);
@@ -2233,26 +2286,46 @@ const ProdDigitalTab = (() => {
 
     if (newValue === null) return;
 
+    let routeSource = null;
+
     if (newValue.startsWith('MV')) {
       const mvNum = parseInt(newValue.replace('MV', ''));
       if (mvNum >= 1 && mvNum <= 11) {
         pxm.assignmentType = 'mv';
         pxm.mvId = mvNum;
         pxm.directSource = '';
+        routeSource = newValue;
       }
     } else if (newValue.startsWith('SRC:')) {
+      const source = newValue.replace('SRC:', '');
       pxm.assignmentType = 'source';
-      pxm.directSource = newValue.replace('SRC:', '');
+      pxm.directSource = source;
       pxm.mvId = null;
+      routeSource = source;
     } else if (newValue) {
       // Assume direct source if not MV format
       pxm.assignmentType = 'source';
       pxm.directSource = newValue;
       pxm.mvId = null;
+      routeSource = newValue;
     } else {
       pxm.assignmentType = '';
       pxm.mvId = null;
       pxm.directSource = '';
+    }
+
+    // Trigger NV9000 route if source selected
+    if (routeSource) {
+      const destName = `PXM ${pxmId}`;
+      NV9000Client.handleRoute(routeSource, destName, 'monitors').then(result => {
+        if (result.success) {
+          if (result.staged) {
+            Utils.toast(`Staged: ${routeSource} → ${destName}`, 'info');
+          } else {
+            Utils.toast(`Routed: ${routeSource} → ${destName}`, 'success');
+          }
+        }
+      });
     }
 
     Store.set(`prodDigital.pxms.${pxmIdx}`, pxm);
