@@ -493,7 +493,7 @@ const MonitorsTab = (() => {
       const isStaged = stagedLayouts[mv.id] !== undefined;
 
       const layoutSelect = document.createElement('select');
-      layoutSelect.style.cssText = `padding:2px;font-size:8px;background:var(--bg-secondary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:2px;color:var(--text-primary);${isStaged ? 'box-shadow: 0 0 4px rgba(234, 179, 8, 0.3);' : ''}`;
+      layoutSelect.style.cssText = `padding:2px;font-size:8px;background:var(--bg-primary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:2px;color:var(--text-primary);${isStaged ? 'box-shadow: 0 0 4px rgba(234, 179, 8, 0.3);' : ''}`;
       if (isStaged) {
         layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
       }
@@ -787,7 +787,7 @@ const MonitorsTab = (() => {
     const filterInput = document.createElement('input');
     filterInput.type = 'text';
     filterInput.placeholder = 'Filter...';
-    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
+    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
     filterWrapper.appendChild(filterInput);
     popup.appendChild(filterWrapper);
 
@@ -939,7 +939,7 @@ const MonitorsTab = (() => {
     const filterInput = document.createElement('input');
     filterInput.type = 'text';
     filterInput.placeholder = 'Filter sources...';
-    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
+    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
     filterWrapper.appendChild(filterInput);
     popup.appendChild(filterWrapper);
 

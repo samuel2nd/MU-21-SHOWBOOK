@@ -616,7 +616,7 @@ const MultiviewerTab = (() => {
 
     // Layout selector
     const layoutSelect = document.createElement('select');
-    layoutSelect.style.cssText = `flex:1;padding:3px 6px;font-size:10px;background:var(--bg-secondary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:3px;color:var(--text-primary);min-width:80px;`;
+    layoutSelect.style.cssText = `flex:1;padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid ${isStaged ? 'var(--accent-yellow)' : 'var(--border)'};border-radius:3px;color:var(--text-primary);min-width:80px;`;
 
     if (isStaged) {
       layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
@@ -824,7 +824,7 @@ const MultiviewerTab = (() => {
     const filterInput = document.createElement('input');
     filterInput.type = 'text';
     filterInput.placeholder = 'Filter sources...';
-    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
+    filterInput.style.cssText = 'width:100%;padding:6px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);box-sizing:border-box;';
     filterWrapper.appendChild(filterInput);
     popup.appendChild(filterWrapper);
 

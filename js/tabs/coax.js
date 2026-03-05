@@ -234,7 +234,7 @@ const CoaxTab = (() => {
         inputDiv.innerHTML = `
           <div>
             <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Destination</label>
-            <input type="text" id="other-dest" value="${output.dest || ''}" style="width:100%;padding:6px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
+            <input type="text" id="other-dest" value="${output.dest || ''}" style="width:100%;padding:6px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);">
           </div>
         `;
         listContainer.appendChild(inputDiv);

@@ -119,13 +119,13 @@ const SourceTab = (() => {
     const namePrefix = document.createElement('input');
     namePrefix.type = 'text';
     namePrefix.placeholder = 'CAM';
-    namePrefix.style.cssText = 'width:60px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    namePrefix.style.cssText = 'width:60px;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const nameStart = document.createElement('input');
     nameStart.type = 'number';
     nameStart.value = '1';
     nameStart.min = '1';
-    nameStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    nameStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const nameArrow = document.createElement('span');
     nameArrow.textContent = '→';
@@ -136,10 +136,10 @@ const SourceTab = (() => {
     nameEnd.value = '10';
     nameEnd.min = '1';
     nameEnd.max = '80';
-    nameEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    nameEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const nameColSelect = document.createElement('select');
-    nameColSelect.style.cssText = 'padding:4px 6px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    nameColSelect.style.cssText = 'padding:4px 6px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
     nameColSelect.innerHTML = '<option value="showName">Show</option><option value="umdName">UMD</option><option value="both">Both</option>';
 
     const nameBtn = document.createElement('button');
@@ -206,7 +206,7 @@ const SourceTab = (() => {
     engRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
 
     const engSelect = document.createElement('select');
-    engSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    engSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
     engSelect.innerHTML = '<option value="">Start device...</option>';
     allDevices.forEach(d => {
       const opt = document.createElement('option');
@@ -221,7 +221,7 @@ const SourceTab = (() => {
     engCount.min = '1';
     engCount.max = '80';
     engCount.title = 'Number of rows';
-    engCount.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    engCount.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const engStartRow = document.createElement('input');
     engStartRow.type = 'number';
@@ -229,7 +229,7 @@ const SourceTab = (() => {
     engStartRow.min = '1';
     engStartRow.max = '80';
     engStartRow.title = 'Starting row';
-    engStartRow.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    engStartRow.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const engBtn = document.createElement('button');
     engBtn.className = 'btn btn-primary';
@@ -311,7 +311,7 @@ const SourceTab = (() => {
     audioRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
 
     const audioSelect = document.createElement('select');
-    audioSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    audioSelect.style.cssText = 'flex:1;min-width:100px;padding:4px 8px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
     audioSelect.innerHTML = '<option value="">Select...</option>';
     audioSources.forEach(s => {
       const opt = document.createElement('option');
@@ -325,7 +325,7 @@ const SourceTab = (() => {
     audioStart.value = '1';
     audioStart.min = '1';
     audioStart.max = '80';
-    audioStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    audioStart.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const audioArrow = document.createElement('span');
     audioArrow.textContent = '→';
@@ -336,7 +336,7 @@ const SourceTab = (() => {
     audioEnd.value = '10';
     audioEnd.min = '1';
     audioEnd.max = '80';
-    audioEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
+    audioEnd.style.cssText = 'width:45px;padding:4px 6px;font-size:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);';
 
     const audioBtn = document.createElement('button');
     audioBtn.className = 'btn btn-primary';

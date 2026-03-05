@@ -123,7 +123,7 @@ const NetworkIoTab = (() => {
     deviceInput.type = 'text';
     deviceInput.value = port.device || '';
     deviceInput.placeholder = 'Device name...';
-    deviceInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    deviceInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
     deviceDiv.appendChild(deviceInput);
     form.appendChild(deviceDiv);
 
@@ -134,7 +134,7 @@ const NetworkIoTab = (() => {
     notesInput.type = 'text';
     notesInput.value = port.notes || '';
     notesInput.placeholder = 'Additional notes...';
-    notesInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
+    notesInput.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);';
     notesDiv.appendChild(notesInput);
     form.appendChild(notesDiv);
 
