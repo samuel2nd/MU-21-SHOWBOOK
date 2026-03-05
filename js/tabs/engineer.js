@@ -150,6 +150,15 @@ const EngineerTab = (() => {
     return ''; // No UMD assigned
   }
 
+  // Refresh the staged routes panel without full page re-render
+  function refreshStagedPanel() {
+    const existingPanel = document.getElementById('nv9000-staged-panel');
+    if (existingPanel) {
+      const newPanel = renderStagedRoutesPanel();
+      existingPanel.replaceWith(newPanel);
+    }
+  }
+
   // Staged Routes Panel for NV9000
   function renderStagedRoutesPanel() {
     const stagedRoutes = NV9000Client.getStagedRoutes();
@@ -289,52 +298,22 @@ const EngineerTab = (() => {
 
       monEl.innerHTML = `
         <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">${mon.label}</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <select class="eic-qc-source" data-mon-id="${mon.id}" data-dest="${mon.dest}"
-                  style="flex:1;padding:6px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
-            <option value="">-- Select Source --</option>
-          </select>
+        <div style="position:relative;">
+          <input type="text" class="eic-qc-input" data-mon-id="${mon.id}" data-dest="${mon.dest}"
+                 value="${storedSource}" placeholder="Type to filter sources..." autocomplete="off"
+                 style="width:100%;padding:6px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+          <div class="eic-qc-dropdown" style="display:none;position:absolute;top:100%;left:0;width:100%;max-height:200px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;z-index:100;"></div>
         </div>
         <div style="margin-top:6px;font-size:9px;color:var(--text-muted);">Dest: ${mon.dest}</div>
       `;
-
-      // Populate source dropdown
-      const select = monEl.querySelector('select');
-      const sources = NV9000Client.getAllSources();
-      sources.forEach(src => {
-        const opt = document.createElement('option');
-        opt.value = src.name;
-        opt.textContent = src.name;
-        if (src.name === storedSource) opt.selected = true;
-        select.appendChild(opt);
-      });
-
-      // Handle source selection
-      select.addEventListener('change', async () => {
-        const source = select.value;
-        const dest = select.dataset.dest;
-        const monId = select.dataset.monId;
-
-        // Store selection
-        if (!Store.data.eicQcMonitors) Store.data.eicQcMonitors = {};
-        Store.data.eicQcMonitors[monId] = source;
-        Store.set(`eicQcMonitors.${monId}`, source);
-
-        // Trigger route
-        if (source) {
-          const result = await NV9000Client.handleRoute(source, dest, 'monitors');
-          if (result.success) {
-            Utils.toast(result.staged ? `Staged: ${source} → ${dest}` : `Routed: ${source} → ${dest}`, 'success');
-          } else if (result.error) {
-            Utils.toast(`Route failed: ${result.error}`, 'error');
-          }
-        }
-      });
 
       eicSection.appendChild(monEl);
     });
 
     page.appendChild(eicSection);
+
+    // Initialize EIC QC filtering dropdowns after DOM is ready
+    setTimeout(() => initEicQcControls(), 100);
 
     // === NV9000 ROUTER BRIDGE SECTION ===
     page.appendChild(Utils.sectionHeader('NV9000 Router Bridge'));
@@ -888,6 +867,105 @@ const EngineerTab = (() => {
 
       testRouteBtn.textContent = 'Execute Route';
       testRouteBtn.disabled = false;
+    });
+  }
+
+  // Initialize EIC QC monitor filtering dropdowns
+  function initEicQcControls() {
+    const sources = (Store.data.rtrMaster || []).map(d => d.deviceName).filter(n => n);
+
+    document.querySelectorAll('.eic-qc-input').forEach(input => {
+      const dropdown = input.parentElement.querySelector('.eic-qc-dropdown');
+      const monId = input.dataset.monId;
+      const dest = input.dataset.dest;
+      let selectedIndex = -1;
+
+      function showDropdown(filter = '') {
+        const filterLower = filter.toLowerCase();
+        const filtered = sources.filter(item => item.toLowerCase().includes(filterLower)).slice(0, 50);
+
+        if (filtered.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        dropdown.innerHTML = '';
+        filtered.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.textContent = item;
+          div.style.cssText = 'padding:4px 8px;font-size:11px;cursor:pointer;';
+          div.addEventListener('mouseenter', () => {
+            div.style.background = 'var(--bg-tertiary)';
+          });
+          div.addEventListener('mouseleave', () => {
+            div.style.background = idx === selectedIndex ? 'var(--bg-tertiary)' : '';
+          });
+          div.addEventListener('click', async () => {
+            input.value = item;
+            dropdown.style.display = 'none';
+            await triggerRoute(item, dest, monId);
+          });
+          dropdown.appendChild(div);
+        });
+        dropdown.style.display = 'block';
+        selectedIndex = -1;
+      }
+
+      function hideDropdown() {
+        setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+      }
+
+      async function triggerRoute(source, destName, monitorId) {
+        // Store selection
+        if (!Store.data.eicQcMonitors) Store.data.eicQcMonitors = {};
+        Store.data.eicQcMonitors[monitorId] = source;
+        Store.set(`eicQcMonitors.${monitorId}`, source);
+
+        // Trigger route
+        if (source) {
+          const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+          if (result.success) {
+            Utils.toast(result.staged ? `Staged: ${source} → ${destName}` : `Routed: ${source} → ${destName}`, 'success');
+            // Refresh staged panel if in staged mode
+            if (result.staged) {
+              refreshStagedPanel();
+            }
+          } else if (result.error) {
+            Utils.toast(`Route failed: ${result.error}`, 'error');
+          }
+        }
+      }
+
+      input.addEventListener('focus', () => showDropdown(input.value));
+      input.addEventListener('input', () => showDropdown(input.value));
+      input.addEventListener('blur', hideDropdown);
+
+      input.addEventListener('keydown', async (e) => {
+        const children = dropdown.children;
+        if (dropdown.style.display === 'none' || children.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, children.length - 1);
+          Array.from(children).forEach((c, i) => c.style.background = i === selectedIndex ? 'var(--bg-tertiary)' : '');
+          children[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, 0);
+          Array.from(children).forEach((c, i) => c.style.background = i === selectedIndex ? 'var(--bg-tertiary)' : '');
+          children[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedIndex >= 0 && children[selectedIndex]) {
+            const source = children[selectedIndex].textContent;
+            input.value = source;
+            dropdown.style.display = 'none';
+            await triggerRoute(source, dest, monId);
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+        }
+      });
     });
   }
 

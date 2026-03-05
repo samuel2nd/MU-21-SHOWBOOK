@@ -307,6 +307,13 @@ const MonitorsTab = (() => {
         "p2mon1 p2mon3 p2gfx"
         "p3mon1 p3mon2 p3mon3"
       `;
+    } else if (wallKey === 'video') {
+      grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      grid.style.gridTemplateRows = '180px 180px';
+      grid.style.gridTemplateAreas = `
+        "vidmv1 vidmv2 vidmv3"
+        "vidqc1 vidqc2 vidqc3"
+      `;
     }
 
     // Render each monitor
