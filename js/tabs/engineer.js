@@ -923,15 +923,20 @@ const EngineerTab = (() => {
 
         // Trigger route
         if (source) {
+          console.log(`[EIC QC] Routing: ${source} → ${destName}`);
           const result = await NV9000Client.handleRoute(source, destName, 'monitors');
+          console.log(`[EIC QC] Result:`, result);
           if (result.success) {
             Utils.toast(result.staged ? `Staged: ${source} → ${destName}` : `Routed: ${source} → ${destName}`, 'success');
             // Refresh staged panel if in staged mode
             if (result.staged) {
               refreshStagedPanel();
             }
-          } else if (result.error) {
-            Utils.toast(`Route failed: ${result.error}`, 'error');
+          } else {
+            // Show detailed error
+            const errorMsg = result.error || result.message || 'Unknown error';
+            Utils.toast(`Route failed: ${errorMsg}`, 'error');
+            console.error(`[EIC QC] Route failed:`, result);
           }
         }
       }

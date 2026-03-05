@@ -73,9 +73,14 @@ const NV9000Client = (() => {
     const sourceId = getSourceId(sourceName);
     const destId = getDestinationId(destName);
 
-    if (!sourceId || !destId) {
-      console.warn(`[NV9000] Cannot stage invalid route: ${sourceName} -> ${destName}`);
-      return false;
+    if (!sourceId) {
+      console.warn(`[NV9000] Cannot stage - unknown source: ${sourceName}`);
+      return { success: false, error: `Unknown source: ${sourceName}` };
+    }
+
+    if (!destId) {
+      console.warn(`[NV9000] Cannot stage - unknown destination: ${destName}`);
+      return { success: false, error: `Unknown destination: ${destName}` };
     }
 
     stagedRoutes[destName] = {
@@ -86,7 +91,7 @@ const NV9000Client = (() => {
     };
 
     console.log(`[NV9000] Staged: ${sourceName} -> ${destName}`);
-    return true;
+    return { success: true };
   }
 
   function unstageRoute(destName) {
@@ -141,8 +146,8 @@ const NV9000Client = (() => {
     const mode = page ? getEffectiveMode(page) : getTriggerMode();
 
     if (mode === 'staged') {
-      const staged = stageRoute(sourceName, destName);
-      return { success: staged, staged: true };
+      const result = stageRoute(sourceName, destName);
+      return { ...result, staged: true };
     } else {
       const result = await route(sourceName, destName);
       return { ...result, staged: false };
