@@ -271,6 +271,71 @@ const EngineerTab = (() => {
   function render(container) {
     const page = Utils.tabPage('ENGINEER', 'NV9000 Router Configuration and Tallyman UMD Updater');
 
+    // === EIC QC MONITORS SECTION ===
+    page.appendChild(Utils.sectionHeader('EIC QC Monitors'));
+    const eicSection = document.createElement('div');
+    eicSection.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;';
+
+    const eicMonitors = [
+      { id: 'eic-qc-1', label: 'EIC QC 1', dest: 'EIC QC 1' },
+      { id: 'eic-qc-2', label: 'EIC QC 2', dest: 'EIC QC 2' }
+    ];
+
+    eicMonitors.forEach(mon => {
+      const monEl = document.createElement('div');
+      monEl.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:12px;';
+
+      const storedSource = Store.data.eicQcMonitors?.[mon.id] || '';
+
+      monEl.innerHTML = `
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">${mon.label}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select class="eic-qc-source" data-mon-id="${mon.id}" data-dest="${mon.dest}"
+                  style="flex:1;padding:6px 8px;font-size:11px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+            <option value="">-- Select Source --</option>
+          </select>
+        </div>
+        <div style="margin-top:6px;font-size:9px;color:var(--text-muted);">Dest: ${mon.dest}</div>
+      `;
+
+      // Populate source dropdown
+      const select = monEl.querySelector('select');
+      const sources = NV9000Client.getAllSources();
+      sources.forEach(src => {
+        const opt = document.createElement('option');
+        opt.value = src.name;
+        opt.textContent = src.name;
+        if (src.name === storedSource) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      // Handle source selection
+      select.addEventListener('change', async () => {
+        const source = select.value;
+        const dest = select.dataset.dest;
+        const monId = select.dataset.monId;
+
+        // Store selection
+        if (!Store.data.eicQcMonitors) Store.data.eicQcMonitors = {};
+        Store.data.eicQcMonitors[monId] = source;
+        Store.set(`eicQcMonitors.${monId}`, source);
+
+        // Trigger route
+        if (source) {
+          const result = await NV9000Client.handleRoute(source, dest, 'monitors');
+          if (result.success) {
+            Utils.toast(result.staged ? `Staged: ${source} → ${dest}` : `Routed: ${source} → ${dest}`, 'success');
+          } else if (result.error) {
+            Utils.toast(`Route failed: ${result.error}`, 'error');
+          }
+        }
+      });
+
+      eicSection.appendChild(monEl);
+    });
+
+    page.appendChild(eicSection);
+
     // === NV9000 ROUTER BRIDGE SECTION ===
     page.appendChild(Utils.sectionHeader('NV9000 Router Bridge'));
     const nv9000Controls = document.createElement('div');

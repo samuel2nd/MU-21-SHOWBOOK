@@ -113,6 +113,25 @@ const MonitorsTab = (() => {
       gridCols: '1fr 1fr',
       gridRows: '1fr',
     },
+    'video': {
+      title: 'MU-21 VIDEO POSITION MONITOR WALL',
+      monitors: [
+        // Top row - MV outputs (32x4 MV card 26, 3 outputs used)
+        { id: 'vid-mv1', label: 'VID MV 1', defaultMv: '26-1', defaultLayout: '9_SPLIT', row: 1, fixedLayout: true, inputStart: 1 },
+        { id: 'vid-mv2', label: 'VID MV 2', defaultMv: '26-2', defaultLayout: '9_SPLIT', row: 1, fixedLayout: true, inputStart: 10 },
+        { id: 'vid-mv3', label: 'VID MV 3', defaultMv: '26-3', defaultLayout: '9_SPLIT', row: 1, fixedLayout: true, inputStart: 19 },
+        // Bottom row - Full screen QC monitors
+        { id: 'vid-qc1', label: 'VID QC 1', defaultMv: null, directSource: true, row: 2 },
+        { id: 'vid-qc2', label: 'VID QC 2', defaultMv: null, directSource: true, row: 2 },
+        { id: 'vid-qc3', label: 'VID QC 3', defaultMv: null, directSource: true, row: 2 },
+      ],
+      gridTemplate: `
+        "vidmv1 vidmv2 vidmv3"
+        "vidqc1 vidqc2 vidqc3"
+      `,
+      gridCols: '1fr 1fr 1fr',
+      gridRows: '2fr 1fr',
+    },
   };
 
   // Ensure prodDigital data exists (initialize if needed)
@@ -323,6 +342,18 @@ const MonitorsTab = (() => {
         if (areaMap[monConfig.id]) {
           display.style.gridArea = areaMap[monConfig.id];
         }
+      } else if (wallKey === 'video') {
+        const areaMap = {
+          'vid-mv1': 'vidmv1',
+          'vid-mv2': 'vidmv2',
+          'vid-mv3': 'vidmv3',
+          'vid-qc1': 'vidqc1',
+          'vid-qc2': 'vidqc2',
+          'vid-qc3': 'vidqc3',
+        };
+        if (areaMap[monConfig.id]) {
+          display.style.gridArea = areaMap[monConfig.id];
+        }
       }
 
       grid.appendChild(display);
@@ -432,8 +463,8 @@ const MonitorsTab = (() => {
     });
     header.appendChild(selectBtn);
 
-    // Layout selector (if MV assigned)
-    if (mv) {
+    // Layout selector (if MV assigned and not fixed layout)
+    if (mv && !monConfig.fixedLayout) {
       // Check if this MV has a staged layout change
       const stagedLayouts = (typeof KaleidoClient !== 'undefined') ? KaleidoClient.getStagedLayouts() : {};
       const isStaged = stagedLayouts[mv.id] !== undefined;
@@ -577,11 +608,17 @@ const MonitorsTab = (() => {
         flex: 1;
       `;
 
-      // Calculate input offset for side 2
-      const pairedMv = getPairedMv(mv.id);
-      const inputOffset = (mv.side === 2 && pairedMv && pairedMv.layout)
-        ? getSide2InputOffset(pairedMv.layout)
-        : 0;
+      // Calculate input offset for side 2, or use inputStart for special MVs (like 32x4)
+      let inputOffset = 0;
+      if (monConfig.inputStart !== undefined) {
+        // Special MV with explicit input start (e.g., 32x4 MV where inputs are 1-9, 10-18, 19-27)
+        inputOffset = monConfig.inputStart - 1;
+      } else {
+        const pairedMv = getPairedMv(mv.id);
+        inputOffset = (mv.side === 2 && pairedMv && pairedMv.layout)
+          ? getSide2InputOffset(pairedMv.layout)
+          : 0;
+      }
 
       layout.cells.forEach(cell => {
         const cellEl = document.createElement('div');

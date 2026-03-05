@@ -24,6 +24,7 @@ const App = (() => {
     'monitors-p2p3': (c) => MonitorsTab.render(c, 'p2p3'),
     'monitors-evs': (c) => MonitorsTab.render(c, 'evs'),
     'monitors-aud': (c) => MonitorsTab.render(c, 'aud'),
+    'monitors-video': (c) => MonitorsTab.render(c, 'video'),
     'evsconfig': (c) => EvsConfigTab.render(c),
     'multiviewer': (c) => MultiviewerTab.render(c),
     'routerpanel': (c) => RouterPanelTab.render(c),

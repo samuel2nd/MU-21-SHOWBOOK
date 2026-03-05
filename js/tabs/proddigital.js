@@ -2376,6 +2376,18 @@ const ProdDigitalTab = (() => {
       });
     }
 
+    // Card 26: Special 32x4 MV with 4 outputs (VIDEO position uses 3)
+    // Inputs: 26-1 = 1-9, 26-2 = 10-18, 26-3 = 19-27, 26-4 = 28-32
+    for (let output = 1; output <= 4; output++) {
+      multiviewers.push({
+        id: `26-${output}`,
+        cardId: 26,
+        side: output,
+        layout: '9_SPLIT',
+        inputs: Array(9).fill(''),
+      });
+    }
+
     return {
       // 11 PXM displays
       pxms: PXM_CONFIG.map(cfg => ({
