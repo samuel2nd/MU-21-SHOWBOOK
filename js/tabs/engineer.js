@@ -514,17 +514,17 @@ const EngineerTab = (() => {
     // Table
     const table = document.createElement('table');
     table.className = 'data-table';
-    table.style.cssText = 'margin:0;border-radius:0;';
+    table.style.cssText = 'margin:0;border-radius:0;table-layout:fixed;';
 
     // Table header
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
+    const colWidths = ['45px', '35px', '70px', '70px', '40px', '35px', '35px', '35px', '35px'];
     ['RTR ID', 'Src #', 'Show Name', 'Eng Source', 'Video', 'A1', 'A2', 'A3', 'A4'].forEach((lbl, i) => {
       const th = document.createElement('th');
       th.textContent = lbl;
       th.style.fontSize = '10px';
-      if (i === 0) th.style.width = '50px';
-      if (i >= 4) th.style.width = '40px';
+      th.style.width = colWidths[i];
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -557,13 +557,13 @@ const EngineerTab = (() => {
       // Show Name
       const tdName = document.createElement('td');
       tdName.textContent = src.showName || '—';
-      tdName.style.cssText = src.showName ? 'color:var(--accent-cyan);' : 'color:var(--text-muted);';
+      tdName.style.cssText = `font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${src.showName ? 'color:var(--accent-cyan);' : 'color:var(--text-muted);'}`;
       tr.appendChild(tdName);
 
       // Eng Source
       const tdEng = document.createElement('td');
       tdEng.textContent = src.engSource || '—';
-      tdEng.style.cssText = 'font-size:10px;';
+      tdEng.style.cssText = 'font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
       tr.appendChild(tdEng);
 
       // Video Level
