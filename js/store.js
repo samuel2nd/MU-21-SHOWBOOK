@@ -1208,6 +1208,13 @@ const Store = (() => {
         if (!data.fiberTac || Object.keys(data.fiberTac).length === 0) {
           data.fiberTac = initTacData();
         }
+        // Ensure all tacPanels have corresponding fiberTac entries
+        const tacPanels = data.sheet8?.tacPanels || [];
+        tacPanels.forEach(panelName => {
+          if (!data.fiberTac[panelName]) {
+            data.fiberTac[panelName] = Array.from({ length: 24 }, (_, i) => ({ port: i + 1, source: '', dest: '', notes: '' }));
+          }
+        });
         // Ensure sources array always has 80 items
         if (!data.sources || !Array.isArray(data.sources) || data.sources.length < 80) {
           const defaultSources = emptyShow().sources;
@@ -1361,6 +1368,13 @@ const Store = (() => {
       if (!data.fiberTac || Object.keys(data.fiberTac).length === 0) {
         data.fiberTac = initTacData();
       }
+      // Ensure all tacPanels have corresponding fiberTac entries
+      const tacPanels = data.sheet8?.tacPanels || [];
+      tacPanels.forEach(panelName => {
+        if (!data.fiberTac[panelName]) {
+          data.fiberTac[panelName] = Array.from({ length: 24 }, (_, i) => ({ port: i + 1, source: '', dest: '', notes: '' }));
+        }
+      });
       saveToStorage();
       emit('show-loaded', data);
     },

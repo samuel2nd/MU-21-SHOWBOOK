@@ -3,7 +3,54 @@ const FiberTacTab = (() => {
   function render(container) {
     const page = Utils.tabPage('FIBER TAC', 'Click any port to assign. Changes sync to CCU/FSY and VIDEO I/O pages.');
 
+    // TAC count control
+    const controlBar = document.createElement('div');
+    controlBar.style.cssText = 'display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;';
+
+    // Current count display
     const panels = Store.data.sheet8.tacPanels || ['TAC-A', 'TAC-B', 'TAC-C', 'TAC-D', 'TAC-E', 'TAC-F', 'TAC-G', 'TAC-H', 'S09', 'S10'];
+    const countLabel = document.createElement('span');
+    countLabel.style.cssText = 'font-size:12px;color:var(--text-secondary);';
+    countLabel.textContent = `${panels.length} TAC Panels`;
+    controlBar.appendChild(countLabel);
+
+    // Add TAC button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-primary';
+    addBtn.style.cssText = 'font-size:11px;padding:6px 12px;';
+    addBtn.textContent = '+ Add TAC Panel';
+    addBtn.addEventListener('click', () => openAddTacModal());
+    controlBar.appendChild(addBtn);
+
+    // Quick add presets
+    const presetLabel = document.createElement('span');
+    presetLabel.style.cssText = 'font-size:11px;color:var(--text-muted);margin-left:auto;';
+    presetLabel.textContent = 'Quick add:';
+    controlBar.appendChild(presetLabel);
+
+    // Preset buttons for common naming patterns
+    const presets = [
+      { label: 'TAC-I', name: 'TAC-I' },
+      { label: 'TAC-J', name: 'TAC-J' },
+      { label: 'S11', name: 'S11' },
+      { label: 'S12', name: 'S12' },
+    ];
+
+    presets.forEach(preset => {
+      // Only show if not already exists
+      if (!panels.includes(preset.name)) {
+        const presetBtn = document.createElement('button');
+        presetBtn.className = 'btn btn-secondary';
+        presetBtn.style.cssText = 'font-size:10px;padding:4px 8px;';
+        presetBtn.textContent = preset.label;
+        presetBtn.addEventListener('click', () => {
+          addTacPanel(preset.name);
+        });
+        controlBar.appendChild(presetBtn);
+      }
+    });
+
+    page.appendChild(controlBar);
 
     // Create grid of panels (2 columns)
     const panelsGrid = document.createElement('div');
@@ -50,6 +97,32 @@ const FiberTacTab = (() => {
         badge.textContent = `${portCount} used`;
         header.appendChild(badge);
       }
+
+      // Delete panel button (only show if panel has no assignments)
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.title = portCount > 0 ? 'Clear all ports before deleting' : 'Delete this TAC panel';
+      deleteBtn.style.cssText = `
+        margin-left:auto;
+        background:none;
+        border:none;
+        color:${portCount > 0 ? 'var(--text-muted)' : 'var(--error)'};
+        font-size:16px;
+        cursor:${portCount > 0 ? 'not-allowed' : 'pointer'};
+        opacity:${portCount > 0 ? '0.3' : '0.6'};
+        padding:0 4px;
+      `;
+      if (portCount === 0) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete TAC panel "${panelName}"? This cannot be undone.`)) {
+            deleteTacPanel(panelName, panelIdx);
+          }
+        });
+        deleteBtn.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        deleteBtn.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0.6');
+      }
+      header.appendChild(deleteBtn);
 
       panelDiv.appendChild(header);
 
@@ -424,6 +497,117 @@ const FiberTacTab = (() => {
         Store.set(`videoIo.fiberRtrOut.${rtrIdx}.fibA`, strand);
       }
     }
+  }
+
+  function openAddTacModal() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:350px;';
+
+    modal.innerHTML = `
+      <h3 style="margin:0 0 16px 0;color:var(--accent-blue);">Add TAC Panel</h3>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:4px;">Panel Name</label>
+        <input type="text" id="new-tac-name" placeholder="e.g. TAC-K, S13, TRUCK-1" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:14px;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="add-tac-cancel" class="btn btn-secondary" style="flex:1;">Cancel</button>
+        <button id="add-tac-confirm" class="btn btn-primary" style="flex:1;">Add Panel</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
+
+    const nameInput = document.getElementById('new-tac-name');
+    nameInput.focus();
+
+    document.getElementById('add-tac-cancel').addEventListener('click', () => overlay.remove());
+    document.getElementById('add-tac-confirm').addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        Utils.toast('Please enter a panel name', 'error');
+        return;
+      }
+      const panels = Store.data.sheet8.tacPanels || [];
+      if (panels.includes(name)) {
+        Utils.toast('A panel with this name already exists', 'error');
+        return;
+      }
+      addTacPanel(name);
+      overlay.remove();
+    });
+
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('add-tac-confirm').click();
+      } else if (e.key === 'Escape') {
+        overlay.remove();
+      }
+    });
+  }
+
+  function addTacPanel(name) {
+    // Add to tacPanels array
+    const panels = Store.data.sheet8.tacPanels || [];
+    panels.push(name);
+    Store.set('sheet8.tacPanels', [...panels]);
+
+    // Initialize fiberTac data for the new panel (24 ports)
+    Store.data.fiberTac[name] = Array.from({ length: 24 }, (_, i) => ({
+      port: i + 1,
+      source: '',
+      dest: '',
+      notes: ''
+    }));
+
+    Utils.toast(`Added TAC panel "${name}"`, 'success');
+    App.renderCurrentTab();
+  }
+
+  function deleteTacPanel(name, panelIdx) {
+    // Remove from tacPanels array
+    const panels = Store.data.sheet8.tacPanels || [];
+    const idx = panelIdx !== undefined ? panelIdx : panels.indexOf(name);
+    if (idx !== -1) {
+      panels.splice(idx, 1);
+      Store.set('sheet8.tacPanels', [...panels]);
+    }
+
+    // Remove fiberTac data
+    if (Store.data.fiberTac[name]) {
+      delete Store.data.fiberTac[name];
+    }
+
+    // Clear any references in CCU/FSY
+    Store.data.ccuFsy.ccu.forEach((ccu, i) => {
+      if (ccu.tac === name) {
+        ccu.tac = '';
+        Store.set(`ccuFsy.ccu.${i}.tac`, '');
+      }
+    });
+    Store.data.ccuFsy.fsy.forEach((fsy, i) => {
+      if (fsy.tac === name) {
+        fsy.tac = '';
+        Store.set(`ccuFsy.fsy.${i}.tac`, '');
+      }
+    });
+
+    // Clear any references in VIDEO I/O
+    Store.data.videoIo.fiberRtrOut.forEach((row, i) => {
+      if (row.tac === name) {
+        row.tac = '';
+        Store.set(`videoIo.fiberRtrOut.${i}.tac`, '');
+      }
+    });
+
+    Utils.toast(`Deleted TAC panel "${name}"`, 'success');
+    App.renderCurrentTab();
   }
 
   return { render };
