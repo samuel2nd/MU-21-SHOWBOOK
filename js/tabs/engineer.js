@@ -393,12 +393,10 @@ const EngineerTab = (() => {
     showSourcesInfo.textContent = 'Show sources from SOURCE page with RTR IDs. Copy names or levels to clipboard for router configuration.';
     page.appendChild(showSourcesInfo);
 
-    // Define the 4 SHOW source groups as they exist in the router
+    // Define the 2 SHOW source groups as they exist in the router
     const showGroups = [
       { label: 'SHOW 01-20', start: 1, end: 20, rtrIdStart: 865 },
-      { label: 'SHOW 21-40', start: 21, end: 40, rtrIdStart: 1171 },
-      { label: 'SHOW 41-60', start: 41, end: 60, rtrIdStart: 1202 },
-      { label: 'SHOW 61-80', start: 61, end: 80, rtrIdStart: 1222 },
+      { label: 'SHOW 21-80', start: 21, end: 80, rtrIdStart: 1171 },
     ];
 
     showGroups.forEach(group => {
@@ -464,6 +462,19 @@ const EngineerTab = (() => {
     container.appendChild(page);
   }
 
+  // Get RTR ID for a SHOW source number (1-80)
+  // SHOW 01-20: RTR IDs 865-884
+  // SHOW 21-40: RTR IDs 1171-1190
+  // SHOW 41-60: RTR IDs 1202-1221
+  // SHOW 61-80: RTR IDs 1222-1241
+  function getShowRtrId(showNum) {
+    if (showNum >= 1 && showNum <= 20) return 864 + showNum;
+    if (showNum >= 21 && showNum <= 40) return 1150 + showNum;
+    if (showNum >= 41 && showNum <= 60) return 1161 + showNum;
+    if (showNum >= 61 && showNum <= 80) return 1161 + showNum;
+    return 0;
+  }
+
   // Render a group of SHOW sources with copy buttons
   function renderShowSourceGroup(group) {
     const section = document.createElement('div');
@@ -523,7 +534,7 @@ const EngineerTab = (() => {
     const tbody = document.createElement('tbody');
     for (let i = group.start; i <= group.end; i++) {
       const src = Store.data.sources[i - 1];
-      const rtrId = group.rtrIdStart + (i - group.start);
+      const rtrId = getShowRtrId(i);
       const tr = document.createElement('tr');
 
       // Lookup video/audio from RTR Master
