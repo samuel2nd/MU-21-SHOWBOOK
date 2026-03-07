@@ -386,77 +386,31 @@ const EngineerTab = (() => {
     // Initialize NV9000 controls
     setTimeout(() => initNV9000Controls(), 100);
 
-    // === NV9000 CONFIG SECTION ===
-    page.appendChild(Utils.sectionHeader('NV9000 Router Configuration Export'));
-    const nvTable = document.createElement('table');
-    nvTable.className = 'data-table';
+    // === NV9000 SHOW SOURCES SECTION ===
+    page.appendChild(Utils.sectionHeader('NV9000 Show Sources'));
+    const showSourcesInfo = document.createElement('div');
+    showSourcesInfo.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-bottom:12px;';
+    showSourcesInfo.textContent = 'Show sources from SOURCE page with RTR IDs. Copy names or levels to clipboard for router configuration.';
+    page.appendChild(showSourcesInfo);
 
-    // Build headers: Src #, Show Name, UMD Name, Eng Source, Video, Audio 1-16
-    const nvThead = document.createElement('thead');
-    const nvHr = document.createElement('tr');
-    const audioHeaders = [];
-    for (let i = 1; i <= 16; i++) {
-      audioHeaders.push(`Audio ${i}`);
-    }
-    ['Src #', 'Show Name', 'UMD Name', 'Eng Source', 'Video', ...audioHeaders].forEach(lbl => {
-      const th = document.createElement('th');
-      th.textContent = lbl;
-      nvHr.appendChild(th);
+    // Define the 4 SHOW source groups as they exist in the router
+    const showGroups = [
+      { label: 'SHOW 01-20', start: 1, end: 20, rtrIdStart: 865 },
+      { label: 'SHOW 21-40', start: 21, end: 40, rtrIdStart: 1171 },
+      { label: 'SHOW 41-60', start: 41, end: 60, rtrIdStart: 1202 },
+      { label: 'SHOW 61-80', start: 61, end: 80, rtrIdStart: 1222 },
+    ];
+
+    showGroups.forEach(group => {
+      page.appendChild(renderShowSourceGroup(group));
     });
-    nvThead.appendChild(nvHr);
-    nvTable.appendChild(nvThead);
 
-    const nvTbody = document.createElement('tbody');
-    Store.data.sources.forEach(src => {
-      if (!src.showName) return;
-      // Exclude EVS CONFIG entries from NV9000 export
-      if (src.category === 'EVS') return;
-      const tr = document.createElement('tr');
-
-      // Lookup VIDEO device from RTR I/O MASTER by engSource name
-      const videoDevice = Formulas.rtrMasterLookup(src.engSource);
-
-      // Lookup AUDIO device from RTR I/O MASTER by audioSource name
-      const audioDevice = Formulas.rtrMasterLookup(src.audioSource);
-
-      // Get audio levels from RTR Master based on audioSource
-      const audioLevels = audioDevice ? audioDevice.audio : null;
-
-      // Base columns
-      const baseValues = [
-        src.number,
-        src.showName,
-        src.umdName || src.showName,
-        src.engSource || '—',
-        videoDevice ? videoDevice.videoLevel : '—',
-      ];
-
-      // 16 audio channels - pull from RTR Master using audioSource lookup
-      const audioValues = [];
-      for (let i = 0; i < 16; i++) {
-        audioValues.push(audioLevels && audioLevels[i] ? audioLevels[i] : '—');
-      }
-
-      [...baseValues, ...audioValues].forEach(val => {
-        const td = document.createElement('td');
-        td.textContent = val;
-        tr.appendChild(td);
-      });
-      nvTbody.appendChild(tr);
-    });
-    nvTable.appendChild(nvTbody);
-
-    const nvWrapper = document.createElement('div');
-    nvWrapper.className = 'table-scroll';
-    nvWrapper.appendChild(nvTable);
-    page.appendChild(nvWrapper);
-
-    // NV9000 Export button
+    // Export all button
     const nvBtnRow = document.createElement('div');
-    nvBtnRow.style.cssText = 'margin-top:12px;margin-bottom:40px;';
+    nvBtnRow.style.cssText = 'margin-top:12px;margin-bottom:40px;display:flex;gap:12px;';
     const btnNv9000 = document.createElement('button');
     btnNv9000.className = 'btn btn-primary';
-    btnNv9000.textContent = 'Export NV9000 CSV';
+    btnNv9000.textContent = 'Export Full NV9000 CSV';
     btnNv9000.addEventListener('click', exportNv9000Csv);
     nvBtnRow.appendChild(btnNv9000);
     page.appendChild(nvBtnRow);
@@ -508,6 +462,163 @@ const EngineerTab = (() => {
     page.appendChild(umdBtnRow);
 
     container.appendChild(page);
+  }
+
+  // Render a group of SHOW sources with copy buttons
+  function renderShowSourceGroup(group) {
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:20px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;overflow:hidden;';
+
+    // Header with copy buttons
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-tertiary);border-bottom:1px solid var(--border);';
+
+    const title = document.createElement('span');
+    title.style.cssText = 'font-weight:600;color:var(--text-primary);font-size:12px;';
+    title.textContent = group.label;
+    header.appendChild(title);
+
+    const btnGroup = document.createElement('div');
+    btnGroup.style.cssText = 'display:flex;gap:8px;';
+
+    // Copy Names button
+    const copyNamesBtn = document.createElement('button');
+    copyNamesBtn.className = 'btn';
+    copyNamesBtn.style.cssText = 'padding:4px 10px;font-size:10px;';
+    copyNamesBtn.textContent = 'Copy Names';
+    copyNamesBtn.addEventListener('click', () => copyShowNames(group));
+    btnGroup.appendChild(copyNamesBtn);
+
+    // Copy Levels button
+    const copyLevelsBtn = document.createElement('button');
+    copyLevelsBtn.className = 'btn';
+    copyLevelsBtn.style.cssText = 'padding:4px 10px;font-size:10px;';
+    copyLevelsBtn.textContent = 'Copy Levels';
+    copyLevelsBtn.addEventListener('click', () => copyShowLevels(group));
+    btnGroup.appendChild(copyLevelsBtn);
+
+    header.appendChild(btnGroup);
+    section.appendChild(header);
+
+    // Table
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    table.style.cssText = 'margin:0;border-radius:0;';
+
+    // Table header
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    ['RTR ID', 'Src #', 'Show Name', 'Eng Source', 'Video', 'A1', 'A2', 'A3', 'A4'].forEach((lbl, i) => {
+      const th = document.createElement('th');
+      th.textContent = lbl;
+      th.style.fontSize = '10px';
+      if (i === 0) th.style.width = '50px';
+      if (i >= 4) th.style.width = '40px';
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    // Table body
+    const tbody = document.createElement('tbody');
+    for (let i = group.start; i <= group.end; i++) {
+      const src = Store.data.sources[i - 1];
+      const rtrId = group.rtrIdStart + (i - group.start);
+      const tr = document.createElement('tr');
+
+      // Lookup video/audio from RTR Master
+      const videoDevice = src.engSource ? Formulas.rtrMasterLookup(src.engSource) : null;
+      const audioDevice = src.audioSource ? Formulas.rtrMasterLookup(src.audioSource) : null;
+      const audioLevels = audioDevice ? audioDevice.audio : [];
+
+      // RTR ID
+      const tdRtrId = document.createElement('td');
+      tdRtrId.textContent = rtrId;
+      tdRtrId.style.cssText = 'color:var(--text-muted);font-size:10px;';
+      tr.appendChild(tdRtrId);
+
+      // Src #
+      const tdNum = document.createElement('td');
+      tdNum.textContent = i;
+      tdNum.className = 'row-num';
+      tr.appendChild(tdNum);
+
+      // Show Name
+      const tdName = document.createElement('td');
+      tdName.textContent = src.showName || '—';
+      tdName.style.cssText = src.showName ? 'color:var(--accent-cyan);' : 'color:var(--text-muted);';
+      tr.appendChild(tdName);
+
+      // Eng Source
+      const tdEng = document.createElement('td');
+      tdEng.textContent = src.engSource || '—';
+      tdEng.style.cssText = 'font-size:10px;';
+      tr.appendChild(tdEng);
+
+      // Video Level
+      const tdVideo = document.createElement('td');
+      tdVideo.textContent = videoDevice ? videoDevice.videoLevel : '—';
+      tdVideo.style.cssText = 'font-size:10px;';
+      tr.appendChild(tdVideo);
+
+      // Audio 1-4 (show first 4 for preview)
+      for (let a = 0; a < 4; a++) {
+        const tdAudio = document.createElement('td');
+        tdAudio.textContent = audioLevels[a] || '—';
+        tdAudio.style.cssText = 'font-size:9px;color:var(--text-secondary);';
+        tr.appendChild(tdAudio);
+      }
+
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-scroll';
+    wrapper.style.cssText = 'max-height:300px;';
+    wrapper.appendChild(table);
+    section.appendChild(wrapper);
+
+    return section;
+  }
+
+  // Copy show names to clipboard (one per line)
+  function copyShowNames(group) {
+    const names = [];
+    for (let i = group.start; i <= group.end; i++) {
+      const src = Store.data.sources[i - 1];
+      names.push(src.showName || '');
+    }
+    const text = names.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      Utils.toast(`Copied ${group.label} names to clipboard`, 'success');
+    }).catch(err => {
+      Utils.toast('Failed to copy to clipboard', 'error');
+      console.error('Clipboard error:', err);
+    });
+  }
+
+  // Copy video + audio levels to clipboard (tab-separated)
+  function copyShowLevels(group) {
+    const lines = [];
+    for (let i = group.start; i <= group.end; i++) {
+      const src = Store.data.sources[i - 1];
+      const videoDevice = src.engSource ? Formulas.rtrMasterLookup(src.engSource) : null;
+      const audioDevice = src.audioSource ? Formulas.rtrMasterLookup(src.audioSource) : null;
+      const audioLevels = audioDevice ? audioDevice.audio : Array(16).fill('');
+
+      // Video level + 16 audio levels, tab-separated
+      const video = videoDevice ? videoDevice.videoLevel : '';
+      const audioStr = audioLevels.map(a => a || '').join('\t');
+      lines.push(`${video}\t${audioStr}`);
+    }
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      Utils.toast(`Copied ${group.label} levels to clipboard`, 'success');
+    }).catch(err => {
+      Utils.toast('Failed to copy to clipboard', 'error');
+      console.error('Clipboard error:', err);
+    });
   }
 
   function exportNv9000Csv() {
