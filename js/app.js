@@ -213,11 +213,11 @@ const App = (() => {
       <h3 style="margin:0 0 12px 0;color:var(--text-primary);font-size:16px;">Show Loaded: ${showName}</h3>
       <p style="margin:0 0 20px 0;color:var(--text-secondary);font-size:13px;">
         Would you like to stage all routes and MV layouts from this show?<br>
-        <span style="font-size:11px;color:var(--text-muted);">Routes will be staged but NOT executed until you trigger them.</span>
+        <span style="font-size:11px;color:var(--text-muted);">This is typically only needed by the engineer.</span>
       </p>
       <div style="display:flex;gap:12px;justify-content:center;">
-        <button id="stage-yes" class="btn btn-primary" style="padding:8px 24px;">Stage All</button>
-        <button id="stage-no" class="btn btn-secondary" style="padding:8px 24px;">Skip</button>
+        <button id="stage-no" class="btn btn-primary" style="padding:8px 24px;">Skip (Recommended)</button>
+        <button id="stage-yes" class="btn btn-secondary" style="padding:8px 24px;">Stage All</button>
       </div>
     `;
 
