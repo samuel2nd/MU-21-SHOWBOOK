@@ -1198,6 +1198,34 @@ const Store = (() => {
   let data = emptyShow();
   data.fiberTac = initTacData();
 
+  // Helper: Get RTR ID for a SHOW device (1-indexed source number)
+  function getShowRtrId(showNum) {
+    if (showNum >= 1 && showNum <= 20) return 864 + showNum;   // 865-884
+    if (showNum >= 21 && showNum <= 40) return 1150 + showNum; // 1171-1190
+    if (showNum >= 41 && showNum <= 60) return 1161 + showNum; // 1202-1221
+    if (showNum >= 61 && showNum <= 80) return 1161 + showNum; // 1222-1241
+    return 0;
+  }
+
+  // Sync all showNames from sources to rtrMaster deviceNames
+  function syncShowNamesToRtrMaster() {
+    if (!data.sources || !data.rtrMaster) return;
+
+    for (let i = 0; i < 80; i++) {
+      const showName = data.sources[i]?.showName;
+      const rtrId = getShowRtrId(i + 1);
+      if (!rtrId) continue;
+
+      // Find the rtrMaster entry with this RTR ID
+      const idx = data.rtrMaster.findIndex(d => d && d.row === rtrId);
+      if (idx !== -1) {
+        // Update deviceName to match showName (or default if empty)
+        const newName = showName || `SHOW ${String(i + 1).padStart(2, '0')}`;
+        data.rtrMaster[idx].deviceName = newName;
+      }
+    }
+  }
+
   // Load from localStorage
   function loadFromStorage() {
     try {
@@ -1228,6 +1256,8 @@ const Store = (() => {
             }
           }
         }
+        // Sync showNames from sources to rtrMaster deviceNames
+        syncShowNamesToRtrMaster();
         // Migrate txPgmGfx to new structure
         if (data.txPgmGfx) {
           const defaults = emptyShow().txPgmGfx;
@@ -1375,6 +1405,8 @@ const Store = (() => {
           data.fiberTac[panelName] = Array.from({ length: 24 }, (_, i) => ({ port: i + 1, source: '', dest: '', notes: '' }));
         }
       });
+      // Sync showNames from sources to rtrMaster deviceNames
+      syncShowNamesToRtrMaster();
       saveToStorage();
       emit('show-loaded', data);
     },

@@ -1,5 +1,31 @@
 // SOURCE Tab — 80 sources (2×40 layout) with validation
 const SourceTab = (() => {
+  // Helper: Get RTR ID for a SHOW device (1-indexed source number)
+  function getShowRtrId(showNum) {
+    if (showNum >= 1 && showNum <= 20) return 864 + showNum;   // 865-884
+    if (showNum >= 21 && showNum <= 40) return 1150 + showNum; // 1171-1190
+    if (showNum >= 41 && showNum <= 60) return 1161 + showNum; // 1202-1221
+    if (showNum >= 61 && showNum <= 80) return 1161 + showNum; // 1222-1241
+    return 0;
+  }
+
+  // Sync showName to rtrMaster deviceName for SHOW devices
+  function syncShowNameToRtrMaster(sourceNum, showName) {
+    const rtrId = getShowRtrId(sourceNum);
+    if (!rtrId) return;
+
+    // Find the rtrMaster entry with this RTR ID (row number)
+    const rtrMaster = Store.data.rtrMaster;
+    const idx = rtrMaster.findIndex(d => d && d.row === rtrId);
+
+    if (idx !== -1) {
+      // Update deviceName to match showName (or default if empty)
+      const newName = showName || `SHOW ${String(sourceNum).padStart(2, '0')}`;
+      rtrMaster[idx].deviceName = newName;
+      Store.set(`rtrMaster.${idx}.deviceName`, newName);
+    }
+  }
+
   // Persist autofill settings across re-renders
   const autofillState = {
     column: 'showName',
@@ -190,6 +216,8 @@ const SourceTab = (() => {
         if (col === 'both' || col === 'showName') {
           data[i].showName = value;
           Store.set(`sources.${i}.showName`, value);
+          // Sync to rtrMaster deviceName for SHOW devices
+          syncShowNameToRtrMaster(i + 1, value);
         }
         if (col === 'both' || col === 'umdName') {
           data[i].umdName = value;
@@ -469,6 +497,8 @@ const SourceTab = (() => {
         rowData.showName = val;
         inpShowName.value = val;
         Store.set(`sources.${globalIdx}.showName`, val);
+        // Sync to rtrMaster deviceName for SHOW devices
+        syncShowNameToRtrMaster(globalIdx + 1, val);
         // Check for duplicate immediately
         const others = allData.filter((s, i) => i !== globalIdx && s.showName && s.showName.trim().toLowerCase() === val.toLowerCase());
         if (val && others.length > 0) {

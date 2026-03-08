@@ -41,26 +41,27 @@ const RtrMasterTab = (() => {
     container.appendChild(page);
   }
 
-  // Build lookup map: "SHOW 01" -> source config from SOURCE page
-  function getSourceConfigMap() {
-    const map = {};
-    if (Store.data.sources) {
-      Store.data.sources.forEach((src, idx) => {
-        // Source number 1 = "SHOW 01", etc.
-        const showName = `SHOW ${String(idx + 1).padStart(2, '0')}`;
-        if (src.engSource || src.audioSource) {
-          map[showName.toLowerCase()] = src;
-        }
-      });
-    }
-    return map;
+  // Helper: Get source number (1-80) from RTR ID
+  function getSourceNumFromRtrId(rtrId) {
+    // SHOW 01-20: RTR IDs 865-884 (864 + showNum)
+    if (rtrId >= 865 && rtrId <= 884) return rtrId - 864;
+    // SHOW 21-40: RTR IDs 1171-1190 (1150 + showNum)
+    if (rtrId >= 1171 && rtrId <= 1190) return rtrId - 1150;
+    // SHOW 41-60: RTR IDs 1202-1221 (1161 + showNum)
+    if (rtrId >= 1202 && rtrId <= 1221) return rtrId - 1161;
+    // SHOW 61-80: RTR IDs 1222-1241 (1161 + showNum)
+    if (rtrId >= 1222 && rtrId <= 1241) return rtrId - 1161;
+    return 0;
   }
 
   // Get computed video/audio for a SHOW device from SOURCE page config
-  function getComputedLevels(deviceName, sourceConfigMap) {
-    const key = (deviceName || '').trim().toLowerCase();
-    const srcConfig = sourceConfigMap[key];
-    if (!srcConfig) return null;
+  // Uses RTR ID to find the source number, then looks up engSource/audioSource
+  function getComputedLevels(rtrId) {
+    const sourceNum = getSourceNumFromRtrId(rtrId);
+    if (sourceNum < 1 || sourceNum > 80) return null;
+
+    const srcConfig = Store.data.sources ? Store.data.sources[sourceNum - 1] : null;
+    if (!srcConfig || (!srcConfig.engSource && !srcConfig.audioSource)) return null;
 
     // Lookup video from engSource
     const videoDevice = srcConfig.engSource ? Formulas.rtrMasterLookup(srcConfig.engSource) : null;
@@ -75,9 +76,6 @@ const RtrMasterTab = (() => {
   }
 
   function renderTable(page, data, storePath) {
-    // Build source config map for SHOW devices
-    const sourceConfigMap = getSourceConfigMap();
-
     // Validation warnings
     const warnings = validate(data);
     if (warnings.length > 0) {
@@ -168,7 +166,7 @@ const RtrMasterTab = (() => {
       tr.appendChild(makeInputTd(row, 'deviceDesc', idx, storePath, 'Description...', 64));
 
       // Check if this is a SHOW device with computed levels from SOURCE page
-      const computed = getComputedLevels(row.deviceName, sourceConfigMap);
+      const computed = getComputedLevels(row.row);
 
       // Video Level - computed or editable
       if (computed) {
