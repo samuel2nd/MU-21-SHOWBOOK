@@ -1030,6 +1030,10 @@ const MonitorsTab = (() => {
     wrapper.appendChild(renderShowSourcesSection());
     // EVS Sources
     wrapper.appendChild(renderEvsSourcesSection());
+    // TX/PGM/CG Sources
+    wrapper.appendChild(renderTxPgmCgSection());
+    // Test Signals
+    wrapper.appendChild(renderTestSignalsSection());
     // SWR Outs
     wrapper.appendChild(renderSwrOutsSection());
 
@@ -1100,12 +1104,72 @@ const MonitorsTab = (() => {
     const grid = document.createElement('div');
     grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
 
-    const defaultEvs = [
+    // EVS inputs (camera feeds)
+    const evsInputs = [
       'EVS1-Ain', 'EVS1-Bin', 'EVS1-Cin', 'EVS1-Din', 'EVS1-Ein', 'EVS1-Fin',
       'EVS2-Ain', 'EVS2-Bin', 'EVS2-Cin', 'EVS2-Din', 'EVS2-Ein', 'EVS2-Fin',
       'EVS3-Ain', 'EVS3-Bin', 'EVS3-Cin', 'EVS3-Din', 'EVS3-Ein', 'EVS3-Fin',
     ];
-    defaultEvs.forEach(name => grid.appendChild(createChip(name, 'evs')));
+    evsInputs.forEach(name => grid.appendChild(createChip(name, 'evs')));
+
+    // EVS super channels (character outputs) - matches RTR Master
+    const evsSupers = [
+      'EVS 1-As', 'EVS 1-Bs', 'EVS 2-As', 'EVS 2-Bs', 'EVS 3-As', 'EVS 3-Bs',
+    ];
+    evsSupers.forEach(name => grid.appendChild(createChip(name, 'evs')));
+
+    section.appendChild(grid);
+    return section;
+  }
+
+  function renderTxPgmCgSection() {
+    const section = document.createElement('div');
+    const header = document.createElement('div');
+    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
+    header.textContent = 'TX / PGM / CG';
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
+
+    // TX DAs - matches RTR Master
+    const txDas = [
+      'TX1 DA', 'TX2 DA', 'TX3 DA', 'TX4 DA',
+      'TX5 DA', 'TX6 DA', 'TX7 DA', 'TX8 DA',
+    ];
+    txDas.forEach(name => grid.appendChild(createChip(name, 'tx')));
+
+    // PGM DA - matches RTR Master
+    grid.appendChild(createChip('PGM DA', 'tx'));
+
+    // CG channels - matches RTR Master
+    const cgChannels = ['CG 1', 'CG 2', 'CG 3', 'CG 4', 'CG 5', 'CG 6'];
+    cgChannels.forEach(name => grid.appendChild(createChip(name, 'cg')));
+
+    // Canvas channels - matches RTR Master
+    const canvasChannels = [
+      'CANVAS 1', 'CANVAS 2', 'CANVAS 3',
+      'CANVAS 4', 'CANVAS 5', 'CANVAS 6',
+    ];
+    canvasChannels.forEach(name => grid.appendChild(createChip(name, 'cg')));
+
+    section.appendChild(grid);
+    return section;
+  }
+
+  function renderTestSignalsSection() {
+    const section = document.createElement('div');
+    const header = document.createElement('div');
+    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
+    header.textContent = 'TEST SIGNALS';
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
+
+    // Test signals - matches RTR Master
+    const testSignals = ['BLACK', 'BARS', 'VALID'];
+    testSignals.forEach(name => grid.appendChild(createChip(name, 'test')));
 
     section.appendChild(grid);
     return section;
@@ -1147,6 +1211,9 @@ const MonitorsTab = (() => {
       show: { bg: '#2a3a5b', border: '#3b5998', text: '#7eb8ff' },
       evs: { bg: '#3a2a5b', border: '#6b3fa0', text: '#c490ff' },
       swr: { bg: '#2a4a3a', border: '#3a7a5a', text: '#7effb8' },
+      tx: { bg: '#5b3a2a', border: '#a06b3f', text: '#ffc490' },
+      cg: { bg: '#4a3a5b', border: '#7a5a9a', text: '#d0a0ff' },
+      test: { bg: '#3a4a4a', border: '#5a7a7a', text: '#a0d0d0' },
     };
     const c = colors[type] || colors.show;
     // Dim placeholder chips to distinguish from defined sources
