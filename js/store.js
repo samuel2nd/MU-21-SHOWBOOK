@@ -853,29 +853,20 @@ const Store = (() => {
       coax: '',
     }));
 
-    // Coax I/O Tie Lines (48 rows) with fixed destinations
-    const tieLineDestinations = [
-      'P1-1', 'P1-2', 'P1-3', 'P1-4', 'P1-5', 'P1-6', 'P1-7', 'P1-8',
-      'P2-1', 'P2-2', 'P2-3', 'P2-4', 'P2-5', 'P2-6', 'P2-7', 'P2-8',
-      'P3-1', 'P3-2', 'P3-3', 'P3-4', 'P3-5', 'P3-6', 'P3-7', 'P3-8',
-      'FEVS-1', 'FEVS-2', 'FEVS-3', 'FEVS-4', 'FEVS-5', 'FEVS-6',
-      'FEVS-7', 'FEVS-8', 'FEVS-9', 'FEVS-10', 'FEVS-11', 'FEVS-12',
-      'REVS-1', 'REVS-2', 'REVS-3', 'REVS-4', 'REVS-5', 'REVS-6',
-      'REVS-7', 'REVS-8', 'REVS-9', 'REVS-10', 'REVS-11', 'REVS-12',
-    ];
+    // Coax I/O Tie Lines (48 rows) - destinations are blank/editable
     const coaxIoTieLines = Array.from({ length: 48 }, (_, i) => ({
       row: i + 1,
       source: '',
-      destination: tieLineDestinations[i] || '',
+      destination: '',
       mult: '',
       coax: '',
     }));
 
-    // Coax Truck Tie Lines (48 rows): source, destination
+    // Coax Truck Tie Lines (48 rows) - destinations are blank/editable
     const coaxTruckTieLines = Array.from({ length: 48 }, (_, i) => ({
       row: i + 1,
       source: '',
-      destination: tieLineDestinations[i] || '',
+      destination: '',
     }));
 
     // JFS MUX 1 (12 rows): source, destination, faxed + TAC/Strand for entire unit
