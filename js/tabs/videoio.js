@@ -224,11 +224,8 @@ const VideoIoTab = (() => {
       // Source
       tr.appendChild(makeSourceInput(row, idx, 'coaxIoTieLines', 'source'));
 
-      // Destination (fixed, read-only)
-      const tdDest = document.createElement('td');
-      tdDest.textContent = row.destination || '';
-      tdDest.style.color = 'var(--text-secondary)';
-      tr.appendChild(tdDest);
+      // Destination (editable)
+      tr.appendChild(makeTextInput(row, idx, 'coaxIoTieLines', 'destination'));
 
       // MULT (dropdown with sync)
       tr.appendChild(makeMultInput(row, idx, 'coaxIoTieLines', 'mult'));
@@ -247,6 +244,17 @@ const VideoIoTab = (() => {
     parent.appendChild(wrapper);
   }
 
+  // Position labels for truck tie lines (same as original destinations)
+  const TRUCK_TIE_POSITIONS = [
+    'P1-1', 'P1-2', 'P1-3', 'P1-4', 'P1-5', 'P1-6', 'P1-7', 'P1-8',
+    'P2-1', 'P2-2', 'P2-3', 'P2-4', 'P2-5', 'P2-6', 'P2-7', 'P2-8',
+    'P3-1', 'P3-2', 'P3-3', 'P3-4', 'P3-5', 'P3-6', 'P3-7', 'P3-8',
+    'FEVS-1', 'FEVS-2', 'FEVS-3', 'FEVS-4', 'FEVS-5', 'FEVS-6',
+    'FEVS-7', 'FEVS-8', 'FEVS-9', 'FEVS-10', 'FEVS-11', 'FEVS-12',
+    'REVS-1', 'REVS-2', 'REVS-3', 'REVS-4', 'REVS-5', 'REVS-6',
+    'REVS-7', 'REVS-8', 'REVS-9', 'REVS-10', 'REVS-11', 'REVS-12',
+  ];
+
   function renderTruckTieLinesTable(parent, data) {
     const table = document.createElement('table');
     table.className = 'data-table';
@@ -254,7 +262,7 @@ const VideoIoTab = (() => {
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
     [
-      { label: '#', width: '25px' },
+      { label: 'POS', width: '55px' },
       { label: 'Source', width: '90px' },
       { label: 'Dest', width: '90px' }
     ].forEach(col => {
@@ -270,20 +278,17 @@ const VideoIoTab = (() => {
     data.forEach((row, idx) => {
       const tr = document.createElement('tr');
 
-      // Row number
-      const tdNum = document.createElement('td');
-      tdNum.className = 'row-num';
-      tdNum.textContent = row.row;
-      tr.appendChild(tdNum);
+      // Position label (replaces row number)
+      const tdPos = document.createElement('td');
+      tdPos.className = 'row-num';
+      tdPos.textContent = TRUCK_TIE_POSITIONS[idx] || row.row;
+      tr.appendChild(tdPos);
 
       // Source
       tr.appendChild(makeSourceInput(row, idx, 'coaxTruckTieLines', 'source'));
 
-      // Destination (fixed, read-only)
-      const tdDest = document.createElement('td');
-      tdDest.textContent = row.destination || '';
-      tdDest.style.color = 'var(--text-secondary)';
-      tr.appendChild(tdDest);
+      // Destination (editable)
+      tr.appendChild(makeTextInput(row, idx, 'coaxTruckTieLines', 'destination'));
 
       tbody.appendChild(tr);
     });
