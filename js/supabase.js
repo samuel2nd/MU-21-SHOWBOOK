@@ -74,7 +74,11 @@ const SupabaseSync = (() => {
 
       if (urlShowName) {
         // Load from Supabase
-        await loadShow(urlShowName);
+        const loaded = await loadShow(urlShowName);
+        if (loaded && typeof App !== 'undefined' && App.showStagingPrompt) {
+          // Show staging prompt after loading from URL
+          setTimeout(() => App.showStagingPrompt(urlShowName), 500);
+        }
       } else if (Store.data.show.name) {
         // We have a local show, use that name
         currentShowName = Store.data.show.name;

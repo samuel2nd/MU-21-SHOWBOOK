@@ -66,6 +66,188 @@ const App = (() => {
     document.title = `MU-21 — ${Store.data.show.name || 'Showbook'}`;
   }
 
+  // ============================================
+  // Stage All Routes & Layouts from Show Data
+  // ============================================
+
+  function stageAllFromShowData() {
+    let nv9000Count = 0;
+    let kaleidoCount = 0;
+
+    const hasNV9000 = typeof NV9000Client !== 'undefined';
+    const hasKaleido = typeof KaleidoClient !== 'undefined';
+
+    // Clear existing staged items first
+    if (hasNV9000) {
+      NV9000Client.clearStagedRoutes();
+    }
+    if (hasKaleido) {
+      KaleidoClient.clearStagedLayouts();
+    }
+
+    if (!hasNV9000) {
+      console.warn('[StageAll] NV9000Client not available');
+      return { nv9000Count: 0, kaleidoCount: 0 };
+    }
+
+    // ── Stage NV9000 Routes ──
+
+    // 1. Video I/O - Fiber RTR Out (source → destination)
+    const videoIo = Store.data.videoIo;
+    if (videoIo) {
+      // Fiber RTR Out
+      (videoIo.fiberRtrOut || []).forEach(row => {
+        if (row.source && row.destination) {
+          const result = NV9000Client.stageRoute(row.source, row.destination);
+          if (result.success) nv9000Count++;
+        }
+      });
+
+      // Coax RTR Out
+      (videoIo.coaxRtrOut || []).forEach(row => {
+        if (row.source && row.destination) {
+          const result = NV9000Client.stageRoute(row.source, row.destination);
+          if (result.success) nv9000Count++;
+        }
+      });
+
+      // Coax I/O Tie Lines
+      (videoIo.coaxIoTieLines || []).forEach(row => {
+        if (row.source && row.destination) {
+          const result = NV9000Client.stageRoute(row.source, row.destination);
+          if (result.success) nv9000Count++;
+        }
+      });
+
+      // Coax Truck Tie Lines
+      (videoIo.coaxTruckTieLines || []).forEach(row => {
+        if (row.source && row.destination) {
+          const result = NV9000Client.stageRoute(row.source, row.destination);
+          if (result.success) nv9000Count++;
+        }
+      });
+    }
+
+    // 2. Prod Digital Multiviewers - inputs (source → MV input)
+    const prodDigital = Store.data.prodDigital;
+    if (prodDigital && prodDigital.multiviewers) {
+      prodDigital.multiviewers.forEach(mv => {
+        if (!mv || !mv.inputs) return;
+
+        // Stage MV input routes
+        mv.inputs.forEach((source, inputIdx) => {
+          if (source) {
+            // Determine actual input number based on layout
+            const layout = mv.layout;
+            let actualInputNum = inputIdx + 1;
+            if (layout && (layout.includes('9_SPLIT') || layout === '9_SPLIT')) {
+              actualInputNum = inputIdx + 1;
+            } else if (layout && layout.includes('6_SPLIT')) {
+              const sixSplitMap = { 0: 1, 1: 2, 2: 3, 3: 7, 4: 9, 5: 8 };
+              actualInputNum = sixSplitMap[inputIdx] || (inputIdx + 1);
+            } else if (layout && layout.includes('5_SPLIT')) {
+              const fiveSplitMap = { 0: 1, 1: 2, 2: 3, 3: 7, 4: 9 };
+              actualInputNum = fiveSplitMap[inputIdx] || (inputIdx + 1);
+            } else if (layout && layout.includes('4_SPLIT')) {
+              const fourSplitMap = { 0: 1, 1: 3, 2: 7, 3: 9 };
+              actualInputNum = fourSplitMap[inputIdx] || (inputIdx + 1);
+            }
+
+            const destName = `MV ${mv.cardId}-${actualInputNum}`;
+            const result = NV9000Client.stageRoute(source, destName);
+            if (result.success) nv9000Count++;
+          }
+        });
+
+        // Stage Kaleido layout if configured
+        if (mv.layout && mv.cardId && hasKaleido) {
+          KaleidoClient.stageLayoutChange(mv.id, null, mv.layout, mv.cardId);
+          kaleidoCount++;
+        }
+      });
+    }
+
+    // 3. Monitor Walls V2 - direct sources (for monitors with assignmentType='source')
+    const monitorWallsV2 = Store.data.monitorWallsV2;
+    if (monitorWallsV2) {
+      // Destination mapping for each wall's direct-source monitors
+      const wallDestinations = {
+        'p2p3': {
+          'p2-gfx': 'P2 GFX',
+          'p3-mon2': 'P3 MON2',
+        },
+        'evs': {
+          'revs-mon1': 'REVS MON1',
+          'revs-mon2': 'REVS MON2',
+          'revs-mon3': 'REVS MON3',
+          'revs-mon4': 'REVS MON4',
+        },
+      };
+
+      Object.entries(monitorWallsV2).forEach(([wallKey, wallData]) => {
+        if (!wallData || !wallData.monitors) return;
+        const destMap = wallDestinations[wallKey] || {};
+
+        wallData.monitors.forEach(mon => {
+          if (mon.assignmentType === 'source' && mon.directSource && destMap[mon.id]) {
+            const result = NV9000Client.stageRoute(mon.directSource, destMap[mon.id]);
+            if (result.success) nv9000Count++;
+          }
+        });
+      });
+    }
+
+    console.log(`[StageAll] Staged ${nv9000Count} NV9000 routes, ${kaleidoCount} Kaleido layouts`);
+    return { nv9000Count, kaleidoCount };
+  }
+
+  // Show staging prompt after cloud show load
+  function showStagingPrompt(showName) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1001;display:flex;align-items:center;justify-content:center;';
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:400px;max-width:500px;text-align:center;';
+
+    modal.innerHTML = `
+      <h3 style="margin:0 0 12px 0;color:var(--text-primary);font-size:16px;">Show Loaded: ${showName}</h3>
+      <p style="margin:0 0 20px 0;color:var(--text-secondary);font-size:13px;">
+        Would you like to stage all routes and MV layouts from this show?<br>
+        <span style="font-size:11px;color:var(--text-muted);">Routes will be staged but NOT executed until you trigger them.</span>
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="stage-yes" class="btn btn-primary" style="padding:8px 24px;">Stage All</button>
+        <button id="stage-no" class="btn btn-secondary" style="padding:8px 24px;">Skip</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    document.getElementById('stage-yes').addEventListener('click', () => {
+      const { nv9000Count, kaleidoCount } = stageAllFromShowData();
+      overlay.remove();
+
+      if (nv9000Count > 0 || kaleidoCount > 0) {
+        const messages = [];
+        if (nv9000Count > 0) messages.push(`${nv9000Count} NV9000 routes`);
+        if (kaleidoCount > 0) messages.push(`${kaleidoCount} MV layouts`);
+        Utils.toast(`Staged: ${messages.join(', ')}`, 'success');
+      } else {
+        Utils.toast('No routes or layouts to stage', 'info');
+      }
+    });
+
+    document.getElementById('stage-no').addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+  }
+
   function init() {
     // Init store
     Store.init();
@@ -216,7 +398,8 @@ const App = (() => {
           updateHeader();
           renderCurrentTab();
           overlay.remove();
-          Utils.toast(`Loaded "${show.name}"`, 'success');
+          // Show staging prompt for routes and MV layouts
+          showStagingPrompt(show.name);
         });
         actions.appendChild(loadBtn);
 
@@ -249,5 +432,5 @@ const App = (() => {
     init();
   }
 
-  return { navigateTo, renderCurrentTab, updateHeader };
+  return { navigateTo, renderCurrentTab, updateHeader, showStagingPrompt };
 })();
