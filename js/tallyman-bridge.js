@@ -5,9 +5,9 @@
 // to Tallyman via TSL 5.0 UDP protocol.
 
 const TallymanBridge = (() => {
-  // Bridge server URL - uses BridgeConfig for auto-detection
+  // Bridge server URL - always localhost
   function getBridgeUrl() {
-    return BridgeConfig.getBridgeUrl('tallyman');
+    return 'http://localhost:3002';
   }
 
   // Track connection state

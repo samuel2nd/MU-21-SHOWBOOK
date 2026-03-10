@@ -11,17 +11,17 @@ const KaleidoClient = (() => {
   let lastError = null;
 
   /**
-   * Get the bridge URL (uses BridgeConfig for auto-detection)
+   * Get the bridge URL - localhost for engineering computer
    */
   function getBridgeUrl() {
-    return BridgeConfig.getBridgeUrl('kaleido');
+    return 'http://localhost:3001';
   }
 
   /**
-   * Set the bridge URL (stored locally per browser)
+   * Set the bridge URL (not used - always localhost)
    */
   function setBridgeUrl(url) {
-    BridgeConfig.setBridgeUrl('kaleido', url);
+    // No-op - bridges are always on localhost
   }
 
   /**

@@ -14,15 +14,15 @@ const NV9000Client = (() => {
   let stagedRoutes = {};  // { 'destName': { source: 'srcName', destination: 'destName', sourceId, destId } }
 
   // ============================================================
-  // CONFIGURATION (uses BridgeConfig for auto-detection)
+  // CONFIGURATION - bridges always on localhost
   // ============================================================
 
   function getBridgeUrl() {
-    return BridgeConfig.getBridgeUrl('nv9000');
+    return 'http://localhost:3003';
   }
 
   function setBridgeUrl(url) {
-    BridgeConfig.setBridgeUrl('nv9000', url);
+    // No-op - bridges are always on localhost
   }
 
   // ============================================================
