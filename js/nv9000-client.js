@@ -10,23 +10,19 @@
  */
 
 const NV9000Client = (() => {
-  // Bridge URL (stored in localStorage so each computer can have its own)
-  const STORAGE_KEY = 'nv9000BridgeUrl';
-  const DEFAULT_BRIDGE_URL = 'http://localhost:3003';
-
   // Staged routes storage
   let stagedRoutes = {};  // { 'destName': { source: 'srcName', destination: 'destName', sourceId, destId } }
 
   // ============================================================
-  // CONFIGURATION
+  // CONFIGURATION (uses BridgeConfig for auto-detection)
   // ============================================================
 
   function getBridgeUrl() {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_BRIDGE_URL;
+    return BridgeConfig.getBridgeUrl('nv9000');
   }
 
   function setBridgeUrl(url) {
-    localStorage.setItem(STORAGE_KEY, url);
+    BridgeConfig.setBridgeUrl('nv9000', url);
   }
 
   // ============================================================
@@ -149,6 +145,13 @@ const NV9000Client = (() => {
       const result = stageRoute(sourceName, destName);
       return { ...result, staged: true };
     } else {
+      // Check if RouteQueue is available and bridges aren't reachable locally
+      // If so, queue the route for the engineering computer to execute
+      if (typeof RouteQueue !== 'undefined' && !RouteQueue.bridgesReachable) {
+        const result = RouteQueue.queueRoute(sourceName, destName);
+        return { success: result, queued: true, staged: false };
+      }
+      // Bridges reachable - execute directly
       const result = await route(sourceName, destName);
       return { ...result, staged: false };
     }

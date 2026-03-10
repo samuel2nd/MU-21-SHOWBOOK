@@ -11,22 +11,17 @@ const KaleidoClient = (() => {
   let lastError = null;
 
   /**
-   * Get the bridge URL from localStorage (per-browser setting, not synced)
+   * Get the bridge URL (uses BridgeConfig for auto-detection)
    */
   function getBridgeUrl() {
-    // Use localStorage so each computer can have its own bridge URL
-    const localUrl = localStorage.getItem('kaleidoBridgeUrl');
-    if (localUrl) {
-      return localUrl;
-    }
-    return 'http://localhost:3001';
+    return BridgeConfig.getBridgeUrl('kaleido');
   }
 
   /**
    * Set the bridge URL (stored locally per browser)
    */
   function setBridgeUrl(url) {
-    localStorage.setItem('kaleidoBridgeUrl', url);
+    BridgeConfig.setBridgeUrl('kaleido', url);
   }
 
   /**
@@ -284,7 +279,13 @@ const KaleidoClient = (() => {
     const mode = getTriggerMode();
 
     if (mode === 'immediate') {
-      // Trigger immediately
+      // Check if RouteQueue is available and bridges aren't reachable locally
+      // If so, queue the layout for the engineering computer to execute
+      if (typeof RouteQueue !== 'undefined' && !RouteQueue.bridgesReachable) {
+        const result = RouteQueue.queueLayout(cardId, toLayout);
+        return { success: result, queued: true };
+      }
+      // Bridges reachable - trigger immediately
       const result = await triggerLayoutImmediate(cardId, toLayout);
       return result;
     } else {

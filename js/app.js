@@ -334,6 +334,9 @@ const App = (() => {
 
     // Init Supabase (async, non-blocking)
     SupabaseSync.init();
+
+    // Init RouteQueue (checks if bridges are reachable)
+    RouteQueue.init();
   }
 
   // Cloud shows modal

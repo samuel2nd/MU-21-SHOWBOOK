@@ -5,8 +5,10 @@
 // to Tallyman via TSL 5.0 UDP protocol.
 
 const TallymanBridge = (() => {
-  // Bridge server URL (running on same machine)
-  const BRIDGE_URL = 'http://localhost:3002';
+  // Bridge server URL - uses BridgeConfig for auto-detection
+  function getBridgeUrl() {
+    return BridgeConfig.getBridgeUrl('tallyman');
+  }
 
   // Track connection state
   let connected = false;
@@ -96,7 +98,7 @@ const TallymanBridge = (() => {
    */
   async function checkHealth() {
     try {
-      const resp = await fetch(`${BRIDGE_URL}/health`, { method: 'GET' });
+      const resp = await fetch(`${getBridgeUrl()}/health`, { method: 'GET' });
       if (resp.ok) {
         connected = true;
         return await resp.json();
@@ -217,7 +219,7 @@ const TallymanBridge = (() => {
     const umdData = buildUmdData();
 
     try {
-      const resp = await fetch(`${BRIDGE_URL}/umd-sync`, {
+      const resp = await fetch(`${getBridgeUrl()}/umd-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ umdData })
@@ -247,7 +249,7 @@ const TallymanBridge = (() => {
    */
   async function updatePosition(position, text) {
     try {
-      const resp = await fetch(`${BRIDGE_URL}/umd`, {
+      const resp = await fetch(`${getBridgeUrl()}/umd`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position, text })
@@ -270,7 +272,7 @@ const TallymanBridge = (() => {
     return {
       connected,
       lastSyncTime,
-      bridgeUrl: BRIDGE_URL,
+      bridgeUrl: getBridgeUrl(),
       positionCount: Object.keys(POSITION_INDEX_MAP).length
     };
   }

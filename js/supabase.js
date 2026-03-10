@@ -256,6 +256,11 @@ const SupabaseSync = (() => {
       Store.loadShow(remoteData);
       isLoadingRemote = false;
 
+      // Process route queue if this device can reach bridges
+      if (typeof RouteQueue !== 'undefined' && RouteQueue.bridgesReachable) {
+        RouteQueue.processQueue();
+      }
+
       // Refresh current tab
       if (typeof App !== 'undefined' && App.renderCurrentTab) {
         App.renderCurrentTab();

@@ -1,1256 +1,437 @@
-# MU-21 SHOWBOOK — Complete Application Reference
+# MU-21 SHOWBOOK - Technical Overview
 
-> **Version:** March 2026
-> **Platform:** MU-21 Mobile Production Unit (Sony ELC Broadcast Truck)
-> **Technology:** Vanilla JavaScript, CSS3, Supabase Cloud, Node.js Bridge Servers
+Single-page web application for broadcast engineering show configuration. Tab-based interface for managing video sources, routing, multiviewer layouts, and equipment assignments.
 
 ---
 
-# TABLE OF CONTENTS
+## File Structure
 
-1. [What Is This Application?](#what-is-this-application)
-2. [Who Uses This Application?](#who-uses-this-application)
-3. [How The Application Works](#how-the-application-works)
-4. [Complete Tab Reference](#complete-tab-reference)
-5. [Integration Systems](#integration-systems)
-6. [Data Architecture](#data-architecture)
-7. [File Structure](#file-structure)
-8. [Building From Scratch](#building-from-scratch)
+### HTML Entry Point
+- **index.html** (114 lines) - Main page with sidebar navigation defining 20 tabs in 6 categories:
+  - Home
+  - Input: SOURCE, TX/PGM/GFX, CCU/FSY INPUT
+  - Output/Computed: ENGINEER, SWR I/O
+  - Physical I/O: VIDEO I/O, FIBER TAC, COAX MULTS/MUX, AUDIO MULT, NETWORK I/O
+  - Monitor Walls: PROD Digital, PROD Print, P2-P3, EVS, AUD, VIDEO
+  - Config: EVS CONFIG, MULTIVIEWER, ROUTER PANELS
+  - Lookup: RTR I/O MASTER, Sheet8
 
----
+### Core JavaScript (12 files)
 
-# WHAT IS THIS APPLICATION?
+| File | Lines | Purpose |
+|------|-------|---------|
+| js/app.js | 440 | Tab routing, header management, `stageAllFromShowData()`, `showStagingPrompt()` |
+| js/store.js | 1430+ | Central data store, `defaultRtrMaster()`, `defaultRtrOutputs()`, `defaultEvsConfig()`, `emptyShow()` |
+| js/utils.js | 775 | Dark dropdowns, table rendering, `syncToFiberTac()`, `syncToCoaxMult()` |
+| js/formulas.js | 221 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()` |
+| js/export.js | 301 | JSON/CSV export/import with validation, `sanitizeStrings()` |
+| js/supabase.js | 400 | Real-time cloud sync, session-based filtering, triggers RouteQueue on remote updates |
+| js/bridge-config.js | 135 | Centralized bridge URL config with auto-detection from current hostname |
+| js/route-queue.js | 250 | Route queue system - remote devices queue routes, engineering computer executes |
+| js/kaleido.js | 325 | Multiviewer layout control, uses RouteQueue when bridges not reachable |
+| js/nv9000-client.js | 420 | Router control, uses RouteQueue when bridges not reachable |
+| js/tallyman-bridge.js | 290 | Tallyman UMD sync via TSL 5.0 UDP |
 
-The MU-21 Showbook is a web-based control center for managing a mobile broadcast production truck. Think of it as the "brain" that connects all the pieces of a live TV broadcast:
+### Tab JavaScript (18 files)
 
-- **80 video sources** (cameras, graphics, replays, etc.)
-- **288+ router devices** (where video signals go)
-- **5 EVS replay servers** (instant replay machines)
-- **22 Kaleido multiviewers** (the big wall of monitors engineers watch)
-- **Hundreds of physical connections** (fiber cables, coax cables, audio cables)
-
-Instead of tracking all this on paper spreadsheets (which is error-prone), this application provides:
-
-1. **A single source of truth** — everyone sees the same data
-2. **Automatic calculations** — change a camera assignment, and it updates everywhere
-3. **Direct hardware control** — click a button to actually route video signals
-4. **Multi-user collaboration** — multiple engineers can edit simultaneously
-5. **Cloud backup** — shows are saved online and can be loaded from any device
-
----
-
-# WHO USES THIS APPLICATION?
-
-## Technical Director (TD)
-- Sets up the show's source assignments
-- Configures switcher inputs/outputs
-- Manages tally and GPI groups
-
-## Video Engineer (VE)
-- Assigns cameras to CCU (Camera Control Units)
-- Routes video through frame synchronizers
-- Manages fiber and coax patch panels
-- Controls multiviewer layouts
-
-## Audio Engineer (A1)
-- Assigns audio sources and channels
-- Manages audio multiplexer panels
-- Tracks 16-channel audio mappings per device
-
-## EVS Operator
-- Configures EVS replay servers
-- Assigns channel names and tape numbers
-- Manages playback settings
-
-## EIC (Engineer In Charge)
-- Oversees all technical aspects
-- Exports router configurations
-- Manages cloud show storage
+| File | Lines | Tab Name | Key Features |
+|------|-------|----------|--------------|
+| js/tabs/home.js | 135 | HOME | Show info, equipment summary, quick navigation grid |
+| js/tabs/source.js | 576 | SOURCE | 80 sources split 1-40/41-80, quick fill controls, syncs to RTR Master |
+| js/tabs/txpgmgfx.js | 401 | TX/PGM/GFX | TX 1-8, CG 1-6, Canvas 1-8, Program outputs, FS 01-67 dropdown |
+| js/tabs/ccufsy.js | 324 | CCU/FSY INPUT | CCU 1-12, FS 1-67, syncs to FIBER TAC and COAX MULTS |
+| js/tabs/engineer.js | 1126 | ENGINEER | UMD groups (CCU/FS, EVS/CG, Switcher Outs, Spare De-Embed, TX DAs), NV9000 controls |
+| js/tabs/swrio.js | 273 | SWR I/O | Switcher Inputs 1-120 (3 columns), Outputs 1-46, Tally Group 1-24, GPI 1-12 |
+| js/tabs/videoio.js | 559 | VIDEO I/O | Fiber RTR Out 1-16, Coax RTR Out 1-16, I/O Tie Lines 1-48, Truck Tie Lines 1-48, JFS MUX 1 (12), JFS MUX 2 (6) |
+| js/tabs/fibertac.js | 615 | FIBER TAC | Visual patch panels (TAC-A through TAC-H, S09, S10), 24 ports each, click-to-assign modal |
+| js/tabs/coax.js | 375 | COAX MULTS | 8 mult units, 15 outputs each (5x3 grid), click-to-assign modal |
+| js/tabs/audiomult.js | 180 | AUDIO MULT | DT-12 panels A-F, 12 channels each (6x2 grid) |
+| js/tabs/networkio.js | 188 | NETWORK I/O | I/O (24 ports), Truck Bench (24 ports), Above Tape (ports 13-24) |
+| js/tabs/proddigital.js | 1500+ | PROD Digital | PXM 1-8, 10-12 monitor wall with MV assignments, layouts, drag-drop |
+| js/tabs/monitors.js | 1234 | P2-P3, EVS, AUD, VIDEO | 4 monitor wall pages with drag-drop sources, layouts |
+| js/tabs/evsconfig.js | 531 | EVS CONFIG | 4 EVS servers (2101, 2102, 2103, 2105), XFILE gateway, Wohler config, Show Sources reference |
+| js/tabs/multiviewer.js | 887 | MULTIVIEWER | 22 Kaleido cards configuration, staged layout changes panel |
+| js/tabs/routerpanel.js | 34 | ROUTER PANELS | Panel Form 1-20, TD Panel Buttons 1-20 |
+| js/tabs/rtrmaster.js | 276 | RTR I/O MASTER | Device library with video + 16 audio levels, sub-tabs for Inputs/Outputs |
+| js/tabs/sheet8.js | 46 | Sheet8 | Reference data editor: Device Types, Video/Audio Formats, Locations, TAC Panels, Audio Sources |
 
 ---
 
-# HOW THE APPLICATION WORKS
+## Router Device Library (RTR I/O Master)
 
-## Opening The Application
+### Router Inputs (from `defaultRtrMaster()` in store.js)
 
-1. Open a web browser (Chrome, Firefox, or Edge)
-2. Navigate to the showbook URL (typically `http://localhost:8080` on the truck network)
-3. The HOME tab loads with show info and navigation
+**Standard Device IDs 1-288:**
+- CCU 01-12 (IDs 1-12)
+- FS 01-62 (IDs 13-74)
+- Additional devices through ID 288
 
-## Basic Workflow
+**Extended SHOW Source IDs:**
+- SHOW 01-20: IDs 865-884
+- SHOW 21-40: IDs 1171-1190
+- SHOW 41-60: IDs 1202-1221
+- SHOW 61-80: IDs 1222-1241
 
-### Starting a New Show
-1. Go to **HOME** tab
-2. Enter the **Show Name** (e.g., "Sunday Night Football")
-3. Select the **Video Format** (1080p/59.94, 1080i/59.94, or 720p/59.94)
-4. This information appears in the header and is included in all exports
-
-### Defining Sources
-1. Go to **SOURCE** tab
-2. For each of the 80 available sources:
-   - Enter a **Show Name** (what appears on monitors, e.g., "MAIN CAM 1")
-   - Enter a **UMD Name** (shorter name for under-monitor displays, e.g., "CAM1")
-   - Select an **Eng Source** (the physical device, e.g., "CCU 01")
-   - Select an **Audio Source** (where audio comes from)
-3. Use **Auto-fill** to quickly populate multiple sources at once
-
-### Setting Up Equipment
-1. Go to **CCU/FSY** tab to assign cameras and frame syncs
-2. Go to **TX/PGM/GFX** tab to configure transmission and graphics
-3. Go to **EVS CONFIG** tab to set up replay servers
-
-### Patching Physical Connections
-1. Go to **FIBER TAC** tab to assign fiber panel ports
-2. Go to **COAX** tab to assign coax multiplexer outputs
-3. Go to **AUDIO MULT** tab to assign audio panel ports
-4. Go to **NETWORK I/O** tab to document network connections
-
-### Controlling Monitor Walls
-1. Go to any **MONITOR** tab (PROD, P2-P3, EVS, AUD, VIDEO)
-2. Drag sources onto monitor positions
-3. Select multiviewer layouts
-4. Routes can be **staged** (queued) or **immediate** (instant)
-
-### Saving and Sharing
-- **Auto-save**: Every change is automatically saved to the browser
-- **Cloud sync**: If configured, changes sync to Supabase in real-time
-- **Share URL**: Copy the URL with `?show=SHOWNAME` to share with others
-- **Export**: Download JSON backup or CSV files for router import
+### Router Outputs (from `defaultRtrOutputs()` in store.js)
+- Destination IDs starting at 289
+- Output devices through 637+
 
 ---
 
-## Navigation
-
-The sidebar on the left contains all tabs organized by category:
-
-| Category | Color | Purpose |
-|----------|-------|---------|
-| **HOME** | Blue | Dashboard and navigation |
-| **INPUT** | Green | Define sources and input equipment |
-| **OUTPUT** | Purple | Configure outputs and UMD text |
-| **LOOKUP** | Orange | Reference data and device library |
-| **PHYSICAL** | Cyan | Fiber, coax, audio, and network patching |
-| **MONITOR** | Red | Monitor wall control and routing |
-| **CONFIG** | Yellow | EVS, multiviewer, and router panel setup |
-
-Click any tab to navigate. The current tab is highlighted.
-
----
-
-# COMPLETE TAB REFERENCE
-
-## HOME Tab
-
-**Purpose:** Landing page with show information and quick navigation
-
-**What You See:**
-- **Show Info Box**: Text field for show name, dropdown for video format
-- **Equipment Summary**: Live counts of active sources, devices in use, and monitors configured
-- **Navigation Grid**: Clickable cards for all 20 tabs organized by category
-
-**What You Do:**
-1. Enter the show name
-2. Select the video format
-3. Click any card to jump to that tab
-
-**Data Saved:**
-- `show.name` — The show title
-- `show.format` — The video format selection
-
----
-
-## SOURCE Tab
-
-**Purpose:** Define all 80 broadcast sources with names, devices, and audio assignments
-
-**What You See:**
-- Two side-by-side tables (Sources 1-40 and 41-80)
-- Each row has: Source #, Show Name, UMD Name, Eng Source, Audio Source, REMI Name, Active checkbox
-- Auto-fill form at the top for bulk entry
-
-**What You Do:**
-1. Enter **Show Name** for each active source (e.g., "SLASH CAM", "MAIN CAM 1")
-2. Enter **UMD Name** (shorter version for monitor displays)
-3. Select **Eng Source** from dropdown (the physical device like "CCU 01" or "FS 05")
-4. Select **Audio Source** from dropdown (where audio comes from)
-5. Check **Active** for sources that are in use
-6. Use **Auto-fill** to populate multiple sources:
-   - Enter a prefix (e.g., "CAM")
-   - Set start number and count
-   - Click "Fill" to auto-number (CAM 01, CAM 02, CAM 03...)
-
-**How It Connects:**
-- Show names sync to **RTR I/O MASTER** SHOW device names (for router lookups)
-- Eng Source selections determine video levels (looked up from RTR I/O MASTER)
-- Audio Source selections determine 16-channel audio mappings
-- UMD names appear in **ENGINEER** tab for Tallyman sync
-
-**Data Saved:**
-- `sources[0-79].showName`
-- `sources[0-79].umdName`
-- `sources[0-79].engSource`
-- `sources[0-79].audioSource`
-- `sources[0-79].remiName`
-- `sources[0-79].active`
-
----
-
-## TX/PGM/GFX Tab
-
-**Purpose:** Configure transmission outputs (TX 1-8), program outputs (PGM 1-2), graphics (GFX 1-3), and canvas channels (CANVAS 1-8)
-
-**What You See:**
-- Four sections with tables:
-  - **TX 1-8**: Transmission DA outputs
-  - **PGM 1-2**: Program outputs
-  - **GFX 1-3**: Graphics content sources
-  - **CANVAS 1-8**: Canvas channel assignments
-
-**What You Do:**
-1. Enter **Show Name** for each output
-2. Enter **UMD Name** for monitor displays
-3. Enter **Destination** information
-4. Add notes as needed
-
-**How It Connects:**
-- TX DA names are used by **ENGINEER** tab for UMD lookups
-- CG and CANVAS names appear in monitor wall drag-and-drop sources
-
-**Data Saved:**
-- `txPgmGfx.tx[0-7]` — TX rows
-- `txPgmGfx.pgm[0-1]` — PGM rows
-- `txPgmGfx.gfx[0-2]` — GFX rows
-- `txPgmGfx.canvas[0-7]` — CANVAS rows
-
----
-
-## CCU/FSY Tab
-
-**Purpose:** Configure Camera Control Units (CCU 1-12) and Frame Synchronizers (FSY 1-67) with fiber and coax routing
-
-**What You See:**
-- **CCU Section (1-12)**: Camera control unit assignments
-- **FSY Section (1-67)**: Frame synchronizer assignments
-
-**CCU Columns:**
-- Unit number
-- Device type
-- TAC panel assignment (dropdown)
-- FIB-A strand (dropdown, 1-24)
-- FIB-B strand (dropdown, 1-24)
-- Show Name (computed from SOURCE page)
-- Lens checkboxes (B, S, W, Dolly, Hand)
-- Notes
-
-**FSY Columns:**
-- Unit number
-- Format (dropdown from reference data)
-- TAC panel assignment
-- FIB-A strand
-- Show Name (computed)
-- Source (computed from SOURCE page engSource)
-- MULT assignment (dropdown, 1-40)
-- COAX output number
-- Fixed and JS fields
-- Notes
-
-**How It Connects:**
-- TAC and FIB-A/B selections **automatically sync to FIBER TAC** page
-- MULT selections **automatically sync to COAX MULTS** page
-- Changes are bidirectional — editing FIBER TAC updates CCU/FSY
-
-**Data Saved:**
-- `ccuFsy.ccu[0-11]` — CCU configurations
-- `ccuFsy.fsy[0-66]` — FSY configurations
-
----
-
-## RTR I/O MASTER Tab
-
-**Purpose:** The master device library containing all router devices with video levels and 16-channel audio mappings
-
-**What You See:**
-- Sub-tab toggle: **ROUTER INPUTS** / **ROUTER OUTPUTS**
-- Table with columns: Row #, Device Name, Description, Video Level, A1-A16
-
-**ROUTER INPUTS Contains:**
-- CCU 01-12 (Camera Control Units)
-- FS 01-67 (Frame Synchronizers)
-- EVS devices (inputs and outputs)
-- CG 1-6 (Character Generators)
-- CANVAS 1-8
-- De-embedder devices
-- SHOW 01-80 (the 80 sources)
-- And more (~288 devices total)
-
-**ROUTER OUTPUTS Contains:**
-- Transmission outputs
-- Monitor destinations
-- MV inputs
-- And other output-only devices
-
-**Special Behavior:**
-- **SHOW devices** (sources 1-80) display **computed** video/audio levels
-  - Green background indicates computed values
-  - Values come from SOURCE page engSource/audioSource lookups
-  - These cells are read-only
-- **Duplicate device names** show warnings (breaks router lookups)
-- Missing descriptions or video levels trigger validation warnings
-
-**How It Connects:**
-- All dropdowns across the app pull device names from this list
-- Video/audio levels are used for NV9000 router exports
-- Device names must match exactly for routing to work
-
-**Data Saved:**
-- `rtrMaster[0-287+]` — Input devices
-- `rtrOutputs[0-N]` — Output devices
-
----
-
-## SHEET8 Tab
-
-**Purpose:** Manage reference dropdown lists used throughout the application
-
-**What You See:**
-- Six text areas (one item per line):
-  - Device Types
-  - Video Formats
-  - Audio Formats
-  - Locations
-  - TAC Panels
-  - Audio Sources
-
-**What You Do:**
-1. Edit any list by adding/removing lines
-2. Changes immediately affect all dropdowns using that list
-
-**Example:**
-Adding "TAC-K" to TAC Panels makes it available in CCU/FSY TAC dropdowns.
-
-**Data Saved:**
-- `sheet8.deviceTypes`
-- `sheet8.videoFormats`
-- `sheet8.audioFormats`
-- `sheet8.locations`
-- `sheet8.tacPanels`
-- `sheet8.audioSources`
-
----
-
-## ENGINEER Tab
-
-**Purpose:** NV9000 router control center and Tallyman UMD text management
-
-**What You See:**
-
-### Section 1: EIC QC Monitors
-- Two monitor assignments (EIC QC 1 and EIC QC 2)
-- Type-to-filter source dropdowns
-- Routes directly to the EIC's quality control monitors
-
-### Section 2: NV9000 Router Bridge (Collapsible)
-- Bridge status indicator (Connected/Offline)
-- Bridge URL configuration
-- Trigger mode selection (Immediate vs Staged)
-- Per-page mode overrides (Video I/O, Monitor Walls)
-- Test route interface (source → destination)
-
-### Section 3: Staged Routes Panel
-- Shows count of staged routes (when in Staged mode)
-- "TAKE ALL" button to execute all staged routes at once
-- "Clear All" button to discard staged routes
-- List of pending routes with remove buttons
-
-### Section 4: NV9000 Show Sources
-- Tables showing SHOW 01-80 with RTR IDs, show names, and levels
-- Copy Names / Copy Levels buttons for clipboard export
-
-### Section 5: Tallyman UMD Updater
-- Bridge status indicator
-- "Sync All UMDs" button
-- Six UMD position groups displayed in grids:
-  - **CCU / FRAMESYNC**: CCU 01-12, FS 01-30
-  - **EVS / CG**: EVS outputs/inputs, CG 1-6, CANVAS 1-8
-  - **SWITCHER OUTS**: PGM, CLEAN, ME buses, AUX 1-12, IS 1-10
-  - **SPARE DE-EMBEDDING**: DEM 87-134
-  - **TRANSMISSION DA'S**: TX1-TX8 DA
-  - **CCU / FRAMESYNC (continued)**: FS 31-67
-
-**How UMD Lookup Works:**
-For each position, the system searches (in order):
-1. SWR I/O outputs (for switcher positions)
-2. EVS CONFIG (for EVS positions)
-3. SOURCE page (for CCU/FS positions)
-4. TX/PGM/GFX (for TX DA, CG, CANVAS positions)
-
-**What You Do:**
-1. Configure NV9000 bridge URL if different from default
-2. Select trigger mode (Staged for complex shows, Immediate for live changes)
-3. Test routes using the test interface
-4. Review and execute staged routes
-5. Sync UMD text to Tallyman system
-
-**Data Saved:**
-- `eicQcMonitors` — EIC monitor assignments
-- NV9000 settings stored in localStorage
-
----
-
-## SWR I/O Tab
-
-**Purpose:** Switcher input/output mapping with tally and GPI groups
-
-**What You See:**
-
-### Switcher Inputs (1-120)
-- 3-column layout for compact viewing
-- Columns: #, Show Source, Eng Source
-- Show Source auto-populates from SOURCE page
-
-### Switcher Outputs (1-46)
-- Columns: #, Default (read-only), UMD (editable)
-- Default shows the standard output name (PGM A, CLEAN, ME buses, etc.)
-- UMD field for custom display text
-
-### SWR Tally Group (1-24)
-- Columns: #, Default, UMD
-- Tally assignments for source indication
-
-### SWR GPI Group (1-12)
-- Columns: #, Default, UMD
-- GPI trigger assignments
-
-**How It Connects:**
-- Switcher output UMD values appear in ENGINEER tab
-- Used by Tallyman sync for switcher position text
-
-**Data Saved:**
-- `swrIo.inputs[0-119]`
-- `swrIo.outputs[0-45]`
-- `swrIo.tally[0-23]`
-- `swrIo.gpi[0-11]`
-
----
-
-## VIDEO I/O Tab
-
-**Purpose:** Router output routing configuration for fiber, coax, and tie lines
-
-**What You See:**
-
-### I/O RTR OUTPUT Section
-Two side-by-side tables:
-- **FIBER (1-16)**: Fiber router outputs with Source, Destination, TAC, FIB columns
-- **COAX (1-16)**: Coax router outputs with Source, Destination, MULT, COAX columns
-
-### TIE LINES Section
-Two side-by-side tables:
-- **COAX I/O TIE LINES (1-48)**: Source, Destination (editable), MULT, COAX columns
-- **COAX TRUCK TIE LINES (1-48)**: Position label (P1-1 through REVS-12), Source, Destination (editable)
-
-### FIBER JFS MUX Section
-Two multiplexer configurations:
-- **JFS MUX 1 (1-12)**: Source, Destination, FXD checkbox, with TAC/FIB-A header
-- **JFS MUX 2 (1-6)**: Same layout, smaller
-
-**What You Do:**
-1. Select **Source** from dropdown (device names from RTR Master)
-2. Enter or select **Destination**
-3. Assign TAC panels and fiber strands for fiber outputs
-4. Assign MULT and COAX outputs for coax routing
-5. Routes can execute immediately or be staged (based on ENGINEER tab settings)
-
-**How It Connects:**
-- Routes trigger NV9000Client based on trigger mode
-- Fiber assignments sync to FIBER TAC page
-- MULT assignments sync to COAX MULTS page
-
-**Data Saved:**
-- `videoIo.fiberRtrOut[0-15]`
-- `videoIo.coaxRtrOut[0-15]`
-- `videoIo.coaxIoTieLines[0-47]`
-- `videoIo.coaxTruckTieLines[0-47]`
-- `videoIo.jfsMux1`
-- `videoIo.jfsMux2`
-
----
-
-## FIBER TAC Tab
-
-**Purpose:** Visual fiber patch panel management for TAC panels
-
-**What You See:**
-- Control bar with panel count and add buttons
-- Grid of TAC panels (TAC-A through TAC-H, S09, S10, plus custom)
-- Each panel shows a 6×4 grid (24 ports)
-- Assigned ports are highlighted blue with white text
-- Badge shows "N used" for each panel
-
-**What You Do:**
-1. Click "**+ Add TAC Panel**" to add custom panels
-2. Click any port to open the assignment editor
-3. In the editor, choose quick-assign tabs:
-   - **CCU**: Lists CCU 01-12 with A/B sides
-   - **FSY**: Lists FS 01-67 with show names
-   - **VIDEO I/O**: Lists Fiber RTR outputs
-   - **Other**: Manual text entry for source/dest
-4. Click to assign or use "Clear" to remove
-
-**How It Connects:**
-- Changes sync bidirectionally with CCU/FSY tab
-- Assigning CCU 01-A in FIBER TAC updates CCU 01's TAC/FIB-A fields
-- Changing CCU 01's TAC/FIB-A in CCU/FSY updates FIBER TAC
-
-**Data Saved:**
-- `fiberTac['TAC-A'][0-23]` through `fiberTac['S10'][0-23]`
-- Each port: `{ port, source, dest, notes }`
-
----
-
-## COAX Tab
-
-**Purpose:** Coax multiplexer assignment with visual grid layout
-
-**What You See:**
-- 8 MULT units displayed as cards
-- Each unit shows a 5×3 grid (15 outputs)
-- Assigned outputs are highlighted orange
-- Badge shows "N used" for each unit
-
-**What You Do:**
-1. Click any output to open the assignment editor
-2. Choose quick-assign tabs:
-   - **FSY**: Lists FS 01-67 with show names
-   - **VIDEO I/O**: Lists Coax RTR and Tie Line rows
-   - **Other**: Manual text entry
-3. Click to assign or use "Clear Output" to remove
-
-**How It Connects:**
-- Changes sync with CCU/FSY MULT selections
-- Assigning FSY to a MULT updates the FSY row's mult/coax fields
-
-**Data Saved:**
-- `coax.mults[0-7]` — 8 MULT units, 15 outputs each
-
----
-
-## AUDIO MULT Tab
-
-**Purpose:** DT-12 audio panel assignments
-
-**What You See:**
-- 6 panels (A through F) in a 2-column grid
-- Each panel shows a 6×2 grid (12 ports)
-- Assigned ports are highlighted orange
-- Badge shows "N used" for each panel
-
-**What You Do:**
-1. Click any port to open the editor
-2. Enter **Source** (what's feeding the port)
-3. Enter **Destination** (where it goes)
-4. Click "Save" or "Clear"
-
-**Data Saved:**
-- `audioMult.dtA[0-11]` through `audioMult.dtF[0-11]`
-- Each port: `{ port, source, dest }`
-
----
-
-## NETWORK I/O Tab
-
-**Purpose:** Network patch documentation for three physical areas
-
-**What You See:**
-- **I/O Area** (24 ports): 2×12 grid
-- **Truck Bench** (24 ports): 2×12 grid
-- **Above Tape** (12 ports, numbered 13-24): 1×12 grid
-
-Each port shows:
-- Port number
-- Device name
-- Notes
-
-Assigned ports are highlighted green.
-
-**What You Do:**
-1. Click any port to open the editor
-2. Enter **Device** name
-3. Enter **Notes** for additional info
-4. Click "Save" or "Clear"
-
-**Data Saved:**
-- `networkIo.io[0-23]`
-- `networkIo.truckBench[0-23]`
-- `networkIo.aboveTape[0-11]` (ports 13-24)
-
----
-
-## PROD Digital Tab
-
-**Purpose:** Production digital multiviewer configuration with advanced input mapping
-
-**What You See:**
-- Multiple multiviewer cards with layout selectors
-- Input assignment grids matching selected layout
-- Route trigger buttons (immediate or stage)
-- Staged layouts panel (when in staged mode)
-
-**Supported Layouts:**
-- 4_SPLIT (4 inputs in 2×2 grid)
-- 5_SPLIT (5 inputs: 3 top, 2 bottom)
-- 6_SPLIT_L (6 inputs: large VIP left)
-- 6_SPLIT_R (6 inputs: large VIP right)
-- 9_SPLIT (9 inputs in 3×3 grid)
-- 9_SPLIT_L (9 inputs: large VIP left)
-- 9_SPLIT_R (9 inputs: large VIP right)
-
-**What You Do:**
-1. Select a **layout** for each multiviewer
-2. Assign **sources** to input positions
-3. Choose **Staged** or **Immediate** mode
-4. Execute routes/layouts
-
-**How It Connects:**
-- Layout changes trigger Kaleido bridge
-- Input routes trigger NV9000 bridge
-- Sources come from RTR Master device list
-
-**Data Saved:**
-- `prodDigital.multiviewers[0-N]`
-- Each MV: `{ id, cardId, side, layout, inputs[0-8] }`
-
----
-
-## Monitor Wall Tabs (P2-P3, EVS, AUD, VIDEO)
-
-**Purpose:** Control physical monitor walls with source assignment and routing
-
-**What You See:**
-- Visual representation of monitor wall layout
-- Each monitor position shows:
-  - Label (monitor name)
-  - Current source or MV assignment
-  - Layout selector (for MV assignments)
-- Drag-and-drop source sections at bottom
-
-**Drag-and-Drop Source Sections:**
-- **SHOW SOURCES**: All 80 sources (toggle 1-40 / 41-80)
-- **EVS SOURCES**: EVS inputs + super channels (EVS 1-As, 1-Bs, etc.)
-- **TX / PGM / CG**: TX1-TX8 DA, PGM DA, CG 1-6, CANVAS 1-6
-- **TEST SIGNALS**: BLACK, BARS, VALID
-- **SWR OUTS**: PGM, PVW, CLN, AUX outputs
-
-**What You Do:**
-1. Drag a source chip onto a monitor position
-2. Select MV layout if applicable
-3. Route executes based on trigger mode
-4. Or click monitor to open source picker
-
-**How It Connects:**
-- Direct source assignments route via NV9000
-- MV assignments control Kaleido layouts
-- All source names must match RTR Master
-
-**Data Saved:**
-- `monitorWallsV2['p2p3'].monitors[0-N]`
-- `monitorWallsV2['evs'].monitors[0-N]`
-- `monitorWallsV2['aud'].monitors[0-N]`
-- `monitorWallsV2['video'].monitors[0-N]`
-
----
-
-## EVS CONFIG Tab
-
-**Purpose:** Configure EVS replay servers with channel assignments and network settings
-
-**What You See:**
-- 5 EVS server panels (collapsible)
-- Each server shows 8 channels (6 inputs + 2 outputs typically)
-- Network configuration section
-- Wohler monitoring assignments
-
-**Per Server:**
-- Server ID, operator, serial number
-- Module type (XT VIA, Xs VIA)
-- Position and configuration
-
-**Per Channel:**
-- Channel number
-- Show Name (editable)
-- Engineering Name (editable)
-- Output flag (checkbox)
-
-**Network Settings:**
-- PC LAN IP
-- 10G IP
-- XNET number
-
-**How It Connects:**
-- EVS channel show names appear in ENGINEER UMD lookups
-- Channel names used for EVS positions in Tallyman sync
-
-**Data Saved:**
-- `evsConfig.servers[0-4]`
-- Each server: `{ id, channels[0-7], network, wohler[0-7] }`
-
----
-
-## MULTIVIEWER Tab
-
-**Purpose:** Configure Kaleido multiviewer cards with input assignments
-
-**What You See:**
-- Collapsible cards for each multiviewer unit
-- Card selector (1-22)
-- Layout selector
-- Input assignment fields matching layout
-
-**What You Do:**
-1. Select **Card** number (corresponds to physical Kaleido card)
-2. Select **Layout** (determines number of inputs)
-3. Assign **Sources** to each input position
-4. Changes trigger immediately or stage based on mode
-
-**How It Connects:**
-- Layout changes send TSL 5.0 commands to Kaleido cards
-- Input assignments route via NV9000
-
-**Data Saved:**
-- `prodDigital.multiviewers[0-N]` (shared with PROD Digital)
-
----
-
-## ROUTER PANELS Tab
-
-**Purpose:** Document router panel configurations and TD button assignments
-
-**What You See:**
-- **Router Panel Form (1-20)**: Panel definitions
-- **TD Router Panel Buttons (1-20)**: Button assignments
-
-**Panel Form Columns:**
-- Panel Name
-- Location (dropdown)
-- Type
-- Levels
-- Notes
-
-**TD Button Columns:**
-- Button Label
-- Source (dropdown)
-- Destination
-- Notes
-
-**Data Saved:**
-- `routerPanels.form[0-19]`
-- `routerPanels.td[0-19]`
-
----
-
-# INTEGRATION SYSTEMS
-
-## NV9000 Router (via nv9000-client.js)
-
-**What It Does:**
-Controls the Evertz NV9000 video router to route sources to destinations.
-
-**Bridge Server:**
-- URL: `http://localhost:3003` (configurable)
-- Must be running for routing to work
-
-**Two Trigger Modes:**
-
-1. **Immediate Mode**: Routes execute instantly when selected
-2. **Staged Mode**: Routes are queued and executed together with "TAKE ALL"
-
-**How Routing Works:**
-1. User selects source and destination
-2. System looks up device IDs from RTR Master
-3. Route command sent to bridge server
-4. Bridge communicates with NV9000 router
-5. Video signal is physically routed
-
-**Staged Routes Panel:**
-- Shows count of pending routes
-- "TAKE ALL" executes all at once
-- Useful for complex show setups where you want to prepare everything before going live
-
----
-
-## Kaleido Multiviewer (via kaleido.js)
-
-**What It Does:**
-Controls Grass Valley Kaleido multiviewer layouts via TSL 5.0 protocol.
-
-**Bridge Server:**
-- URL: `http://localhost:3001` (configurable)
-- Sends UDP packets to Kaleido cards
-
-**Card Configuration:**
-- 22 cards supported
-- IP addresses: 192.168.23.201-222
-- Port: 8902 (TSL 5.0)
-
-**Layout Index Mapping:**
+## EVS Server Configuration
+
+4 EVS servers defined in `getDefaultEvsConfig()` (evsconfig.js):
+
+| Server | S/N | Model | Position | Config | XNET |
+|--------|-----|-------|----------|--------|------|
+| 2101 | 310160 | XT VIA | REVS 1 | 6X2 | 1 |
+| 2102 | 310170 | XT VIA | FEVS 2 | 6X2 | 2 |
+| 2103 | 310140 | XT VIA | FEVS 1 | 6X2 | 3 |
+| 2105 | 310110 | Xs VIA | TD | 0X4 | 20 |
+
+### EVS Channel Names (per 6X2 server)
+Each server has 8 channels defined in `channelDefaults`:
+- Channels 1-6: Inputs (e.g., `EVS1-Ain`, `EVS1-Bin`, `EVS1-Cin`, `EVS1-Din`, `EVS1-Ein`, `EVS1-Fin`)
+- Channels 7-8: Outputs/Super channels (e.g., `EVS 1-As`, `EVS 1-Bs`)
+
+### EVS Super Channels (RTR Master names with 's' suffix)
 ```
-4_SPLIT     → Index 4
-5_SPLIT     → Index 5
-6_SPLIT_L   → Index 6
-6_SPLIT_R   → Index 7
-9_SPLIT     → Index 9
-9_SPLIT_L   → Index 10
-9_SPLIT_R   → Index 11
-5_SPLIT_FLIP → Index 15
-6_SPLIT_L_UP → Index 16
-6_SPLIT_R_UP → Index 17
+EVS 1-As, EVS 1-Bs
+EVS 2-As, EVS 2-Bs
+EVS 3-As, EVS 3-Bs
 ```
 
-**Two Trigger Modes:**
-
-1. **Immediate Mode**: Layout changes apply instantly
-2. **Staged Mode**: Layouts are queued and applied together
-
----
-
-## Tallyman UMD (via tallyman-bridge.js)
-
-**What It Does:**
-Updates Under Monitor Display (UMD) text on Tallyman system.
-
-**Bridge Server:**
-- URL: `http://localhost:3002`
-- Sends TSL 5.0 UDP packets to Tallyman
-
-**166 UMD Positions:**
-- CCU 01-12 (indices 1-12)
-- FS 01-67 (indices 13-158, dispersed)
-- EVS outputs/inputs (indices 33-56)
-- Switcher outputs (indices 57-102)
-- TX DA 1-8 (indices 159-166)
-- CG 1-6, CANVAS 1-8 (indices 107-120)
-
-**Sync Process:**
-1. User clicks "Sync All UMDs" in ENGINEER tab
-2. System builds UMD text for all 166 positions
-3. POST request sent to bridge with all UMD data
-4. Bridge sends TSL 5.0 packets to Tallyman
-5. Monitor labels update
+### XFILE Gateway
+- Name: XFILE 1
+- PC LAN: 10.5.21.10/16
+- 10G: 192.168.201.230/24
+- INET: DHCP
 
 ---
 
-## Supabase Cloud (via supabase.js)
+## Multiviewer Layouts
 
-**What It Does:**
-Provides cloud storage and real-time multi-user synchronization.
+Defined in proddigital.js and multiviewer.js `LAYOUTS` object:
 
-**Configuration:**
-- Requires `SUPABASE_CONFIG` with URL and API key
-- SDK loaded dynamically from CDN
+| Layout | Name | Positions | Description |
+|--------|------|-----------|-------------|
+| 9_SPLIT | 9 SPLIT | 9 | 3x3 equal grid |
+| 9_SPLIT_R | 9 SPLIT R | 9 | 6 small top, VIP large right (p9) |
+| 9_SPLIT_L | 9 SPLIT L | 9 | 6 small top, VIP large left (p9) |
+| 6_SPLIT_R | 6 SPLIT R | 6 | 3 top, 2 stacked left, VIP right (p5) |
+| 6_SPLIT_L | 6 SPLIT L | 6 | 3 top, VIP left (p4), 2 stacked right |
+| 6_SPLIT_R_UP | 6 SPLIT R UP | 6 | VIP upper right (p2) |
+| 6_SPLIT_L_UP | 6 SPLIT L UP | 6 | VIP upper left (p1) |
+| 5_SPLIT | 5 SPLIT | 5 | 3 small top, 2 VIP bottom (p4, p5) |
+| 5_SPLIT_FLIP | 5 SPLIT FLIP | 5 | 2 VIP top (p1, p2), 3 small bottom |
+| 4_SPLIT | 4 SPLIT | 4 | 2x2 equal grid |
+| FULL_SCREEN | FULL SCREEN | 1 | Single full-size VIP |
 
-**Database Table:**
-```sql
-CREATE TABLE shows (
-  name TEXT PRIMARY KEY,
-  data JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  session_id TEXT
-);
+---
+
+## Monitor Walls
+
+### PROD Digital (PXM Configuration from proddigital.js)
+`PXM_CONFIG` defines physical monitor positions:
+- PXM 1-8: Large monitors (defaultMv: 1-1 through 8-1)
+- PXM 10: Small monitor (defaultMv: 5-2)
+- PXM 11: Small monitor (defaultMv: 9-1)
+- PXM 12: Small monitor (defaultMv: 9-2)
+
+MV Card Count: 22 cards (each with 2 sides, sharing 9 inputs)
+
+### Other Walls (from monitors.js)
+4 wall configurations in `Store.data.monitorWallsV2`:
+- p2p3: P2-P3 wall
+- evs: EVS wall
+- aud: AUD wall
+- video: VIDEO wall
+
+### Drag-Drop Source Sections (from monitors.js)
+Source categories available for drag-drop:
+- SHOW: Show sources from SOURCE page
+- EVS: EVS super channels (`EVS 1-As`, `EVS 1-Bs`, `EVS 2-As`, `EVS 2-Bs`, `EVS 3-As`, `EVS 3-Bs`)
+- TX/PGM/CG: Transmission and graphics
+- Test Signals: Test patterns
+- SWR Outs: Switcher outputs
+
+---
+
+## VIDEO I/O Tab Structure
+
+From videoio.js:
+
+| Section | Rows | Purpose |
+|---------|------|---------|
+| Fiber RTR Outputs | 16 | Router fiber outputs |
+| Coax RTR Outputs | 16 | Router coax outputs |
+| Coax I/O Tie Lines | 48 | Internal coax tie lines |
+| Coax Truck Tie Lines | 48 | Truck coax tie lines |
+| JFS MUX 1 | 12 | JFS multiplexer 1 |
+| JFS MUX 2 | 6 | JFS multiplexer 2 |
+
+### Truck Tie Line Positions
+From `TRUCK_TIE_POSITIONS` in videoio.js:
+```
+P1-1 through P1-8
+P2-1 through P2-8
+P3-1 through P3-8
+FEVS-1 through FEVS-12
+REVS-1 through REVS-12
 ```
 
-**Features:**
-1. **Auto-save**: Changes save to cloud automatically (500ms debounce)
-2. **Real-time sync**: Multiple users see changes instantly
-3. **Session filtering**: Your own changes don't trigger re-render
-4. **URL sharing**: `?show=SHOWNAME` parameter loads specific show
-5. **Cloud show browser**: List, load, and delete cloud shows
+---
 
-**Status Indicator:**
-- "LIVE: Show Name" when connected
-- "LOCAL" when offline (using localStorage only)
+## Tallyman UMD Position Mapping
+
+From tallyman-bridge.js `POSITION_INDEX_MAP` (166 positions total):
+
+| Position Range | Index Range |
+|----------------|-------------|
+| CCU 01-12 | 1-12 |
+| FS 01-20 | 13-32 |
+| EVS 1-1 OUT, EVS 1-2 OUT | 33-34 |
+| EVS 1-1 IN through EVS 1-6 IN | 35-40 |
+| EVS 2-1 OUT, EVS 2-2 OUT | 41-42 |
+| EVS 2-1 IN through EVS 2-6 IN | 43-48 |
+| EVS 3-1 OUT, EVS 3-2 OUT | 49-50 |
+| EVS 3-1 IN through EVS 3-6 IN | 51-56 |
+| PGM A, CLEAN, PRESET, SWPVW | 57-60 |
+| ME1 PVW, ME1 A-D | 61-65 |
+| ME2 PVW, ME2 A-D | 66-70 |
+| ME3 PVW, ME3 A-D | 71-75 |
+| ME4 PVW, ME4 A-D | 76-80 |
+| AUX 1-12 | 81-92 |
+| IS 1-10 | 93-102 |
+| FS 21-24 | 103-106 |
+| CG 1-6 | 107-112 |
+| CANVAS 1-8 | 113-120 |
+| FS 25-28 | 121-124 |
+| FS 29-44 | 125-140 |
+| FS 45-62 | 141-158 |
+| TX1 DA through TX8 DA | 159-166 |
 
 ---
 
-# DATA ARCHITECTURE
+## External Bridge Servers
 
-## State Management (store.js)
+| Service | Port | Protocol | Purpose |
+|---------|------|----------|---------|
+| Kaleido Bridge | 3001 | HTTP | Multiviewer layouts |
+| Tallyman Bridge | 3002 | HTTP/TSL 5.0 UDP | UMD text sync |
+| NV9000 Bridge | 3003 | HTTP | Router control |
 
-All application data lives in a single `Store.data` object. Changes trigger events that update the UI and save to storage.
+### Bridge Auto-Detection (bridge-config.js)
 
-### Core Store Methods
+The `BridgeConfig` module automatically detects the correct bridge host from the browser's URL:
+- If accessing `http://192.168.1.50:8080`, bridges resolve to `http://192.168.1.50:300x`
+- If accessing `http://localhost:8080`, bridges resolve to `http://localhost:300x`
+
+**API:**
+```javascript
+BridgeConfig.getBridgeUrl('kaleido')  // Returns full URL for bridge
+BridgeConfig.getHost()                // Returns auto-detected or manual host
+BridgeConfig.setManualHost('1.2.3.4') // Override auto-detection
+BridgeConfig.resetAll()               // Clear overrides, use auto-detection
+BridgeConfig.getStatus()              // Check current config mode and URLs
+```
+
+Bridge URLs can also be overridden per-bridge via localStorage.
+
+### Route Queue System (route-queue.js)
+
+Remote devices (iPads, laptops) cannot directly access bridges on the engineering computer. The RouteQueue system solves this:
+
+**Architecture:**
+1. Any device adds routes to `Store.data.routeQueue` (synced via Supabase)
+2. Engineering computer detects it can reach bridges (localhost check)
+3. When queue changes sync to engineering computer, it processes and clears the queue
+
+**Queue Structure:**
+```javascript
+{
+  nv9000: [{ source, destination, sourceId, destId, timestamp }],
+  kaleido: [{ cardId, ip, port, index, layoutName, timestamp }],
+  tallyman: [{ position, text, timestamp }]
+}
+```
+
+**API:**
+```javascript
+RouteQueue.queueRoute(sourceName, destName)  // Queue NV9000 route
+RouteQueue.queueLayout(cardId, layoutName)   // Queue Kaleido layout
+RouteQueue.queueUmd(position, text)          // Queue Tallyman UMD
+RouteQueue.processQueue()                     // Execute queued items (eng computer only)
+RouteQueue.getStatus()                        // Check queue status
+RouteQueue.bridgesReachable                   // true on engineering computer
+```
+
+**Flow:**
+- iPad changes monitor assignment → triggers `NV9000Client.handleRoute()`
+- handleRoute detects `!RouteQueue.bridgesReachable` → calls `RouteQueue.queueRoute()`
+- Queue saved to Store → syncs via Supabase to engineering computer
+- Engineering computer's `handleRemoteChange()` calls `RouteQueue.processQueue()`
+- Routes execute via localhost bridges → queue cleared → syncs back
+
+---
+
+## Data Storage
+
+### Local Storage
+- Show data persisted via `Store.save()` to localStorage
+- Bridge URLs stored per-computer in localStorage (not synced)
+
+### Cloud Sync (Supabase)
+- Real-time sync via PostgreSQL changes subscription
+- Session ID filtering to prevent own-update echoes
+- URL-based show loading: `?show=SHOWNAME`
+- Debounced save (500ms) via `debouncedSave()`
+- Required table schema:
+  ```sql
+  CREATE TABLE shows (
+    name TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    session_id TEXT
+  );
+  ```
+
+---
+
+## Routing Modes
+
+Two modes supported (configured per bridge):
+1. **Staged** - Changes queued, executed on trigger
+2. **Immediate** - Changes executed instantly
+
+Staging functions in app.js:
+- `stageAllFromShowData()` - Stage all routes and MV layouts from show data
+- `showStagingPrompt()` - Prompt engineer after cloud load
+
+---
+
+## Key Data Structures (from store.js emptyShow())
 
 ```javascript
-Store.init()              // Load from localStorage
-Store.set(path, value)    // Set value and trigger events
-Store.get(path)           // Get value by path
-Store.save()              // Save to localStorage
-Store.on(event, callback) // Subscribe to events
-Store.emit(event, data)   // Emit event (internal)
-Store.loadShow(data)      // Load complete show data
-Store.exportData()        // Get data for export
-```
-
-### Events
-
-- `'change'` — Any data change (includes path and value)
-- `'change:sources'` — Sources array changed
-- `'change:show'` — Show info changed
-- `'saved'` — Data saved to localStorage
-- `'show-loaded'` — Show loaded from file or cloud
-
----
-
-## Complete Data Structure
-
-```javascript
-Store.data = {
-  // Show Information
-  show: {
-    name: "Sunday Night Football",
-    format: "1080p/59.94"
-  },
-
-  // 80 Sources
-  sources: [
-    {
-      number: 1,
-      showName: "MAIN CAM 1",
-      umdName: "CAM1",
-      engSource: "CCU 01",
-      audioSource: "CCU 01",
-      remiName: "",
-      active: true
-    },
-    // ... 79 more
-  ],
-
-  // TX/PGM/GFX Configuration
-  txPgmGfx: {
-    tx: [{ row: 1, showName: "", umdName: "", destination: "", notes: "" }, ...],
-    pgm: [...],
-    gfx: [...],
-    canvas: [...]
-  },
-
-  // CCU and Frame Sync Settings
-  ccuFsy: {
-    ccu: [
-      {
-        unit: 1,
-        device: "GV XCU",
-        tac: "TAC-A",
-        fibA: "1",
-        fibB: "2",
-        lensB: false,
-        lensS: false,
-        lensW: true,
-        lensDolly: false,
-        lensHand: false,
-        notes: ""
-      },
-      // ... 11 more
-    ],
-    fsy: [
-      {
-        unit: 1,
-        format: "1080p/59.94",
-        tac: "TAC-C",
-        fibA: "5",
-        mult: "1",
-        coax: "1",
-        fixed: "",
-        js: "",
-        notes: ""
-      },
-      // ... 66 more
-    ]
-  },
-
-  // Router Device Library
-  rtrMaster: [
-    {
-      row: 1,
-      deviceName: "CCU 01",
-      deviceDesc: "Camera 1 CCU",
-      videoLevel: "101",
-      audio: ["1441", "1442", "1443", "", "", "", "", "", "", "", "", "", "", "", "", ""]
-    },
-    // ... 287+ more devices
-  ],
-  rtrOutputs: [...],
-
-  // Reference Data
-  sheet8: {
-    deviceTypes: ["Camera", "EVS", "VTR", "Graphics", ...],
-    videoFormats: ["1080p/59.94", "1080i/59.94", "720p/59.94"],
-    audioFormats: ["AES", "MADI", "Analog"],
-    locations: ["Control Room", "Field", "Truck"],
-    tacPanels: ["TAC-A", "TAC-B", "TAC-C", "TAC-D", "TAC-E", "TAC-F", "TAC-G", "TAC-H", "S09", "S10"],
-    audioSources: [...]
-  },
-
-  // Video I/O Routing
+{
+  show: { name, format },
+  sources: [80 entries with number, showName, umdName, engSource, audioSource],
+  rtrMaster: [device library with row, deviceName, deviceDesc, videoLevel, audio[16]],
+  rtrOutputs: [output device library],
+  txPgmGfx: { tx: [8], cg: [6], canvas: [8], pgm: [...] },
+  ccuFsy: { ccu: [12], fsy: [67] },
+  swrIo: { inputs: [120], outputs: [46], tally: [24], gpi: [12] },
   videoIo: {
-    fiberRtrOut: [{ row: 1, source: "", destination: "", tac: "", fibA: "" }, ...],
-    coaxRtrOut: [...],
-    coaxIoTieLines: [...],
-    coaxTruckTieLines: [...],
-    jfsMux1: { tac: "", fibA: "", rows: [...] },
-    jfsMux2: { tac: "", fibA: "", rows: [...] }
+    fiberRtrOut: [16],
+    coaxRtrOut: [16],
+    coaxIoTieLines: [48],
+    coaxTruckTieLines: [48],
+    jfsMux1: {rows: [12]},
+    jfsMux2: {rows: [6]}
   },
-
-  // Fiber TAC Panels
-  fiberTac: {
-    "TAC-A": [{ port: 1, source: "", dest: "", notes: "" }, ...],
-    "TAC-B": [...],
-    // ... all panels
-  },
-
-  // Switcher I/O
-  swrIo: {
-    inputs: [{ row: 1, source: "", sw: "" }, ...],   // 120 inputs
-    outputs: [{ row: 1, defaultShow: "PGM A", show: "", umd: "" }, ...],  // 46 outputs
-    tally: [...],   // 24 groups
-    gpi: [...]      // 12 groups
-  },
-
-  // Network Patching
-  networkIo: {
-    io: [{ port: 1, device: "", notes: "" }, ...],
-    truckBench: [...],
-    aboveTape: [...]
-  },
-
-  // Coax Multiplexers
-  coax: {
-    mults: [{ unit: 1, outputs: [{}, {}, ...] }, ...]  // 8 units × 15 outputs
-  },
-
-  // Audio Multiplexers
-  audioMult: {
-    dtA: [{ port: 1, source: "", dest: "" }, ...],  // 12 ports
-    dtB: [...],
-    dtC: [...],
-    dtD: [...],
-    dtE: [...],
-    dtF: [...]
-  },
-
-  // EVS Configuration
-  evsConfig: {
-    servers: [
-      {
-        id: "2101",
-        channels: [
-          { channel: 1, engName: "EVS1-Ain", showName: "", isOutput: false },
-          // ... 7 more
-        ],
-        network: { pcLan: "10.5.21.11/16", tenG: "192.168.201.211/24", xnet: 1 }
-      },
-      // ... 4 more servers
-    ]
-  },
-
-  // Production Digital Multiviewers
-  prodDigital: {
-    multiviewers: [
-      { id: "1-1", cardId: 1, side: 1, layout: "9_SPLIT", inputs: ["", "", "", "", "", "", "", "", ""] },
-      // ... more
-    ]
-  },
-
-  // Monitor Walls
-  monitorWallsV2: {
-    p2p3: { monitors: [...] },
-    evs: { monitors: [...] },
-    aud: { monitors: [...] },
-    video: { monitors: [...] }
-  },
-
-  // Router Panels
-  routerPanels: {
-    form: [...],
-    td: [...]
-  },
-
-  // EIC QC Monitors
-  eicQcMonitors: {
-    "eic-qc-1": "",
-    "eic-qc-2": ""
-  }
+  fiberTac: { 'TAC-A': [24 ports], 'TAC-B': [24], ..., 'S10': [24] },
+  coax: { multUnits: [8 units with 15 outputs each] },
+  audioMult: { dtA: [12], dtB: [12], dtC: [12], dtD: [12], dtE: [12], dtF: [12] },
+  networkIo: { io: [24], truckBench: [24], aboveTape: [12] },
+  monitorWalls: { ... },
+  monitorWallsV2: { p2p3, evs, aud, video },
+  prodDigital: { pxms: [...], multiviewers: [...] },
+  evsConfig: { servers: [4], xfile, showSources: [5 columns] },
+  kaleidoConfig: { bridgeUrl, triggerMode, cards: [22], stagedLayouts },
+  routerPanels: { form: [20], td: [20] },
+  sheet8: { deviceTypes, videoFormats, audioFormats, locations, tacPanels, audioSources }
 }
 ```
 
 ---
 
-# FILE STRUCTURE
+## CCU/FSY Tab Details
 
-```
-mu21-showbook/
-│
-├── index.html                 # Main HTML page
-├── config.js                  # Supabase configuration
-├── SHOWBOOK-OVERVIEW.md       # This documentation
-│
-├── css/
-│   └── styles.css             # All styling (dark theme, CSS variables)
-│
-├── js/
-│   ├── app.js                 # Main app initialization, tab routing
-│   ├── store.js               # State management (~25,000 lines)
-│   ├── utils.js               # Shared UI components
-│   ├── formulas.js            # Computed lookups
-│   ├── export.js              # JSON/CSV export/import
-│   │
-│   ├── supabase.js            # Cloud sync client
-│   ├── nv9000-client.js       # Router integration
-│   ├── kaleido.js             # Multiviewer integration
-│   ├── tallyman-bridge.js     # UMD integration
-│   │
-│   └── tabs/                  # Tab modules
-│       ├── home.js            # HOME tab
-│       ├── source.js          # SOURCE tab
-│       ├── txpgmgfx.js        # TX/PGM/GFX tab
-│       ├── ccufsy.js          # CCU/FSY tab
-│       ├── rtrmaster.js       # RTR I/O MASTER tab
-│       ├── sheet8.js          # SHEET8 tab
-│       ├── engineer.js        # ENGINEER tab
-│       ├── swrio.js           # SWR I/O tab
-│       ├── videoio.js         # VIDEO I/O tab
-│       ├── fibertac.js        # FIBER TAC tab
-│       ├── coax.js            # COAX tab
-│       ├── audiomult.js       # AUDIO MULT tab
-│       ├── networkio.js       # NETWORK I/O tab
-│       ├── monitors.js        # Monitor walls (P2-P3, EVS, AUD, VIDEO)
-│       ├── proddigital.js     # PROD Digital tab
-│       ├── evsconfig.js       # EVS CONFIG tab
-│       ├── multiviewer.js     # MULTIVIEWER tab
-│       └── routerpanel.js     # ROUTER PANELS tab
-│
-├── kaleido-bridge/            # Node.js Kaleido server
-│   └── index.js
-│
-├── nv9000-bridge/             # Node.js NV9000 server
-├── tallyman-bridge/           # Node.js Tallyman server
-├── showbook-server/           # Web server
-│
-└── start-all-servers.bat      # Launch all bridges
-```
+From ccufsy.js:
+
+### CCU Section (12 units)
+Columns: #, Device, TAC, FIB-A, FIB-B, Show Name (computed), Lens checkboxes (B, S, W, DOLLY, HAND), Notes
+
+### FSY Section (67 units)
+Columns: #, Format, TAC, FIB-A, Show Name (computed), Source (computed), MULT, COAX, Fixed, JS, Notes
+
+### Bidirectional Sync
+- TAC/FIB assignments sync to FIBER TAC page via `Utils.syncToFiberTac()`
+- MULT assignments sync to COAX MULTS page via `Utils.syncToCoaxMult()`
 
 ---
 
-# BUILDING FROM SCRATCH
+## TX/PGM/GFX Tab Details
 
-If you need to rebuild this application from scratch, follow this order:
+From txpgmgfx.js:
 
-## Phase 1: Core Infrastructure
+### Transmission Section (TX 1-8)
+Columns: TX, DA INPUT, UMD NAME, ENG SOURCE, AUDIO SRC, FRAMESYNC (dropdown FS 01-67), OUTPUT, I/O COAX 1-4 (checkboxes), I/O RTR OUT (computed)
 
-1. **Create index.html** with header, sidebar, and content area
-2. **Create css/styles.css** with CSS variables for theming
-3. **Create js/store.js** with:
-   - Data structure initialization
-   - localStorage persistence
-   - Event system (on/emit)
-   - set/get methods
+### Graphics Section
+- CG 1-6: DA INPUT, UMD, ENG SRC, KEY IN
+- CANVAS 1-8: RTR IN, UMD, ENG SRC
 
-## Phase 2: Utilities
-
-4. **Create js/utils.js** with:
-   - tabPage() container
-   - sectionHeader() divider
-   - toast() notifications
-   - createDarkDropdown() component
-   - Device/source option generators
-   - Fiber TAC sync functions
-   - Coax MULT sync functions
-
-5. **Create js/formulas.js** with:
-   - rtrMasterLookup()
-   - equipmentSummary()
-   - getUmdForSource()
-
-## Phase 3: Tab Modules
-
-Build tabs in this order (dependencies flow downward):
-
-6. **home.js** — Basic landing page
-7. **sheet8.js** — Reference data (needed by dropdowns)
-8. **rtrmaster.js** — Device library (needed by all tabs)
-9. **source.js** — 80 sources (references rtrmaster)
-10. **ccufsy.js** — CCU/FSY with sync to fiber/coax
-11. **txpgmgfx.js** — TX/PGM/GFX
-12. **fibertac.js** — Fiber panels (syncs with ccufsy)
-13. **coax.js** — Coax panels (syncs with ccufsy)
-14. **audiomult.js** — Audio panels
-15. **networkio.js** — Network patches
-16. **videoio.js** — Router outputs and tie lines
-17. **swrio.js** — Switcher I/O
-18. **evsconfig.js** — EVS servers
-19. **engineer.js** — UMD management (references many tabs)
-20. **multiviewer.js** — MV configuration
-21. **proddigital.js** — Production wall
-22. **monitors.js** — Other monitor walls
-23. **routerpanel.js** — Router panels
-
-## Phase 4: App Shell
-
-24. **Create js/app.js** with:
-    - Tab routing registry
-    - Navigation handlers
-    - Header management
-    - Staging system
-
-## Phase 5: Integrations
-
-25. **Create js/nv9000-client.js** for router control
-26. **Create js/kaleido.js** for multiviewer control
-27. **Create js/tallyman-bridge.js** for UMD sync
-28. **Create js/supabase.js** for cloud sync
-29. **Create js/export.js** for JSON/CSV
-
-## Phase 6: Bridge Servers
-
-30. **Create kaleido-bridge/index.js** — Express server with TSL 5.0
-31. **Create nv9000-bridge/** — NV9000 protocol bridge
-32. **Create tallyman-bridge/** — Tallyman TSL bridge
-33. **Create start-all-servers.bat**
-
-## Key Architecture Decisions
-
-- **Vanilla JavaScript**: No frameworks for simplicity and performance
-- **Single Store**: All data in one reactive object
-- **Event-driven**: Changes propagate via events
-- **Bidirectional sync**: Related pages stay in sync automatically
-- **Bridge pattern**: HTTP servers translate to hardware protocols
-- **Staged execution**: Queue changes and execute together
+### Program Section
+- DA INPUT, UMD, ENG SRC, AUDIO SRC
 
 ---
 
-# APPENDIX: CSS Variables
+## SWR I/O Tab Details
 
-```css
-:root {
-  --bg-primary: #12141a;
-  --bg-secondary: #1c1f26;
-  --bg-tertiary: #252932;
-  --border: #2d333d;
-  --text-primary: #eaeef3;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --accent-blue: #5b9aff;
-  --accent-green: #34d399;
-  --accent-red: #f87171;
-  --accent-orange: #fbbf24;
-  --accent-yellow: #fde047;
-  --accent-purple: #a78bfa;
-  --accent-cyan: #22d3ee;
-  --header-height: 52px;
-  --sidebar-width: 155px;
-}
+From swrio.js:
+
+### Switcher Inputs (120)
+Displayed in 3 columns (1-48, 49-96, 97-120)
+Show Source computed from SOURCE page via `lookupShowName(engSource)`
+
+### Switcher Outputs (46)
+Default positions include: PGM A, CLEAN, PRESET, SWPVW, ME buses, AUX 1-12, IS 1-10
+
+### Tally Group (24)
+### GPI Group (12)
+
+---
+
+## Sheet8 Reference Data
+
+From sheet8.js - 6 editable lists (one item per line):
+1. Device Types
+2. Video Formats
+3. Audio Formats
+4. Locations
+5. TAC Panels (default: TAC-A through TAC-H, S09, S10)
+6. Audio Sources
+
+---
+
+## Kaleido Configuration (from multiviewer.js)
+
+Default configuration in `ensureKaleidoConfig()`:
+- Bridge URL: http://localhost:3001
+- Trigger Mode: staged
+- 22 cards with IPs: 192.168.23.201-222
+- Port: 8902
+
+---
+
+## File Count Summary
+
+- **HTML**: 1 file (index.html)
+- **Core JS**: 12 files in js/
+- **Tab JS**: 18 files in js/tabs/
+- **Total JS**: 30 files in js/ directory
+
+---
+
+## Source RTR ID Mapping (from source.js and rtrmaster.js)
+
+```javascript
+// getShowRtrId() function
+SHOW 01-20: RTR IDs 865-884   (864 + showNum)
+SHOW 21-40: RTR IDs 1171-1190 (1150 + showNum)
+SHOW 41-60: RTR IDs 1202-1221 (1161 + showNum)
+SHOW 61-80: RTR IDs 1222-1241 (1161 + showNum)
 ```
 
----
-
-*Document Version: March 2026*
-*Total Lines of Code: ~40,000+*
-*Total Tab Modules: 18*
+SHOW device names in rtrMaster sync bidirectionally with SOURCE page showName.
