@@ -16,7 +16,7 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
   - Config: EVS CONFIG, MULTIVIEWER, ROUTER PANELS
   - Lookup: RTR I/O MASTER, Sheet8
 
-### Core JavaScript (12 files)
+### Core JavaScript (11 files)
 
 | File | Lines | Purpose |
 |------|-------|---------|
@@ -26,7 +26,6 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 | js/formulas.js | 221 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()` |
 | js/export.js | 301 | JSON/CSV export/import with validation, `sanitizeStrings()` |
 | js/supabase.js | 400 | Real-time cloud sync, session-based filtering, triggers RouteQueue on remote updates |
-| js/bridge-config.js | 135 | Centralized bridge URL config with auto-detection from current hostname |
 | js/route-queue.js | 250 | Route queue system - remote devices queue routes, engineering computer executes |
 | js/kaleido.js | 325 | Multiviewer layout control, uses RouteQueue when bridges not reachable |
 | js/nv9000-client.js | 420 | Router control, uses RouteQueue when bridges not reachable |
@@ -215,28 +214,19 @@ From tallyman-bridge.js `POSITION_INDEX_MAP` (166 positions total):
 
 ## External Bridge Servers
 
+Site hosted on Netlify (mu-21showbook.netlify.app). Bridge servers run on engineering computer.
+
 | Service | Port | Protocol | Purpose |
 |---------|------|----------|---------|
 | Kaleido Bridge | 3001 | HTTP | Multiviewer layouts |
 | Tallyman Bridge | 3002 | HTTP/TSL 5.0 UDP | UMD text sync |
 | NV9000 Bridge | 3003 | HTTP | Router control |
 
-### Bridge Auto-Detection (bridge-config.js)
-
-The `BridgeConfig` module automatically detects the correct bridge host from the browser's URL:
-- If accessing `http://192.168.1.50:8080`, bridges resolve to `http://192.168.1.50:300x`
-- If accessing `http://localhost:8080`, bridges resolve to `http://localhost:300x`
-
-**API:**
-```javascript
-BridgeConfig.getBridgeUrl('kaleido')  // Returns full URL for bridge
-BridgeConfig.getHost()                // Returns auto-detected or manual host
-BridgeConfig.setManualHost('1.2.3.4') // Override auto-detection
-BridgeConfig.resetAll()               // Clear overrides, use auto-detection
-BridgeConfig.getStatus()              // Check current config mode and URLs
-```
-
-Bridge URLs can also be overridden per-bridge via localStorage.
+**Architecture:**
+- All devices access showbook via Netlify
+- Engineering computer runs bridge servers on localhost
+- Engineering computer browser connects to `localhost:3001/3002/3003`
+- Remote devices (iPad) cannot reach bridges directly — use RouteQueue instead
 
 ### Route Queue System (route-queue.js)
 
@@ -418,9 +408,9 @@ Default configuration in `ensureKaleidoConfig()`:
 ## File Count Summary
 
 - **HTML**: 1 file (index.html)
-- **Core JS**: 12 files in js/
+- **Core JS**: 11 files in js/
 - **Tab JS**: 18 files in js/tabs/
-- **Total JS**: 30 files in js/ directory
+- **Total JS**: 29 files in js/ directory
 
 ---
 
