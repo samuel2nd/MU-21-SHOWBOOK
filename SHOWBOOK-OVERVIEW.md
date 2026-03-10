@@ -219,7 +219,7 @@ Site hosted on Netlify (mu-21showbook.netlify.app). Bridge servers run on engine
 | Service | Port | Protocol | Purpose |
 |---------|------|----------|---------|
 | Kaleido Bridge | 3001 | HTTP | Multiviewer layouts |
-| Tallyman Bridge | 3002 | HTTP/TSL 5.0 UDP | UMD text sync |
+| Tallyman Bridge | 3002 | HTTP→TSL 5.0 UDP (port 8901) | UMD text sync |
 | NV9000 Bridge | 3003 | HTTP | Router control |
 
 **Architecture:**
