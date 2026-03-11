@@ -1478,6 +1478,23 @@ const Store = (() => {
           // Remove old remi section if it exists (no longer used)
           delete data.txPgmGfx.remi;
         }
+        // Migrate RTR Outputs - add any missing devices from defaults
+        if (data.rtrOutputs && Array.isArray(data.rtrOutputs)) {
+          const defaultOutputs = defaultRtrOutputs();
+          const existingIds = new Set(data.rtrOutputs.map(d => d.row));
+          let addedCount = 0;
+          for (const defDevice of defaultOutputs) {
+            if (!existingIds.has(defDevice.row)) {
+              data.rtrOutputs.push(defDevice);
+              addedCount++;
+            }
+          }
+          if (addedCount > 0) {
+            // Sort by row number after adding
+            data.rtrOutputs.sort((a, b) => a.row - b.row);
+            console.log(`Migrated ${addedCount} new RTR output devices`);
+          }
+        }
       }
     } catch (e) {
       console.warn('Failed to load from localStorage:', e);
