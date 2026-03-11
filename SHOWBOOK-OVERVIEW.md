@@ -11,7 +11,7 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
   - Home
   - Input: SOURCE, TX/PGM/GFX, CCU/FSY INPUT
   - Output/Computed: ENGINEER, SWR I/O
-  - Physical I/O: VIDEO I/O, FIBER TAC, COAX MULTS/MUX, AUDIO MULT, NETWORK I/O
+  - Physical I/O: VIDEO I/O, FIBER TAC, COAX MULTS, AUDIO MULT, NETWORK I/O
   - Monitor Walls: PROD Digital, PROD Print, P2-P3, EVS, AUD, VIDEO
   - Config: EVS CONFIG, MULTIVIEWER, ROUTER PANELS
   - Lookup: RTR I/O MASTER, Sheet8
@@ -160,14 +160,32 @@ Source categories available for drag-drop:
 
 From videoio.js:
 
-| Section | Rows | Purpose |
-|---------|------|---------|
-| Fiber RTR Outputs | 16 | Router fiber outputs |
-| Coax RTR Outputs | 16 | Router coax outputs |
-| Coax I/O Tie Lines | 48 | Internal coax tie lines |
-| Coax Truck Tie Lines | 48 | Truck coax tie lines |
-| JFS MUX 1 | 12 | JFS multiplexer 1 |
-| JFS MUX 2 | 6 | JFS multiplexer 2 |
+| Section | Rows | RTR I/O Master Output | Purpose |
+|---------|------|----------------------|---------|
+| Fiber RTR Outputs | 16 | IO FIB01-16 | Router fiber outputs |
+| Coax RTR Outputs | 16 | IO BNC 1-16 | Router coax outputs |
+| Coax I/O Tie Lines | 48 | — | Internal coax tie lines |
+| Coax Truck Tie Lines | 48 | — | Truck coax tie lines |
+| JFS MUX 1 | 12 | MUX 1-1 through 1-12 | JFS multiplexer 1 |
+| JFS MUX 2 | 6 | MUX 2-1 through 2-6 | JFS multiplexer 2 |
+
+### VIDEO I/O Routing
+
+When a source is selected for Fiber RTR Out, Coax RTR Out, or JFS MUX rows, the routing is executed automatically using computed RTR I/O Master output names:
+
+```javascript
+// getRtrOutputName(section, rowNum)
+fiberRtrOut row 1  → IO FIB01
+fiberRtrOut row 16 → IO FIB16
+coaxRtrOut row 1   → IO BNC 1
+coaxRtrOut row 16  → IO BNC 16
+
+// getMuxRtrOutputName(storePath, rowNum)
+jfsMux1 row 1  → MUX 1-1
+jfsMux1 row 12 → MUX 1-12
+jfsMux2 row 1  → MUX 2-1
+jfsMux2 row 6  → MUX 2-6
+```
 
 ### Truck Tie Line Positions
 From `TRUCK_TIE_POSITIONS` in videoio.js:
