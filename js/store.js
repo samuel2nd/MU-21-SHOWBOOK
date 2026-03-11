@@ -1567,6 +1567,22 @@ const Store = (() => {
           data.fiberTac[panelName] = Array.from({ length: 24 }, (_, i) => ({ port: i + 1, source: '', dest: '', notes: '' }));
         }
       });
+      // Migrate RTR Outputs - add any missing devices from defaults
+      if (data.rtrOutputs && Array.isArray(data.rtrOutputs)) {
+        const defaultOutputs = defaultRtrOutputs();
+        const existingIds = new Set(data.rtrOutputs.map(d => d.row));
+        let addedCount = 0;
+        for (const defDevice of defaultOutputs) {
+          if (!existingIds.has(defDevice.row)) {
+            data.rtrOutputs.push(defDevice);
+            addedCount++;
+          }
+        }
+        if (addedCount > 0) {
+          data.rtrOutputs.sort((a, b) => a.row - b.row);
+          console.log(`Migrated ${addedCount} new RTR output devices`);
+        }
+      }
       // Sync showNames from sources to rtrMaster deviceNames
       syncShowNamesToRtrMaster();
       saveToStorage();
