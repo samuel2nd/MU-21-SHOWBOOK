@@ -4,6 +4,25 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 
 ---
 
+## CRITICAL - READ FIRST
+
+**Deployment Architecture:**
+- **Website**: Hosted on Netlify at `mu-21showbook.netlify.app` — NOT on any local computer
+- **Bridge servers**: Run ONLY on the engineering computer (localhost:3001/3002/3003)
+- **This development computer**: Used for code changes only — bridges do NOT run here
+
+**When modifying bridge files (kaleido-bridge, tallyman-bridge, nv9000-bridge):**
+- Changes must be MANUALLY TRANSFERRED to the engineering computer
+- The engineering computer is the only place bridges execute
+- Test bridge changes on the engineering computer, not here
+
+**Development rules:**
+- Do NOT guess or assume — check existing code first
+- Read the relevant files before making changes
+- This is always the same project (MU-21 Showbook) — context should persist
+
+---
+
 ## File Structure
 
 ### HTML Entry Point
