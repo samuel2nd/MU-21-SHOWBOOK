@@ -640,6 +640,20 @@ const Utils = (() => {
         filterInput.value = '';
         renderOptions();
         filterInput.focus();
+        // Check if dropdown extends past viewport bottom and flip upward if needed
+        requestAnimationFrame(() => {
+          const popupRect = popup.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          if (popupRect.bottom > viewportHeight - 10) {
+            // Position above the trigger instead
+            popup.style.top = 'auto';
+            popup.style.bottom = '100%';
+          } else {
+            // Position below (default)
+            popup.style.top = '100%';
+            popup.style.bottom = 'auto';
+          }
+        });
       }
     });
 
