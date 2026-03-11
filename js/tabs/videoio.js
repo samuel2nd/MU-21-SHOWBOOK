@@ -404,6 +404,16 @@ const VideoIoTab = (() => {
     parent.appendChild(wrapper);
   }
 
+  // Get the RTR I/O Master output device name for JFS MUX routing
+  function getMuxRtrOutputName(storePath, rowNum) {
+    if (storePath === 'jfsMux1') {
+      return `MUX 1-${rowNum}`;
+    } else if (storePath === 'jfsMux2') {
+      return `MUX 2-${rowNum}`;
+    }
+    return null;
+  }
+
   // Helper for JFS MUX inputs (different store path)
   function makeJfsMuxInput(row, idx, storePath, key, placeholder = '') {
     const td = document.createElement('td');
@@ -415,9 +425,21 @@ const VideoIoTab = (() => {
         options.push({ value: row[key], label: row[key] });
       }
       deviceOpts.forEach(o => options.push({ value: o.value, label: o.label || o.value }));
-      const dropdown = Utils.createDarkDropdown(options, row[key] || '', (val) => {
+      const dropdown = Utils.createDarkDropdown(options, row[key] || '', async (val) => {
         row[key] = val;
         Store.set(`videoIo.${storePath}.rows.${idx}.${key}`, val);
+        // Route using the RTR I/O Master output name for MUX
+        const rtrDest = getMuxRtrOutputName(storePath, row.row);
+        if (val && rtrDest) {
+          const result = await NV9000Client.handleRoute(val, rtrDest, 'videoio');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${val} → ${rtrDest}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${val} → ${rtrDest}`, 'success');
+            }
+          }
+        }
       }, { placeholder: '--' });
       td.appendChild(dropdown);
     } else {
@@ -432,6 +454,18 @@ const VideoIoTab = (() => {
       td.appendChild(inp);
     }
     return td;
+  }
+
+  // Get the RTR I/O Master output device name for routing
+  function getRtrOutputName(section, rowNum) {
+    switch (section) {
+      case 'fiberRtrOut':
+        return `IO FIB${String(rowNum).padStart(2, '0')}`;
+      case 'coaxRtrOut':
+        return `IO BNC ${rowNum}`;
+      default:
+        return null;
+    }
   }
 
   // Helper: Source input (dark dropdown) - uses RTR I/O MASTER devices
@@ -449,13 +483,15 @@ const VideoIoTab = (() => {
     const dropdown = Utils.createDarkDropdown(options, row[key] || '', async (val) => {
       row[key] = val;
       Store.set(`videoIo.${section}.${idx}.${key}`, val);
-      if (key === 'source' && val && row.destination) {
-        const result = await NV9000Client.handleRoute(val, row.destination, 'videoio');
+      // Route using the RTR I/O Master output name based on section and row
+      const rtrDest = getRtrOutputName(section, row.row);
+      if (key === 'source' && val && rtrDest) {
+        const result = await NV9000Client.handleRoute(val, rtrDest, 'videoio');
         if (result.success) {
           if (result.staged) {
-            Utils.toast(`Staged: ${val} → ${row.destination}`, 'info');
+            Utils.toast(`Staged: ${val} → ${rtrDest}`, 'info');
           } else {
-            Utils.toast(`Routed: ${val} → ${row.destination}`, 'success');
+            Utils.toast(`Routed: ${val} → ${rtrDest}`, 'success');
           }
         }
       }
