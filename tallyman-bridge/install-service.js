@@ -15,7 +15,7 @@ const svc = new Service({
   nodeOptions: [],
   env: [
     { name: 'TALLYMAN_IP', value: '192.168.23.20' },
-    { name: 'TALLYMAN_PORT', value: '8902' }
+    { name: 'TALLYMAN_PORT', value: '8901' }
   ]
 });
 

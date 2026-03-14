@@ -427,7 +427,7 @@ const EngineerTab = (() => {
         <div style="display:flex;align-items:center;gap:12px;">
           <span style="font-size:12px;color:var(--text-secondary);">Tallyman Bridge:</span>
           <span id="tallyman-status" style="font-size:11px;padding:4px 10px;border-radius:12px;background:var(--bg-primary);color:var(--text-muted);">Checking...</span>
-          <span style="font-size:11px;color:var(--text-muted);">Target: 192.168.23.20:8902</span>
+          <span style="font-size:11px;color:var(--text-muted);">Target: 192.168.23.20:8901</span>
         </div>
         <div style="display:flex;gap:8px;">
           <button id="btn-tallyman-test" class="btn" style="padding:6px 12px;font-size:11px;">Test Connection</button>

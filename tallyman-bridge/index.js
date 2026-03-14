@@ -4,7 +4,7 @@
  * HTTP server that accepts UMD text updates from the Showbook and sends
  * TSL 5.0 DMSG packets to Tallyman over UDP.
  *
- * Default Tallyman: 192.168.23.20:8902
+ * Default Tallyman: 192.168.23.20:8901
  *
  * Endpoints:
  *   POST /umd           - Update single UMD
