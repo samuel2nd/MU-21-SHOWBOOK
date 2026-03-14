@@ -14,8 +14,8 @@ const svc = new Service({
   script: path.join(__dirname, 'index.js'),
   nodeOptions: [],
   env: [
-    { name: 'TALLYMAN_IP', value: '192.168.23.20' },
-    { name: 'TALLYMAN_PORT', value: '8901' }
+    { name: 'TALLYMAN_IP', value: '192.168.23.20' }
+    // TALLYMAN_PORT is hardcoded to 8901 in index.js
   ]
 });
 

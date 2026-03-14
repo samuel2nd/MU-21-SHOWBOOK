@@ -24,7 +24,7 @@ const PORT = 3002;
 
 // Default Tallyman settings
 const TALLYMAN_IP = process.env.TALLYMAN_IP || '192.168.23.20';
-const TALLYMAN_PORT = parseInt(process.env.TALLYMAN_PORT) || 8901;
+const TALLYMAN_PORT = 8901;  // Hardcoded - Tallyman TSL 5.0 port
 
 // Create reusable UDP socket
 const udpSocket = dgram.createSocket('udp4');
