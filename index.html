@@ -19,10 +19,7 @@
       <span id="connection-status" class="status-indicator offline" title="Storage mode">LOCAL</span>
       <button id="btn-cloud-shows" class="header-btn" title="Browse Cloud Shows">Cloud Shows</button>
       <button id="btn-share" class="header-btn" title="Copy Share Link">Share</button>
-      <button id="btn-new-show" class="header-btn" title="New Show">+ New Show</button>
-      <button id="btn-import" class="header-btn" title="Import Show">Import</button>
-      <button id="btn-export-json" class="header-btn" title="Export JSON">Export JSON</button>
-      <button id="btn-export-csv" class="header-btn" title="Export Current Tab CSV">Export CSV</button>
+      <button id="btn-new-show" class="header-btn" title="New Show">+ New</button>
     </div>
   </header>
 
@@ -34,22 +31,22 @@
     </div>
     <div class="nav-group" data-category="input">
       <div class="nav-group-label">Input</div>
-      <button class="nav-tab" data-tab="source">SOURCE</button>
       <button class="nav-tab" data-tab="txpgmgfx">TX/PGM/GFX</button>
-      <button class="nav-tab" data-tab="ccufsy">CCU/FSY INPUT</button>
-    </div>
-    <div class="nav-group" data-category="output">
-      <div class="nav-group-label">Output / Computed</div>
-      <button class="nav-tab" data-tab="engineer">ENGINEER</button>
-      <button class="nav-tab" data-tab="swrio">SWR I/O</button>
+      <button class="nav-tab" data-tab="source">SHOW SOURCES</button>
+      <button class="nav-tab" data-tab="evsconfig">EVS CONFIG</button>
     </div>
     <div class="nav-group" data-category="physical">
       <div class="nav-group-label">Physical I/O</div>
+      <button class="nav-tab" data-tab="ccufsy">CCU/FSY</button>
       <button class="nav-tab" data-tab="videoio">VIDEO I/O</button>
+      <button class="nav-tab" data-tab="networkio">NETWORK I/O</button>
+      <button class="nav-tab" data-tab="swrio">SWR I/O</button>
+    </div>
+    <div class="nav-group" data-category="connection">
+      <div class="nav-group-label">Connection</div>
       <button class="nav-tab" data-tab="fibertac">FIBER TAC</button>
       <button class="nav-tab" data-tab="coax">COAX MULTS</button>
-      <button class="nav-tab" data-tab="audiomult">AUDIO MULT</button>
-      <button class="nav-tab" data-tab="networkio">NETWORK I/O</button>
+      <button class="nav-tab" data-tab="audiomult">AUDIO MULTS</button>
     </div>
     <div class="nav-group" data-category="monitor">
       <div class="nav-group-label">Monitor Walls</div>
@@ -62,8 +59,8 @@
     </div>
     <div class="nav-group" data-category="config">
       <div class="nav-group-label">Config</div>
-      <button class="nav-tab" data-tab="evsconfig">EVS CONFIG</button>
-      <button class="nav-tab" data-tab="multiviewer">MULTIVIEWER</button>
+      <button class="nav-tab" data-tab="engineer">ENGINEER</button>
+      <button class="nav-tab" data-tab="multiviewer">MULTIVIEWERS</button>
       <button class="nav-tab" data-tab="routerpanel">ROUTER PANELS</button>
     </div>
     <div class="nav-group" data-category="lookup">
@@ -78,8 +75,6 @@
     <!-- Tab content rendered here by JS -->
   </main>
 
-  <!-- Hidden file input for import -->
-  <input type="file" id="import-file-input" accept=".json" style="display:none">
 
   <!-- Scripts -->
   <script src="config.js"></script>

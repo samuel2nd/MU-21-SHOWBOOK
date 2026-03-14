@@ -277,32 +277,6 @@ const App = (() => {
       SupabaseSync.copyShareUrl();
     });
 
-    document.getElementById('btn-import').addEventListener('click', () => {
-      document.getElementById('import-file-input').click();
-    });
-
-    document.getElementById('import-file-input').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      try {
-        await ExportImport.importJSON(file);
-        updateHeader();
-        navigateTo('home');
-        alert('Show imported successfully!');
-      } catch (err) {
-        alert('Import failed: ' + err.message);
-      }
-      e.target.value = '';
-    });
-
-    document.getElementById('btn-export-json').addEventListener('click', () => {
-      ExportImport.exportJSON();
-    });
-
-    document.getElementById('btn-export-csv').addEventListener('click', () => {
-      ExportImport.exportCSV(currentTab);
-    });
-
     // Listen for show-loaded to refresh UI
     Store.on('show-loaded', () => {
       updateHeader();

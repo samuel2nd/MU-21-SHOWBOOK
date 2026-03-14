@@ -35,10 +35,11 @@
   --cat-lookup: #fbbf24;
   --cat-output: #a78bfa;
   --cat-physical: #22d3ee;
+  --cat-connection: #f472b6;
   --cat-monitor: #f87171;
   --cat-config: #fde047;
 
-  --header-height: 52px;
+  --header-height: 40px;
   --sidebar-width: 155px;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -93,15 +94,15 @@ select option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 12px;
   z-index: 100;
   box-shadow: var(--shadow-md);
 }
-.header-left { display: flex; align-items: center; gap: 16px; }
+.header-left { display: flex; align-items: center; gap: 10px; }
 .header-logo {
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -109,27 +110,27 @@ select option {
   letter-spacing: 1px;
 }
 .header-show {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
 .header-format {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
   background: var(--bg-tertiary);
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 500;
 }
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 6px; }
 .header-btn {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 8px 14px;
+  padding: 5px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -140,8 +141,8 @@ select option {
 }
 .save-indicator {
   font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 4px 10px;
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 600;
   color: var(--text-muted);
@@ -154,8 +155,8 @@ select option {
 }
 .status-indicator {
   font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 4px 12px;
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 600;
   cursor: pointer;
@@ -204,6 +205,7 @@ select option {
 .nav-group[data-category="lookup"] .nav-group-label { color: var(--cat-lookup); }
 .nav-group[data-category="output"] .nav-group-label { color: var(--cat-output); }
 .nav-group[data-category="physical"] .nav-group-label { color: var(--cat-physical); }
+.nav-group[data-category="connection"] .nav-group-label { color: var(--cat-connection); }
 .nav-group[data-category="monitor"] .nav-group-label { color: var(--cat-monitor); }
 .nav-group[data-category="config"] .nav-group-label { color: var(--cat-config); }
 
@@ -237,6 +239,7 @@ select option {
 .nav-group[data-category="lookup"] .nav-tab.active { border-left: 3px solid var(--cat-lookup); padding-left: 7px; }
 .nav-group[data-category="output"] .nav-tab.active { border-left: 3px solid var(--cat-output); padding-left: 7px; }
 .nav-group[data-category="physical"] .nav-tab.active { border-left: 3px solid var(--cat-physical); padding-left: 7px; }
+.nav-group[data-category="connection"] .nav-tab.active { border-left: 3px solid var(--cat-connection); padding-left: 7px; }
 .nav-group[data-category="monitor"] .nav-tab.active { border-left: 3px solid var(--cat-monitor); padding-left: 7px; }
 .nav-group[data-category="config"] .nav-tab.active { border-left: 3px solid var(--cat-config); padding-left: 7px; }
 
@@ -498,6 +501,7 @@ select option {
 .home-nav-card[data-cat="lookup"] { border-left: 4px solid var(--cat-lookup); }
 .home-nav-card[data-cat="output"] { border-left: 4px solid var(--cat-output); }
 .home-nav-card[data-cat="physical"] { border-left: 4px solid var(--cat-physical); }
+.home-nav-card[data-cat="connection"] { border-left: 4px solid var(--cat-connection); }
 .home-nav-card[data-cat="monitor"] { border-left: 4px solid var(--cat-monitor); }
 .home-nav-card[data-cat="config"] { border-left: 4px solid var(--cat-config); }
 

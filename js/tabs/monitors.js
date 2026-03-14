@@ -277,7 +277,9 @@ const MonitorsTab = (() => {
     page.style.padding = '0';
 
     // Monitor Wall Visual
-    page.appendChild(Utils.sectionHeader(config.title));
+    const wallHeader = Utils.sectionHeader(config.title);
+    wallHeader.style.marginTop = '0';
+    page.appendChild(wallHeader);
     page.appendChild(renderMonitorWall(wallKey, config));
 
     // Draggable Sources
@@ -1022,210 +1024,199 @@ const MonitorsTab = (() => {
   }
 
   // Draggable source sections
+  // Render tabbed draggable source sections - router panel style (matches PROD Digital)
   function renderDraggableSources() {
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:8px;background:var(--bg-secondary);border-radius:var(--radius-md);';
+    wrapper.style.cssText = 'background:var(--bg-secondary);border-radius:var(--radius-md);padding:6px;';
 
-    // Show Sources
-    wrapper.appendChild(renderShowSourcesSection());
-    // EVS Sources
-    wrapper.appendChild(renderEvsSourcesSection());
-    // TX/PGM/CG Sources
-    wrapper.appendChild(renderTxPgmCgSection());
-    // Test Signals
-    wrapper.appendChild(renderTestSignalsSection());
-    // SWR Outs
-    wrapper.appendChild(renderSwrOutsSection());
+    // Tab buttons
+    const tabBar = document.createElement('div');
+    tabBar.style.cssText = 'display:flex;gap:2px;margin-bottom:6px;flex-wrap:wrap;';
+
+    const categories = [
+      { id: 'show1', label: 'SHOW 1-20', color: '#3b6998' },
+      { id: 'show2', label: 'SHOW 21-40', color: '#3b6998' },
+      { id: 'show3', label: 'SHOW 41-60', color: '#3b6998' },
+      { id: 'show4', label: 'SHOW 61-80', color: '#3b6998' },
+      { id: 'evs', label: 'EVS', color: '#8b3ba0' },
+      { id: 'tx', label: 'TX/PGM', color: '#a07030' },
+      { id: 'cg', label: 'CG', color: '#a03080' },
+      { id: 'test', label: 'TEST', color: '#6a6a6a' },
+      { id: 'swr', label: 'SWR', color: '#4a8a4a' },
+    ];
+
+    const contentArea = document.createElement('div');
+    contentArea.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
+
+    let activeTab = 'show1';
+
+    function renderContent(catId) {
+      contentArea.innerHTML = '';
+      const sources = (Store.data && Store.data.sources) ? Store.data.sources : [];
+
+      if (catId === 'show1') {
+        for (let i = 0; i < 20; i++) {
+          const src = sources[i];
+          const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+          const isPlaceholder = !(src && src.showName);
+          contentArea.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
+        }
+      } else if (catId === 'show2') {
+        for (let i = 20; i < 40; i++) {
+          const src = sources[i];
+          const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+          const isPlaceholder = !(src && src.showName);
+          contentArea.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
+        }
+      } else if (catId === 'show3') {
+        for (let i = 40; i < 60; i++) {
+          const src = sources[i];
+          const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+          const isPlaceholder = !(src && src.showName);
+          contentArea.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
+        }
+      } else if (catId === 'show4') {
+        for (let i = 60; i < 80; i++) {
+          const src = sources[i];
+          const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
+          const isPlaceholder = !(src && src.showName);
+          contentArea.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
+        }
+      } else if (catId === 'evs') {
+        const evsInputs = [
+          'EVS1-Ain', 'EVS1-Bin', 'EVS1-Cin', 'EVS1-Din', 'EVS1-Ein', 'EVS1-Fin',
+          'EVS2-Ain', 'EVS2-Bin', 'EVS2-Cin', 'EVS2-Din', 'EVS2-Ein', 'EVS2-Fin',
+          'EVS3-Ain', 'EVS3-Bin', 'EVS3-Cin', 'EVS3-Din', 'EVS3-Ein', 'EVS3-Fin',
+        ];
+        evsInputs.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
+        const evsSupers = ['EVS 1-As', 'EVS 1-Bs', 'EVS 2-As', 'EVS 2-Bs', 'EVS 3-As', 'EVS 3-Bs'];
+        evsSupers.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
+      } else if (catId === 'tx') {
+        const txDas = ['TX1 DA', 'TX2 DA', 'TX3 DA', 'TX4 DA', 'TX5 DA', 'TX6 DA', 'TX7 DA', 'TX8 DA', 'PGM DA'];
+        txDas.forEach(name => contentArea.appendChild(createDraggableChip(name, 'tx')));
+      } else if (catId === 'cg') {
+        const cgChannels = ['CG 1', 'CG 2', 'CG 3', 'CG 4', 'CG 5', 'CG 6'];
+        cgChannels.forEach(name => contentArea.appendChild(createDraggableChip(name, 'cg')));
+        const canvasChannels = ['CANVAS 1', 'CANVAS 2', 'CANVAS 3', 'CANVAS 4', 'CANVAS 5', 'CANVAS 6'];
+        canvasChannels.forEach(name => contentArea.appendChild(createDraggableChip(name, 'cg')));
+      } else if (catId === 'test') {
+        const testSignals = ['BLACK', 'BARS', 'VALID'];
+        testSignals.forEach(name => contentArea.appendChild(createDraggableChip(name, 'test')));
+      } else if (catId === 'swr') {
+        const swrOutputs = (Store.data && Store.data.swrIo && Store.data.swrIo.outputs) ? Store.data.swrIo.outputs : [];
+        let swrCount = 0;
+        if (Array.isArray(swrOutputs)) {
+          swrOutputs.forEach(item => {
+            const name = item && (item.show || item.defaultShow);
+            if (name) {
+              contentArea.appendChild(createDraggableChip(name, 'swr'));
+              swrCount++;
+            }
+          });
+        }
+        if (swrCount === 0) {
+          ['PGM', 'PVW', 'CLN', 'AUX1', 'AUX2', 'AUX3'].forEach(name => contentArea.appendChild(createDraggableChip(name, 'swr')));
+        }
+      }
+    }
+
+    categories.forEach(cat => {
+      const tab = document.createElement('button');
+      tab.textContent = cat.label;
+      tab.style.cssText = `
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 2px solid ${cat.color};
+        border-radius: 4px;
+        cursor: pointer;
+        background: ${cat.id === activeTab ? cat.color : 'transparent'};
+        color: ${cat.id === activeTab ? '#fff' : cat.color};
+        transition: all 0.15s;
+      `;
+      tab.addEventListener('click', () => {
+        activeTab = cat.id;
+        // Update all tab styles
+        tabBar.querySelectorAll('button').forEach((btn, idx) => {
+          const c = categories[idx];
+          btn.style.background = c.id === activeTab ? c.color : 'transparent';
+          btn.style.color = c.id === activeTab ? '#fff' : c.color;
+        });
+        renderContent(cat.id);
+      });
+      tabBar.appendChild(tab);
+    });
+
+    wrapper.appendChild(tabBar);
+    wrapper.appendChild(contentArea);
+    renderContent(activeTab);
 
     return wrapper;
   }
 
-  function renderShowSourcesSection() {
-    const section = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-    const title = document.createElement('span');
-    title.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);';
-    title.textContent = 'SHOW SOURCES';
-    header.appendChild(title);
-
-    const toggleGroup = document.createElement('div');
-    toggleGroup.style.cssText = 'display:flex;gap:2px;';
-    const btn1 = document.createElement('button');
-    btn1.textContent = '1-40';
-    btn1.style.cssText = 'padding:2px 6px;font-size:9px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--accent-blue);color:white;';
-    const btn2 = document.createElement('button');
-    btn2.textContent = '41-80';
-    btn2.style.cssText = 'padding:2px 6px;font-size:9px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--bg-primary);color:var(--text-secondary);';
-    toggleGroup.appendChild(btn1);
-    toggleGroup.appendChild(btn2);
-    header.appendChild(toggleGroup);
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
-
-    function renderRange(start, end) {
-      grid.innerHTML = '';
-      const sources = (Store.data && Store.data.sources) ? Store.data.sources : [];
-      // Always show all sources 1-80, use placeholder if no showName defined
-      for (let i = start - 1; i < end; i++) {
-        const src = sources[i];
-        const showName = (src && src.showName) ? src.showName : `SRC ${String(i + 1).padStart(2, '0')}`;
-        const isPlaceholder = !(src && src.showName);
-        grid.appendChild(createChip(showName, 'show', isPlaceholder));
-      }
-    }
-
-    renderRange(1, 40);
-
-    btn1.addEventListener('click', () => {
-      btn1.style.background = 'var(--accent-blue)'; btn1.style.color = 'white';
-      btn2.style.background = 'var(--bg-primary)'; btn2.style.color = 'var(--text-secondary)';
-      renderRange(1, 40);
-    });
-    btn2.addEventListener('click', () => {
-      btn2.style.background = 'var(--accent-blue)'; btn2.style.color = 'white';
-      btn1.style.background = 'var(--bg-primary)'; btn1.style.color = 'var(--text-secondary)';
-      renderRange(41, 80);
-    });
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  function renderEvsSourcesSection() {
-    const section = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
-    header.textContent = 'EVS SOURCES';
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
-
-    // EVS inputs (camera feeds)
-    const evsInputs = [
-      'EVS1-Ain', 'EVS1-Bin', 'EVS1-Cin', 'EVS1-Din', 'EVS1-Ein', 'EVS1-Fin',
-      'EVS2-Ain', 'EVS2-Bin', 'EVS2-Cin', 'EVS2-Din', 'EVS2-Ein', 'EVS2-Fin',
-      'EVS3-Ain', 'EVS3-Bin', 'EVS3-Cin', 'EVS3-Din', 'EVS3-Ein', 'EVS3-Fin',
-    ];
-    evsInputs.forEach(name => grid.appendChild(createChip(name, 'evs')));
-
-    // EVS super channels (character outputs) - matches RTR Master
-    const evsSupers = [
-      'EVS 1-As', 'EVS 1-Bs', 'EVS 2-As', 'EVS 2-Bs', 'EVS 3-As', 'EVS 3-Bs',
-    ];
-    evsSupers.forEach(name => grid.appendChild(createChip(name, 'evs')));
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  function renderTxPgmCgSection() {
-    const section = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
-    header.textContent = 'TX / PGM / CG';
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
-
-    // TX DAs - matches RTR Master
-    const txDas = [
-      'TX1 DA', 'TX2 DA', 'TX3 DA', 'TX4 DA',
-      'TX5 DA', 'TX6 DA', 'TX7 DA', 'TX8 DA',
-    ];
-    txDas.forEach(name => grid.appendChild(createChip(name, 'tx')));
-
-    // PGM DA - matches RTR Master
-    grid.appendChild(createChip('PGM DA', 'tx'));
-
-    // CG channels - matches RTR Master
-    const cgChannels = ['CG 1', 'CG 2', 'CG 3', 'CG 4', 'CG 5', 'CG 6'];
-    cgChannels.forEach(name => grid.appendChild(createChip(name, 'cg')));
-
-    // Canvas channels - matches RTR Master
-    const canvasChannels = [
-      'CANVAS 1', 'CANVAS 2', 'CANVAS 3',
-      'CANVAS 4', 'CANVAS 5', 'CANVAS 6',
-    ];
-    canvasChannels.forEach(name => grid.appendChild(createChip(name, 'cg')));
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  function renderTestSignalsSection() {
-    const section = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
-    header.textContent = 'TEST SIGNALS';
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
-
-    // Test signals - matches RTR Master
-    const testSignals = ['BLACK', 'BARS', 'VALID'];
-    testSignals.forEach(name => grid.appendChild(createChip(name, 'test')));
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  function renderSwrOutsSection() {
-    const section = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.cssText = 'font-weight:600;font-size:11px;color:var(--accent-blue);margin-bottom:6px;';
-    header.textContent = 'SWR OUTS';
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;';
-
-    const swrOutputs = (Store.data && Store.data.swrIo && Store.data.swrIo.outputs) ? Store.data.swrIo.outputs : [];
-    let count = 0;
-    if (Array.isArray(swrOutputs)) {
-      swrOutputs.forEach(item => {
-        const name = item && (item.show || item.defaultShow);
-        if (name) {
-          grid.appendChild(createChip(name, 'swr'));
-          count++;
-        }
-      });
-    }
-    if (count === 0) {
-      ['PGM', 'PVW', 'CLN', 'AUX1', 'AUX2', 'AUX3'].forEach(name => grid.appendChild(createChip(name, 'swr')));
-    }
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  function createChip(label, type, isPlaceholder = false) {
+  // Create a draggable source chip - router panel button style
+  function createDraggableChip(label, type, isPlaceholder = false) {
     const chip = document.createElement('div');
     chip.draggable = true;
+    chip.dataset.source = label;
+    chip.dataset.sourceType = type;
+
+    // Color scheme by category
     const colors = {
-      show: { bg: '#2a3a5b', border: '#3b5998', text: '#7eb8ff' },
-      evs: { bg: '#3a2a5b', border: '#6b3fa0', text: '#c490ff' },
-      swr: { bg: '#2a4a3a', border: '#3a7a5a', text: '#7effb8' },
-      tx: { bg: '#5b3a2a', border: '#a06b3f', text: '#ffc490' },
-      cg: { bg: '#4a3a5b', border: '#7a5a9a', text: '#d0a0ff' },
-      test: { bg: '#3a4a4a', border: '#5a7a7a', text: '#a0d0d0' },
+      show:  { bg: '#1e3a5f', border: '#3b6998', text: '#8ec8ff' },  // Blue - all show sources
+      evs:   { bg: '#4a1e5f', border: '#8b3ba0', text: '#d8a0ff' },  // Purple - EVS
+      tx:    { bg: '#5f3a1e', border: '#a07030', text: '#ffc890' },  // Orange - TX/PGM
+      cg:    { bg: '#5f1e4a', border: '#a03080', text: '#ff90c8' },  // Pink - CG/Canvas
+      test:  { bg: '#3a3a3a', border: '#6a6a6a', text: '#c0c0c0' },  // Gray - Test signals
+      swr:   { bg: '#2a5a2a', border: '#4a8a4a', text: '#90ff90' },  // Green - SWR outs
     };
     const c = colors[type] || colors.show;
-    // Dim placeholder chips to distinguish from defined sources
-    const opacity = isPlaceholder ? '0.5' : '1';
-    chip.style.cssText = `padding:3px 6px;font-size:9px;font-weight:500;background:${c.bg};border:1px solid ${c.border};border-radius:3px;color:${c.text};cursor:grab;user-select:none;white-space:nowrap;opacity:${opacity};`;
+    const opacity = isPlaceholder ? '0.4' : '1';
+
+    chip.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      height: 32px;
+      padding: 4px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      background: ${c.bg};
+      border: 2px solid ${c.border};
+      border-radius: 4px;
+      color: ${c.text};
+      cursor: grab;
+      user-select: none;
+      text-align: center;
+      opacity: ${opacity};
+      touch-action: none;
+      box-sizing: border-box;
+    `;
     chip.textContent = label;
+
+    // Touch-friendly: use pointer events
+    chip.addEventListener('pointerdown', (e) => {
+      chip.style.transform = 'scale(0.95)';
+    });
+    chip.addEventListener('pointerup', () => {
+      chip.style.transform = 'scale(1)';
+    });
+    chip.addEventListener('pointercancel', () => {
+      chip.style.transform = 'scale(1)';
+    });
+
     chip.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', label);
       e.dataTransfer.effectAllowed = 'copy';
       chip.style.opacity = '0.3';
     });
-    chip.addEventListener('dragend', () => { chip.style.opacity = isPlaceholder ? '0.5' : '1'; });
+
+    chip.addEventListener('dragend', () => {
+      chip.style.opacity = isPlaceholder ? '0.4' : '1';
+      chip.style.transform = 'scale(1)';
+    });
+
     return chip;
   }
 

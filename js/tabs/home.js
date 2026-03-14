@@ -63,27 +63,28 @@ const HomeTab = (() => {
     // Match sidebar order exactly
     const tabs = [
       // INPUT
-      { tab: 'source', label: 'SOURCE', cat: 'input' },
       { tab: 'txpgmgfx', label: 'TX/PGM/GFX', cat: 'input' },
-      { tab: 'ccufsy', label: 'CCU/FSY INPUT', cat: 'input' },
-      // OUTPUT
-      { tab: 'engineer', label: 'ENGINEER', cat: 'output' },
-      { tab: 'swrio', label: 'SWR I/O', cat: 'output' },
-      // PHYSICAL
+      { tab: 'source', label: 'SHOW SOURCES', cat: 'input' },
+      { tab: 'evsconfig', label: 'EVS CONFIG', cat: 'input' },
+      // PHYSICAL I/O
+      { tab: 'ccufsy', label: 'CCU/FSY', cat: 'physical' },
       { tab: 'videoio', label: 'VIDEO I/O', cat: 'physical' },
-      { tab: 'fibertac', label: 'FIBER TAC', cat: 'physical' },
-      { tab: 'coax', label: 'COAX MULTS/MUX', cat: 'physical' },
-      { tab: 'audiomult', label: 'AUDIO MULT', cat: 'physical' },
       { tab: 'networkio', label: 'NETWORK I/O', cat: 'physical' },
+      { tab: 'swrio', label: 'SWR I/O', cat: 'physical' },
+      // CONNECTION
+      { tab: 'fibertac', label: 'FIBER TAC', cat: 'connection' },
+      { tab: 'coax', label: 'COAX MULTS', cat: 'connection' },
+      { tab: 'audiomult', label: 'AUDIO MULTS', cat: 'connection' },
       // MONITOR WALLS
       { tab: 'monitors-prod-digital', label: 'PROD Digital', cat: 'monitor' },
       { tab: 'monitors-prod-print', label: 'PROD Print', cat: 'monitor' },
       { tab: 'monitors-p2p3', label: 'P2-P3', cat: 'monitor' },
       { tab: 'monitors-evs', label: 'EVS', cat: 'monitor' },
       { tab: 'monitors-aud', label: 'AUD', cat: 'monitor' },
+      { tab: 'monitors-video', label: 'VIDEO', cat: 'monitor' },
       // CONFIG
-      { tab: 'evsconfig', label: 'EVS CONFIG', cat: 'config' },
-      { tab: 'multiviewer', label: 'MULTIVIEWER', cat: 'config' },
+      { tab: 'engineer', label: 'ENGINEER', cat: 'config' },
+      { tab: 'multiviewer', label: 'MULTIVIEWERS', cat: 'config' },
       { tab: 'routerpanel', label: 'ROUTER PANELS', cat: 'config' },
       // LOOKUP
       { tab: 'rtrmaster', label: 'RTR I/O MASTER', cat: 'lookup' },
