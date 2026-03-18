@@ -1687,6 +1687,22 @@ const Store = (() => {
           console.log(`Migrated ${addedCount} new RTR output devices`);
         }
       }
+      // Migrate RTR Master - add any missing devices from defaults (audio sources, etc.)
+      if (data.rtrMaster && Array.isArray(data.rtrMaster)) {
+        const defaultMaster = defaultRtrMaster();
+        const existingIds = new Set(data.rtrMaster.map(d => d.row));
+        let addedCount = 0;
+        for (const defDevice of defaultMaster) {
+          if (!existingIds.has(defDevice.row)) {
+            data.rtrMaster.push(defDevice);
+            addedCount++;
+          }
+        }
+        if (addedCount > 0) {
+          data.rtrMaster.sort((a, b) => a.row - b.row);
+          console.log(`[loadShow] Added ${addedCount} missing RTR master devices`);
+        }
+      }
       // Sync showNames from sources to rtrMaster deviceNames
       syncShowNamesToRtrMaster();
       saveToStorage();
