@@ -1575,6 +1575,23 @@ const Store = (() => {
             console.log(`Migrated ${addedCount} new RTR output devices`);
           }
         }
+        // Migrate RTR Master - add any missing devices from defaults (audio-only sources, etc.)
+        if (data.rtrMaster && Array.isArray(data.rtrMaster)) {
+          const defaultMaster = defaultRtrMaster();
+          const existingIds = new Set(data.rtrMaster.map(d => d.row));
+          let addedCount = 0;
+          for (const defDevice of defaultMaster) {
+            if (!existingIds.has(defDevice.row)) {
+              data.rtrMaster.push(defDevice);
+              addedCount++;
+            }
+          }
+          if (addedCount > 0) {
+            // Sort by row number after adding
+            data.rtrMaster.sort((a, b) => a.row - b.row);
+            console.log(`Migrated ${addedCount} new RTR master devices`);
+          }
+        }
       }
     } catch (e) {
       console.warn('Failed to load from localStorage:', e);
