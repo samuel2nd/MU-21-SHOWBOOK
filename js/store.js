@@ -1721,7 +1721,15 @@ const Store = (() => {
 
     // Ensure all audio-only sources from defaults exist in rtrMaster
     ensureAudioSources() {
+      console.log('[ensureAudioSources] Starting...');
       const defaultMaster = defaultRtrMaster();
+      console.log('[ensureAudioSources] Default master has', defaultMaster.length, 'entries');
+      console.log('[ensureAudioSources] Current rtrMaster has', data.rtrMaster.length, 'entries');
+
+      const audioSources = defaultMaster.filter(d => d.row >= 2000);
+      console.log('[ensureAudioSources] Audio sources in defaults:', audioSources.length);
+      console.log('[ensureAudioSources] First audio source:', audioSources[0]);
+
       const existingIds = new Set(data.rtrMaster.map(d => d.row));
       let addedCount = 0;
 
@@ -1733,10 +1741,14 @@ const Store = (() => {
         }
       }
 
+      console.log('[ensureAudioSources] Added', addedCount, 'new entries');
+
       if (addedCount > 0) {
         data.rtrMaster.sort((a, b) => a.row - b.row);
         saveToStorage();
-        console.log(`[ensureAudioSources] Added ${addedCount} audio sources, total now: ${data.rtrMaster.length}`);
+        console.log('[ensureAudioSources] Saved! Total now:', data.rtrMaster.length);
+      } else {
+        console.log('[ensureAudioSources] No new entries needed or already exist');
       }
     },
   };
