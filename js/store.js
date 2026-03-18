@@ -1590,6 +1590,13 @@ const Store = (() => {
             // Sort by row number after adding
             data.rtrMaster.sort((a, b) => a.row - b.row);
             console.log(`Migrated ${addedCount} new RTR master devices`);
+            // Persist the migration immediately
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+              console.log('RTR master migration saved to localStorage');
+            } catch (e) {
+              console.warn('Failed to save RTR master migration:', e);
+            }
           }
         }
       }
