@@ -252,6 +252,11 @@ const App = (() => {
     // Init store
     Store.init();
 
+    // Init Tallyman Bridge WebSocket (for remote trigger from Companion)
+    if (typeof TallymanBridge !== 'undefined') {
+      TallymanBridge.init();
+    }
+
     // Set up tab navigation
     document.querySelectorAll('.nav-tab').forEach(btn => {
       btn.addEventListener('click', () => navigateTo(btn.dataset.tab));

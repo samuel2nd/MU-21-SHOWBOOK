@@ -10,9 +10,17 @@ const TallymanBridge = (() => {
     return 'http://localhost:3002';
   }
 
+  function getWsUrl() {
+    return 'ws://localhost:3002';
+  }
+
   // Track connection state
   let connected = false;
+  let wsConnected = false;
   let lastSyncTime = null;
+  let ws = null;
+  let reconnectTimer = null;
+  const RECONNECT_DELAY = 5000; // 5 seconds
 
   // ============================================================
   // POSITION TO INDEX MAPPING (matches tallyman-bridge/index.js)
@@ -92,6 +100,90 @@ const TallymanBridge = (() => {
     'TX1 DA': 159, 'TX2 DA': 160, 'TX3 DA': 161, 'TX4 DA': 162,
     'TX5 DA': 163, 'TX6 DA': 164, 'TX7 DA': 165, 'TX8 DA': 166
   };
+
+  // ============================================================
+  // WEBSOCKET CONNECTION (for remote trigger from Companion)
+  // ============================================================
+
+  /**
+   * Connect to bridge via WebSocket for remote trigger support
+   */
+  function connectWebSocket() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+      return; // Already connected or connecting
+    }
+
+    try {
+      ws = new WebSocket(getWsUrl());
+
+      ws.onopen = () => {
+        console.log('TallymanBridge: WebSocket connected');
+        wsConnected = true;
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          if (msg.type === 'trigger-sync') {
+            console.log('TallymanBridge: Remote sync triggered');
+            syncAll().then(result => {
+              console.log('TallymanBridge: Remote sync complete', result);
+            });
+          } else if (msg.type === 'connected') {
+            console.log('TallymanBridge:', msg.message);
+          }
+        } catch (e) {
+          console.warn('TallymanBridge: Invalid WebSocket message', e);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('TallymanBridge: WebSocket disconnected');
+        wsConnected = false;
+        ws = null;
+        scheduleReconnect();
+      };
+
+      ws.onerror = (err) => {
+        console.warn('TallymanBridge: WebSocket error');
+        wsConnected = false;
+      };
+    } catch (e) {
+      console.warn('TallymanBridge: Failed to create WebSocket', e);
+      scheduleReconnect();
+    }
+  }
+
+  /**
+   * Schedule WebSocket reconnection
+   */
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      connectWebSocket();
+    }, RECONNECT_DELAY);
+  }
+
+  /**
+   * Disconnect WebSocket
+   */
+  function disconnectWebSocket() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    wsConnected = false;
+  }
 
   /**
    * Check if bridge server is reachable
@@ -271,20 +363,32 @@ const TallymanBridge = (() => {
   function getState() {
     return {
       connected,
+      wsConnected,
       lastSyncTime,
       bridgeUrl: getBridgeUrl(),
       positionCount: Object.keys(POSITION_INDEX_MAP).length
     };
   }
 
+  /**
+   * Initialize WebSocket connection (call on page load)
+   */
+  function init() {
+    connectWebSocket();
+  }
+
   return {
+    init,
     checkHealth,
     syncAll,
     updatePosition,
     buildUmdData,
     getUmdForPosition,
     getState,
+    connectWebSocket,
+    disconnectWebSocket,
     get connected() { return connected; },
+    get wsConnected() { return wsConnected; },
     get lastSyncTime() { return lastSyncTime; },
     POSITION_INDEX_MAP
   };

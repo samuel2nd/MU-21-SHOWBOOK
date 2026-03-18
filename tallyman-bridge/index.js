@@ -17,10 +17,17 @@
 const express = require('express');
 const cors = require('cors');
 const dgram = require('dgram');
+const http = require('http');
+const WebSocket = require('ws');
 const TSL5_UMD = require('./tsl5-umd');
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const PORT = 3002;
+
+// Track connected showbook browsers
+const connectedClients = new Set();
 
 // Default Tallyman settings
 const TALLYMAN_IP = process.env.TALLYMAN_IP || '192.168.23.20';
@@ -309,10 +316,77 @@ function sendUmdUpdate(ip, port, index, text) {
 }
 
 // ============================================================
+// WEBSOCKET CONNECTIONS (for remote trigger from Companion)
+// ============================================================
+
+wss.on('connection', (ws, req) => {
+  const clientIp = req.socket.remoteAddress;
+  console.log(`WebSocket client connected: ${clientIp}`);
+  connectedClients.add(ws);
+
+  // Send welcome message with current state
+  ws.send(JSON.stringify({
+    type: 'connected',
+    message: 'Connected to Tallyman Bridge',
+    tallyman: { ip: TALLYMAN_IP, port: TALLYMAN_PORT }
+  }));
+
+  ws.on('close', () => {
+    console.log(`WebSocket client disconnected: ${clientIp}`);
+    connectedClients.delete(ws);
+  });
+
+  ws.on('error', (err) => {
+    console.error(`WebSocket error from ${clientIp}:`, err.message);
+    connectedClients.delete(ws);
+  });
+});
+
+// Trigger sync from external source (Companion, etc.)
+// This tells connected browsers to run their sync
+app.get('/trigger-sync', (req, res) => {
+  const clientCount = connectedClients.size;
+
+  if (clientCount === 0) {
+    console.log('TRIGGER-SYNC: No showbook browsers connected');
+    return res.status(503).json({
+      success: false,
+      error: 'No showbook browsers connected',
+      message: 'Open the showbook in a browser to enable remote sync'
+    });
+  }
+
+  console.log(`TRIGGER-SYNC: Broadcasting to ${clientCount} connected browser(s)`);
+
+  // Broadcast sync command to all connected browsers
+  let sentCount = 0;
+  connectedClients.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'trigger-sync' }));
+      sentCount++;
+    }
+  });
+
+  res.json({
+    success: true,
+    message: `Sync triggered on ${sentCount} browser(s)`,
+    connectedClients: clientCount
+  });
+});
+
+// Get connection status
+app.get('/connections', (req, res) => {
+  res.json({
+    connectedClients: connectedClients.size,
+    status: connectedClients.size > 0 ? 'ready' : 'no browsers connected'
+  });
+});
+
+// ============================================================
 // START SERVER
 // ============================================================
 
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('========================================');
   console.log('  TALLYMAN UMD BRIDGE RUNNING');
@@ -321,12 +395,16 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Tallyman: ${TALLYMAN_IP}:${TALLYMAN_PORT}`);
   console.log('');
   console.log('Endpoints:');
-  console.log('  GET  /health      - Health check');
-  console.log('  GET  /mapping     - Position-to-index mapping');
-  console.log('  POST /umd         - Update single UMD by position');
-  console.log('  POST /umd-index   - Update single UMD by index');
-  console.log('  POST /umd-batch   - Batch update multiple UMDs');
-  console.log('  POST /umd-sync    - Sync all UMDs from showbook');
+  console.log('  GET  /health       - Health check');
+  console.log('  GET  /mapping      - Position-to-index mapping');
+  console.log('  GET  /trigger-sync - Trigger sync from Companion');
+  console.log('  GET  /connections  - Check connected browsers');
+  console.log('  POST /umd          - Update single UMD by position');
+  console.log('  POST /umd-index    - Update single UMD by index');
+  console.log('  POST /umd-batch    - Batch update multiple UMDs');
+  console.log('  POST /umd-sync     - Sync all UMDs from showbook');
+  console.log('');
+  console.log('WebSocket: ws://localhost:3002 (for browser connection)');
   console.log('========================================');
   console.log('');
 });
