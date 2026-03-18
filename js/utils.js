@@ -679,12 +679,11 @@ const Utils = (() => {
 
     // Close on click outside
     document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target)) {
+      if (!wrapper.contains(e.target) && !popup.contains(e.target)) {
         popup.style.display = 'none';
       }
     });
 
-    wrapper.appendChild(popup);
     return wrapper;
   }
 
