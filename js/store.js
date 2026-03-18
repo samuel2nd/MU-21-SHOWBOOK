@@ -1587,13 +1587,9 @@ const Store = (() => {
             }
           }
           if (addedCount > 0) {
-            // Sort by row number after adding
             data.rtrMaster.sort((a, b) => a.row - b.row);
-            console.log(`Migrated ${addedCount} new RTR master devices`);
-            // Persist the migration immediately
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-              console.log('RTR master migration saved to localStorage');
             } catch (e) {
               console.warn('Failed to save RTR master migration:', e);
             }
@@ -1700,7 +1696,6 @@ const Store = (() => {
         }
         if (addedCount > 0) {
           data.rtrMaster.sort((a, b) => a.row - b.row);
-          console.log(`[loadShow] Added ${addedCount} missing RTR master devices`);
         }
       }
       // Sync showNames from sources to rtrMaster deviceNames
@@ -1737,19 +1732,10 @@ const Store = (() => {
 
     // Ensure all audio-only sources from defaults exist in rtrMaster
     ensureAudioSources() {
-      console.log('[ensureAudioSources] Starting...');
       const defaultMaster = defaultRtrMaster();
-      console.log('[ensureAudioSources] Default master has', defaultMaster.length, 'entries');
-      console.log('[ensureAudioSources] Current rtrMaster has', data.rtrMaster.length, 'entries');
-
-      const audioSources = defaultMaster.filter(d => d.row >= 2000);
-      console.log('[ensureAudioSources] Audio sources in defaults:', audioSources.length);
-      console.log('[ensureAudioSources] First audio source:', audioSources[0]);
-
       const existingIds = new Set(data.rtrMaster.map(d => d.row));
       let addedCount = 0;
 
-      // Only add entries with row >= 2000 (audio-only sources)
       for (const defDevice of defaultMaster) {
         if (defDevice.row >= 2000 && !existingIds.has(defDevice.row)) {
           data.rtrMaster.push(defDevice);
@@ -1757,14 +1743,9 @@ const Store = (() => {
         }
       }
 
-      console.log('[ensureAudioSources] Added', addedCount, 'new entries');
-
       if (addedCount > 0) {
         data.rtrMaster.sort((a, b) => a.row - b.row);
         saveToStorage();
-        console.log('[ensureAudioSources] Saved! Total now:', data.rtrMaster.length);
-      } else {
-        console.log('[ensureAudioSources] No new entries needed or already exist');
       }
     },
   };
