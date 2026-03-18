@@ -35,23 +35,23 @@ const Utils = (() => {
     `;
     wrapper.appendChild(display);
 
-    // The dropdown popup
+    // The dropdown popup - use fixed positioning to avoid overflow clipping
     const popup = document.createElement('div');
     popup.className = 'dark-dropdown-popup';
     popup.style.cssText = `
       display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      min-width: 100%;
+      position: fixed;
+      min-width: 100px;
       max-height: 180px;
       overflow-y: auto;
       background: var(--bg-primary);
       border: 1px solid var(--border);
       border-radius: 3px;
-      z-index: 1000;
+      z-index: 9999;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     `;
+    // Append to body so it's not clipped by overflow containers
+    document.body.appendChild(popup);
 
     // Render options
     options.forEach(opt => {
@@ -91,17 +91,32 @@ const Utils = (() => {
       });
       const isOpen = popup.style.display === 'block';
       popup.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) {
+        // Position popup using fixed positioning relative to trigger
+        requestAnimationFrame(() => {
+          const rect = display.getBoundingClientRect();
+          const popupHeight = popup.offsetHeight;
+          const viewportHeight = window.innerHeight;
+
+          popup.style.width = Math.max(rect.width, 100) + 'px';
+          popup.style.left = rect.left + 'px';
+
+          if (rect.bottom + popupHeight > viewportHeight - 10) {
+            popup.style.top = (rect.top - popupHeight) + 'px';
+          } else {
+            popup.style.top = rect.bottom + 'px';
+          }
+        });
+      }
     });
 
     // Close on click outside
     const closeHandler = (e) => {
-      if (!wrapper.contains(e.target)) {
+      if (!wrapper.contains(e.target) && !popup.contains(e.target)) {
         popup.style.display = 'none';
       }
     };
     document.addEventListener('click', closeHandler);
-
-    wrapper.appendChild(popup);
     return wrapper;
   }
 
@@ -528,23 +543,23 @@ const Utils = (() => {
     `;
     wrapper.appendChild(display);
 
-    // The dropdown popup
+    // The dropdown popup - use fixed positioning to avoid overflow clipping
     const popup = document.createElement('div');
     popup.className = 'dark-dropdown-popup';
     popup.style.cssText = `
       display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
+      position: fixed;
       max-height: 200px;
+      min-width: 150px;
       overflow-y: auto;
       background: var(--bg-primary);
       border: 1px solid var(--border);
       border-radius: 3px;
-      z-index: 1000;
+      z-index: 9999;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     `;
+    // Append to body so it's not clipped by overflow containers
+    document.body.appendChild(popup);
 
     // Filter input
     const filterInput = document.createElement('input');
@@ -640,18 +655,23 @@ const Utils = (() => {
         filterInput.value = '';
         renderOptions();
         filterInput.focus();
-        // Check if dropdown extends past viewport bottom and flip upward if needed
+        // Position popup using fixed positioning relative to trigger
         requestAnimationFrame(() => {
-          const popupRect = popup.getBoundingClientRect();
+          const rect = display.getBoundingClientRect();
+          const popupHeight = popup.offsetHeight;
           const viewportHeight = window.innerHeight;
-          if (popupRect.bottom > viewportHeight - 10) {
-            // Position above the trigger instead
-            popup.style.top = 'auto';
-            popup.style.bottom = '100%';
+
+          // Set width to match trigger
+          popup.style.width = Math.max(rect.width, 150) + 'px';
+          popup.style.left = rect.left + 'px';
+
+          // Check if dropdown would extend past viewport bottom
+          if (rect.bottom + popupHeight > viewportHeight - 10) {
+            // Position above the trigger
+            popup.style.top = (rect.top - popupHeight) + 'px';
           } else {
-            // Position below (default)
-            popup.style.top = '100%';
-            popup.style.bottom = 'auto';
+            // Position below the trigger
+            popup.style.top = rect.bottom + 'px';
           }
         });
       }
