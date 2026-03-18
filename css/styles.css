@@ -683,12 +683,18 @@ select option {
 /* ---- Scrollable Table Wrapper ---- */
 .table-scroll {
   overflow-x: auto;
+  overflow-y: visible;
   margin-bottom: 16px;
   border-radius: var(--radius-md);
 }
 .table-scroll::-webkit-scrollbar { height: 8px; }
 .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .table-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ---- Dropdown popups ---- */
+.dark-dropdown-popup {
+  z-index: 9999 !important;
+}
 
 /* ---- Buttons ---- */
 .btn {
