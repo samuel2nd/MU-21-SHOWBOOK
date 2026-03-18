@@ -1715,6 +1715,29 @@ const Store = (() => {
 
     init() {
       loadFromStorage();
+      // Ensure audio-only sources exist in rtrMaster (runs after all loading complete)
+      this.ensureAudioSources();
+    },
+
+    // Ensure all audio-only sources from defaults exist in rtrMaster
+    ensureAudioSources() {
+      const defaultMaster = defaultRtrMaster();
+      const existingIds = new Set(data.rtrMaster.map(d => d.row));
+      let addedCount = 0;
+
+      // Only add entries with row >= 2000 (audio-only sources)
+      for (const defDevice of defaultMaster) {
+        if (defDevice.row >= 2000 && !existingIds.has(defDevice.row)) {
+          data.rtrMaster.push(defDevice);
+          addedCount++;
+        }
+      }
+
+      if (addedCount > 0) {
+        data.rtrMaster.sort((a, b) => a.row - b.row);
+        saveToStorage();
+        console.log(`[ensureAudioSources] Added ${addedCount} audio sources, total now: ${data.rtrMaster.length}`);
+      }
     },
   };
 })();
