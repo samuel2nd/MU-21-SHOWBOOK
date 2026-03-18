@@ -462,7 +462,8 @@ const VideoIoTab = (() => {
       case 'fiberRtrOut':
         return `IO FIB${String(rowNum).padStart(2, '0')}`;
       case 'coaxRtrOut':
-        return `IO BNC ${rowNum}`;
+        // Match RTR output names: 1-9 have space (IO BNC 1), 10+ no space (IO BNC10)
+        return rowNum < 10 ? `IO BNC ${rowNum}` : `IO BNC${rowNum}`;
       default:
         return null;
     }
