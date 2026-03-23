@@ -88,7 +88,7 @@ const HomeTab = (() => {
       { tab: 'routerpanel', label: 'ROUTER PANELS', cat: 'config' },
       // LOOKUP
       { tab: 'rtrmaster', label: 'RTR I/O MASTER', cat: 'lookup' },
-      { tab: 'sheet8', label: 'Sheet8 (Ref Data)', cat: 'lookup' },
+      { tab: 'sheet8', label: 'Dropdown Options', cat: 'lookup' },
     ];
 
     tabs.forEach(t => {

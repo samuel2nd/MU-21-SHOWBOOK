@@ -41,6 +41,86 @@ const MonitorsTab = (() => {
         { pos: 9, area: 'p9', vip: true },
       ],
     },
+    // 6 SPLIT R: Flip of R UP - 3 small on TOP, 2 stacked left, VIP right
+    '6_SPLIT_R': {
+      name: '6 SPLIT R',
+      positions: 6,
+      template: '"p1 p2 p3" "p4 p5 p5" "p6 p5 p5"',
+      colSizes: '1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' },
+        { pos: 5, area: 'p5', vip: true },
+        { pos: 6, area: 'p6' },
+      ],
+    },
+    // 6 SPLIT L: Flip of L UP - 3 small on TOP, VIP left, 2 stacked right
+    '6_SPLIT_L': {
+      name: '6 SPLIT L',
+      positions: 6,
+      template: '"p1 p2 p3" "p4 p4 p5" "p4 p4 p6"',
+      colSizes: '1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4', vip: true },
+        { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+      ],
+    },
+    // 6 SPLIT R UP: Mirror of L UP - 1 top-left, 3 mid-left, 2 VIP on right, 4+5+6 bottom row
+    '6_SPLIT_R_UP': {
+      name: '6 SPLIT R UP',
+      positions: 6,
+      template: '"p1 p2 p2" "p3 p2 p2" "p4 p5 p6"',
+      colSizes: '1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' },
+        { pos: 2, area: 'p2', vip: true },
+        { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+      ],
+    },
+    // 6 SPLIT L UP: 1 VIP on left, 2 top-right, 3 mid-right, 4+5+6 bottom row
+    '6_SPLIT_L_UP': {
+      name: '6 SPLIT L UP',
+      positions: 6,
+      template: '"p1 p1 p2" "p1 p1 p3" "p4 p5 p6"',
+      colSizes: '1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1', vip: true },
+        { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' },
+      ],
+    },
+    // 5 SPLIT: 3 small cells on top (1,2,3), 2 larger VIPs on bottom (4,5)
+    '5_SPLIT': {
+      name: '5 SPLIT',
+      positions: 5,
+      template: '"p1 p1 p2 p2 p3 p3" "p4 p4 p4 p5 p5 p5"',
+      colSizes: '1fr 1fr 1fr 1fr 1fr 1fr',
+      rowSizes: '1fr 2fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' },
+        { pos: 4, area: 'p4', vip: true },
+        { pos: 5, area: 'p5', vip: true },
+      ],
+    },
+    // 5 SPLIT FLIP: 2 larger VIPs on top (1,2), 3 small cells on bottom (3,4,5)
+    '5_SPLIT_FLIP': {
+      name: '5 SPLIT FLIP',
+      positions: 5,
+      template: '"p1 p1 p1 p2 p2 p2" "p3 p3 p4 p4 p5 p5"',
+      colSizes: '1fr 1fr 1fr 1fr 1fr 1fr',
+      rowSizes: '2fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1', vip: true },
+        { pos: 2, area: 'p2', vip: true },
+        { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' }, { pos: 5, area: 'p5' },
+      ],
+    },
     '4_SPLIT': {
       name: '4 SPLIT',
       positions: 4,

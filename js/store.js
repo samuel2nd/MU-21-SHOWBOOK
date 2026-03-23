@@ -978,6 +978,175 @@ const Store = (() => {
       [862,'Out 574','FUTURE OUT (No Card)','574','9169','9170','9171','9172','9173','9174','9175','9176','9177','9178','9179','9180','9181','9182','9183','9184'],
       [863,'Out 575','FUTURE OUT (No Card)','575','9185','9186','9187','9188','9189','9190','9191','9192','9193','9194','9195','9196','9197','9198','9199','9200'],
       [864,'Out 576','FUTURE OUT (No Card)','576','9201','9202','9203','9204','9205','9206','9207','9208','9209','9210','9211','9212','9213','9214','9215','9216'],
+      // ===== AUDIO-ONLY OUTPUTS (RTR IDs 941-1100) =====
+      // MDI Outputs 1-96 (4 audio channels each)
+      [941,'MDI OP1','MDI Output 1','','1441','1442','1443','1444'],
+      [942,'MDI OP2','MDI Output 2','','1445','1446','1447','1448'],
+      [943,'MDI OP3','MDI Output 3','','1449','1450','1451','1452'],
+      [944,'MDI OP4','MDI Output 4','','1453','1454','1455','1456'],
+      [945,'MDI OP5','MDI Output 5','','1457','1458','1459','1460'],
+      [946,'MDI OP6','MDI Output 6','','1461','1462','1463','1464'],
+      [947,'MDI OP7','MDI Output 7','','1465','1466','1467','1468'],
+      [948,'MDI OP8','MDI Output 8','','1469','1470','1471','1472'],
+      [949,'MDI OP9','MDI Output 9','','1473','1474','1475','1476'],
+      [950,'MDI OP10','MDI Output 10','','1477','1478','1479','1480'],
+      [951,'MDI OP11','MDI Output 11','','1481','1482','1483','1484'],
+      [952,'MDI OP12','MDI Output 12','','1485','1486','1487','1488'],
+      [953,'MDI OP13','MDI Output 13','','1489','1490','1491','1492'],
+      [954,'MDI OP14','MDI Output 14','','1493','1494','1495','1496'],
+      [955,'MDI OP15','MDI Output 15','','1497','1498','1499','1500'],
+      [956,'MDI OP16','MDI Output 16','','1501','1502','1503','1504'],
+      [957,'MDI OP17','MDI Output 17','','1585','1586','1587','1588'],
+      [958,'MDI OP18','MDI Output 18','','1589','1590','1591','1592'],
+      [959,'MDI OP19','MDI Output 19','','1593','1594','1595','1596'],
+      [960,'MDI OP20','MDI Output 20','','1597','1598','1599','1600'],
+      [961,'MDI OP21','MDI Output 21','','1601','1602','1603','1604'],
+      [962,'MDI OP22','MDI Output 22','','1605','1606','1607','1608'],
+      [963,'MDI OP23','MDI Output 23','','1609','1610','1611','1612'],
+      [964,'MDI OP24','MDI Output 24','','1613','1614','1615','1616'],
+      [965,'MDI OP25','MDI Output 25','','1617','1618','1619','1620'],
+      [966,'MDI OP26','MDI Output 26','','1621','1622','1623','1624'],
+      [967,'MDI OP27','MDI Output 27','','1625','1626','1627','1628'],
+      [968,'MDI OP28','MDI Output 28','','1629','1630','1631','1632'],
+      [969,'MDI OP29','MDI Output 29','','1633','1634','1635','1636'],
+      [970,'MDI OP30','MDI Output 30','','1637','1638','1639','1640'],
+      [971,'MDI OP31','MDI Output 31','','1641','1642','1643','1644'],
+      [972,'MDI OP32','MDI Output 32','','1645','1646','1647','1648'],
+      [973,'MDI OP33','MDI Output 33','','1729','1730','1731','1732'],
+      [974,'MDI OP34','MDI Output 34','','1733','1734','1735','1736'],
+      [975,'MDI OP35','MDI Output 35','','1737','1738','1739','1740'],
+      [976,'MDI OP36','MDI Output 36','','1741','1742','1743','1744'],
+      [977,'MDI OP37','MDI Output 37','','1745','1746','1747','1748'],
+      [978,'MDI OP38','MDI Output 38','','1749','1750','1751','1752'],
+      [979,'MDI OP39','MDI Output 39','','1753','1754','1755','1756'],
+      [980,'MDI OP40','MDI Output 40','','1757','1758','1759','1760'],
+      [981,'MDI OP41','MDI Output 41','','1761','1762','1763','1764'],
+      [982,'MDI OP42','MDI Output 42','','1765','1766','1767','1768'],
+      [983,'MDI OP43','MDI Output 43','','1769','1770','1771','1772'],
+      [984,'MDI OP44','MDI Output 44','','1773','1774','1775','1776'],
+      [985,'MDI OP45','MDI Output 45','','1777','1778','1779','1780'],
+      [986,'MDI OP46','MDI Output 46','','1781','1782','1783','1784'],
+      [987,'MDI OP47','MDI Output 47','','1785','1786','1787','1788'],
+      [988,'MDI OP48','MDI Output 48','','1789','1790','1791','1792'],
+      [989,'MDI OP49','MDI Output 49','','1873','1874','1875','1876'],
+      [990,'MDI OP50','MDI Output 50','','1877','1878','1879','1880'],
+      [991,'MDI OP51','MDI Output 51','','1881','1882','1883','1884'],
+      [992,'MDI OP52','MDI Output 52','','1885','1886','1887','1888'],
+      [993,'MDI OP53','MDI Output 53','','1889','1890','1891','1892'],
+      [994,'MDI OP54','MDI Output 54','','1893','1894','1895','1896'],
+      [995,'MDI OP55','MDI Output 55','','1897','1898','1899','1900'],
+      [996,'MDI OP56','MDI Output 56','','1901','1902','1903','1904'],
+      [997,'MDI OP57','MDI Output 57','','1905','1906','1907','1908'],
+      [998,'MDI OP58','MDI Output 58','','1909','1910','1911','1912'],
+      [999,'MDI OP59','MDI Output 59','','1913','1914','1915','1916'],
+      [1000,'MDI OP60','MDI Output 60','','1917','1918','1919','1920'],
+      [1001,'MDI OP61','MDI Output 61','','1921','1922','1923','1924'],
+      [1002,'MDI OP62','MDI Output 62','','1925','1926','1927','1928'],
+      [1003,'MDI OP63','MDI Output 63','','1929','1930','1931','1932'],
+      [1004,'MDI OP64','MDI Output 64','','1933','1934','1935','1936'],
+      [1005,'MDI OP65','MDI Output 65','','2017','2018','2019','2020'],
+      [1006,'MDI OP66','MDI Output 66','','2021','2022','2023','2024'],
+      [1007,'MDI OP67','MDI Output 67','','2025','2026','2027','2028'],
+      [1008,'MDI OP68','MDI Output 68','','2029','2030','2031','2032'],
+      [1009,'MDI OP69','MDI Output 69','','2033','2034','2035','2036'],
+      [1010,'MDI OP70','MDI Output 70','','2037','2038','2039','2040'],
+      [1011,'MDI OP71','MDI Output 71','','2041','2042','2043','2044'],
+      [1012,'MDI OP72','MDI Output 72','','2045','2046','2047','2048'],
+      [1013,'MDI OP73','MDI Output 73','','2049','2050','2051','2052'],
+      [1014,'MDI OP74','MDI Output 74','','2053','2054','2055','2056'],
+      [1015,'MDI OP75','MDI Output 75','','2057','2058','2059','2060'],
+      [1016,'MDI OP76','MDI Output 76','','2061','2062','2063','2064'],
+      [1017,'MDI OP77','MDI Output 77','','2065','2066','2067','2068'],
+      [1018,'MDI OP78','MDI Output 78','','2069','2070','2071','2072'],
+      [1019,'MDI OP79','MDI Output 79','','2073','2074','2075','2076'],
+      [1020,'MDI OP80','MDI Output 80','','2077','2078','2079','2080'],
+      [1021,'MDI OP81','MDI Output 81','','2161','2162','2163','2164'],
+      [1022,'MDI OP82','MDI Output 82','','2165','2166','2167','2168'],
+      [1023,'MDI OP83','MDI Output 83','','2169','2170','2171','2172'],
+      [1024,'MDI OP84','MDI Output 84','','2173','2174','2175','2176'],
+      [1025,'MDI OP85','MDI Output 85','','2177','2178','2179','2180'],
+      [1026,'MDI OP86','MDI Output 86','','2181','2182','2183','2184'],
+      [1027,'MDI OP87','MDI Output 87','','2185','2186','2187','2188'],
+      [1028,'MDI OP88','MDI Output 88','','2189','2190','2191','2192'],
+      [1029,'MDI OP89','MDI Output 89','','2193','2194','2195','2196'],
+      [1030,'MDI OP90','MDI Output 90','','2197','2198','2199','2200'],
+      [1031,'MDI OP91','MDI Output 91','','2201','2202','2203','2204'],
+      [1032,'MDI OP92','MDI Output 92','','2205','2206','2207','2208'],
+      [1033,'MDI OP93','MDI Output 93','','2209','2210','2211','2212'],
+      [1034,'MDI OP94','MDI Output 94','','2213','2214','2215','2216'],
+      [1035,'MDI OP95','MDI Output 95','','2217','2218','2219','2220'],
+      [1036,'MDI OP96','MDI Output 96','','2221','2222','2223','2224'],
+      // FEVS Wohler Outputs (1-2 audio channels each)
+      [1037,'FEVS 1-1','FEVS 1-1 Wohler','','2024'],
+      [1038,'FEVS 1-2','FEVS 1-2 Wohler','','','2023'],
+      [1039,'FEVS 1-3','FEVS 1-3 Wohler','','2022'],
+      [1040,'FEVS 1-4','FEVS 1-4 Wohler','','','2021'],
+      [1041,'FEVS 2-1','FEVS 2-1 Wohler','','2020'],
+      [1042,'FEVS 2-2','FEVS 2-2 Wohler','','','2019'],
+      [1043,'FEVS 2-3','FEVS 2-3 Wohler','','2018'],
+      [1044,'FEVS 2-4','FEVS 2-4 Wohler','','','2017'],
+      [1045,'FEVS 3-1','FEVS 3-1 Wohler','','2032'],
+      [1046,'FEVS 3-2','FEVS 3-2 Wohler','','','2031'],
+      [1047,'FEVS 3-3','FEVS 3-3 Wohler','','2030'],
+      [1048,'FEVS 3-4','FEVS 3-4 Wohler','','','2029'],
+      [1049,'FEVS 4-1','FEVS 4-1 Wohler','','2028'],
+      [1050,'FEVS 4-2','FEVS 4-2 Wohler','','','2027'],
+      [1051,'FEVS 4-3','FEVS 4-3 Wohler','','2026'],
+      [1052,'FEVS 4-4','FEVS 4-4 Wohler','','','2025'],
+      [1053,'FEVS 5-1','FEVS 5-1 Wohler','','2040'],
+      [1054,'FEVS 5-2','FEVS 5-2 Wohler','','','2039'],
+      [1055,'FEVS 5-3','FEVS 5-3 Wohler','','2038'],
+      [1056,'FEVS 5-4','FEVS 5-4 Wohler','','','2037'],
+      [1057,'FEVS 6-1','FEVS 6-1 Wohler','','2036'],
+      [1058,'FEVS 6-2','FEVS 6-2 Wohler','','','2035'],
+      [1059,'FEVS 6-3','FEVS 6-3 Wohler','','2034'],
+      [1060,'FEVS 6-4','FEVS 6-4 Wohler','','','2033'],
+      // REVS Wohler Outputs (1-2 audio channels each)
+      [1061,'REVS 1-1','REVS 1-1 Wohler','','2048'],
+      [1062,'REVS 1-2','REVS 1-2 Wohler','','','2047'],
+      [1063,'REVS 1-3','REVS 1-3 Wohler','','2046'],
+      [1064,'REVS 1-4','REVS 1-4 Wohler','','','2045'],
+      [1065,'REVS 2-1','REVS 2-1 Wohler','','2044'],
+      [1066,'REVS 2-2','REVS 2-2 Wohler','','','2043'],
+      [1067,'REVS 2-3','REVS 2-3 Wohler','','2042'],
+      [1068,'REVS 2-4','REVS 2-4 Wohler','','','2041'],
+      [1069,'REVS 3-1','REVS 3-1 Wohler','','2056'],
+      [1070,'REVS 3-2','REVS 3-2 Wohler','','','2055'],
+      [1071,'REVS 3-3','REVS 3-3 Wohler','','2054'],
+      [1072,'REVS 3-4','REVS 3-4 Wohler','','','2053'],
+      [1073,'REVS 4-1','REVS 4-1 Wohler','','2052'],
+      [1074,'REVS 4-2','REVS 4-2 Wohler','','','2051'],
+      [1075,'REVS 4-3','REVS 4-3 Wohler','','2050'],
+      [1076,'REVS 4-4','REVS 4-4 Wohler','','','2049'],
+      // P2 Wohler Outputs (1-2 audio channels each)
+      [1077,'P2WHLR1','P2 Wohler 1','','2064'],
+      [1078,'P2WHLR2','P2 Wohler 2','','','2063'],
+      [1079,'P2WHLR3','P2 Wohler 3','','2062'],
+      [1080,'P2WHLR4','P2 Wohler 4','','','2061'],
+      // GFX Wohler Outputs (1-2 audio channels each)
+      [1081,'GFXWHLR1','GFX Wohler 1','','2060'],
+      [1082,'GFXWHLR2','GFX Wohler 2','','','2059'],
+      [1083,'GFXWHLR3','GFX Wohler 3','','2058'],
+      [1084,'GFXWHLR4','GFX Wohler 4','','','2057'],
+      // P3 Wohler Outputs (1-2 audio channels each)
+      [1085,'P3WHLR1','P3 Wohler 1','','2065'],
+      [1086,'P3WHLR2','P3 Wohler 2','','','2066'],
+      [1087,'P3WHLR3','P3 Wohler 3','','2067'],
+      [1088,'P3WHLR4','P3 Wohler 4','','','2068'],
+      [1089,'P3WHLR5','P3 Wohler 5','','2069'],
+      [1090,'P3WHLR6','P3 Wohler 6','','','2070'],
+      [1091,'P3WHLR7','P3 Wohler 7','','2071'],
+      [1092,'P3WHLR8','P3 Wohler 8','','','2072'],
+      // VID Wohler Outputs (1-2 audio channels each)
+      [1093,'VIDWHLR1','VID Wohler 1','','2080'],
+      [1094,'VIDWHLR2','VID Wohler 2','','','2079'],
+      [1095,'VIDWHLR3','VID Wohler 3','','2078'],
+      [1096,'VIDWHLR4','VID Wohler 4','','','2077'],
+      // M2A Outputs (1-2 audio channels each)
+      [1097,'M2A 061','M2A Output 61','','2076'],
+      [1098,'M2A 062','M2A Output 62','','','2075'],
+      [1099,'M2A 063','M2A Output 63','','2074'],
+      [1100,'M2A 064','M2A Output 64','','','2073'],
     ];
     const devices = _D.map((d, i) => {
       const audio = Array(16).fill('');
@@ -986,8 +1155,8 @@ const Store = (() => {
       }
       return { row: d[0], deviceName: d[1] || '', deviceDesc: d[2] || '', videoLevel: d[3] || '', audio };
     });
-    // Pad to 350 total rows for custom additions
-    while (devices.length < 350) {
+    // Pad to 1150 total rows for custom additions (audio-only outputs go up to 1100)
+    while (devices.length < 1150) {
       devices.push({ row: devices.length + 1, deviceName: '', deviceDesc: '', videoLevel: '', audio: Array(16).fill('') });
     }
     return devices;
@@ -1133,10 +1302,11 @@ const Store = (() => {
   // Default EVS CONFIG data
   function defaultEvsConfig() {
     // EVS Server definitions from the sheet
+    // POS options: FEVS1, FEVS2, FEVS3, REVS1, REVS2 (TD for 2105)
     const serverDefs = [
-      { id: '2101', sn: '310160', mod: 'XT VIA', pos: 'REVS 1', config: '6X2', xnet: 1 },
-      { id: '2102', sn: '310170', mod: 'XT VIA', pos: 'FEVS 2', config: '6X2', xnet: 2 },
-      { id: '2103', sn: '310140', mod: 'XT VIA', pos: 'FEVS 1', config: '6X2', xnet: 3 },
+      { id: '2101', sn: '310160', mod: 'XT VIA', pos: 'REVS1', config: '6X2', xnet: 1 },
+      { id: '2102', sn: '310170', mod: 'XT VIA', pos: 'FEVS2', config: '6X2', xnet: 2 },
+      { id: '2103', sn: '310140', mod: 'XT VIA', pos: 'FEVS1', config: '6X2', xnet: 3 },
       { id: '2105', sn: '310110', mod: 'Xs VIA', pos: 'TD', config: '0X4', xnet: 20 },
     ];
 
@@ -1186,11 +1356,13 @@ const Store = (() => {
       ],
     };
 
-    // Wohler defaults per server
+    // Wohler defaults per server (based on position)
+    // Position mapping: FEVS1→FEVS2-1..FEVS3-4, FEVS2→FEVS4-1..FEVS5-4, FEVS3→FEVS6-1..FEVS7-4
+    //                   REVS1→REVS1-1..REVS2-4, REVS2→REVS4-1..REVS5-4
     const wohlerDefaults = {
-      '2101': ['REVS 1-1', 'REVS 1-2', 'REVS 1-3', 'REVS 1-4', 'REVS 2-1', 'REVS 2-2', 'REVS 2-3', 'REVS 2-4'],
-      '2102': ['FEVS 3-1', 'FEVS 3-2', 'FEVS 3-3', 'FEVS 3-4', 'FEVS 4-1', 'FEVS 4-2', 'FEVS 4-3', 'FEVS 4-4'],
-      '2103': ['FEVS 1-1', 'FEVS 1-2', 'FEVS 1-3', 'FEVS 1-4', 'FEVS 2-1', 'FEVS 2-2', 'FEVS 2-3', 'FEVS 2-4'],
+      '2101': ['REVS 1-1', 'REVS 1-2', 'REVS 1-3', 'REVS 1-4', 'REVS 2-1', 'REVS 2-2', 'REVS 2-3', 'REVS 2-4'],  // REVS1
+      '2102': ['FEVS 4-1', 'FEVS 4-2', 'FEVS 4-3', 'FEVS 4-4', 'FEVS 5-1', 'FEVS 5-2', 'FEVS 5-3', 'FEVS 5-4'],  // FEVS2
+      '2103': ['FEVS 2-1', 'FEVS 2-2', 'FEVS 2-3', 'FEVS 2-4', 'FEVS 3-1', 'FEVS 3-2', 'FEVS 3-3', 'FEVS 3-4'],  // FEVS1
       '2105': ['TD WOHLER 1', 'TD WOHLER 2', 'TD WOHLER 3', 'TD WOHLER 4', 'TD WOHLER 5', 'TD WOHLER 6', 'TD WOHLER 7', 'TD WOHLER 8'],
     };
 
@@ -1217,8 +1389,8 @@ const Store = (() => {
       },
       wohler: Array.from({ length: 8 }, (_, i) => ({
         channel: i + 1,
-        description: '',  // User fills in description
-        rtrOut: wohlerDefaults[def.id][i] || '',  // Default router output name
+        source: '',  // Source device for routing
+        rtrOut: wohlerDefaults[def.id][i] || '',  // Router output destination (auto-populated from position)
         isAnalog: def.id === '2105',
       })),
     }));
@@ -1321,7 +1493,7 @@ const Store = (() => {
       rtrOutputs: defaultRtrOutputs(),
       sheet8: {
         deviceTypes: ['Camera', 'EVS', 'VTR', 'GFX', 'Router', 'Frame Sync', 'Switcher', 'Audio', 'Network', 'Fiber', 'Other'],
-        videoFormats: ['1080i/59.94', '1080p/59.94', '720p/59.94', '2160p/59.94', 'SDI', 'HDMI', 'NDI', 'SRT'],
+        videoFormats: ['1080p/59.94', '1080i/59.94', '720p/59.94', '1080p/59.94 HDR'],
         audioFormats: ['AES', 'MADI', 'Dante', 'Analog', 'Embedded', 'SDI Emb'],
         locations: ['PCR', 'Studio', 'MCR', 'TOC', 'Truck', 'Field', 'Rack Room'],
         tacPanels: ['TAC-A', 'TAC-B', 'TAC-C', 'TAC-D', 'TAC-E', 'TAC-F', 'TAC-G', 'TAC-H', 'S09', 'S10'],

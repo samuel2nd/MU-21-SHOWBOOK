@@ -26,23 +26,23 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 ## File Structure
 
 ### HTML Entry Point
-- **index.html** (114 lines) - Main page with sidebar navigation defining 20 tabs in 6 categories:
-  - Home
-  - Input: SOURCE, TX/PGM/GFX, CCU/FSY INPUT
-  - Output/Computed: ENGINEER, SWR I/O
-  - Physical I/O: VIDEO I/O, FIBER TAC, COAX MULTS, AUDIO MULT, NETWORK I/O
+- **index.html** (110 lines) - Main page with sidebar navigation defining 20 tabs in 7 categories:
+  - Home: HOME
+  - Input: TX/PGM/GFX, SHOW SOURCES, EVS CONFIG
+  - Physical I/O: CCU/FSY, VIDEO I/O, NETWORK I/O, SWR I/O
+  - Connection: FIBER TAC, COAX MULTS, AUDIO MULTS
   - Monitor Walls: PROD Digital, PROD Print, P2-P3, EVS, AUD, VIDEO
-  - Config: EVS CONFIG, MULTIVIEWER, ROUTER PANELS
-  - Lookup: RTR I/O MASTER, Sheet8
+  - Config: ENGINEER, MULTIVIEWERS, ROUTER PANELS
+  - Lookup: RTR I/O MASTER, Dropdown Options
 
 ### Core JavaScript (11 files)
 
 | File | Lines | Purpose |
 |------|-------|---------|
 | js/app.js | 440 | Tab routing, header management, `stageAllFromShowData()`, `showStagingPrompt()` |
-| js/store.js | 1430+ | Central data store, `defaultRtrMaster()`, `defaultRtrOutputs()`, `defaultEvsConfig()`, `emptyShow()` |
+| js/store.js | 1924 | Central data store, `defaultRtrMaster()`, `defaultRtrOutputs()`, `defaultEvsConfig()`, `emptyShow()` |
 | js/utils.js | 775 | Dark dropdowns, table rendering, `syncToFiberTac()`, `syncToCoaxMult()` |
-| js/formulas.js | 221 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()` |
+| js/formulas.js | 260 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()`, `getShowNameForFs()` |
 | js/export.js | 301 | JSON/CSV export/import with validation, `sanitizeStrings()` |
 | js/supabase.js | 400 | Real-time cloud sync, session-based filtering, triggers RouteQueue on remote updates |
 | js/route-queue.js | 250 | Route queue system - remote devices queue routes, engineering computer executes |
@@ -55,23 +55,23 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 | File | Lines | Tab Name | Key Features |
 |------|-------|----------|--------------|
 | js/tabs/home.js | 135 | HOME | Show info, equipment summary, quick navigation grid |
-| js/tabs/source.js | 576 | SOURCE | 80 sources split 1-40/41-80, quick fill controls, syncs to RTR Master |
+| js/tabs/source.js | 576 | SHOW SOURCES | 80 sources split 1-40/41-80, quick fill controls, syncs to RTR Master |
 | js/tabs/txpgmgfx.js | 401 | TX/PGM/GFX | TX 1-8, CG 1-6, Canvas 1-8, Program outputs, FS 01-67 dropdown |
-| js/tabs/ccufsy.js | 324 | CCU/FSY INPUT | CCU 1-12, FS 1-67, syncs to FIBER TAC and COAX MULTS |
-| js/tabs/engineer.js | 1126 | ENGINEER | UMD groups (CCU/FS, EVS/CG, Switcher Outs, Spare De-Embed, TX DAs), NV9000 controls |
+| js/tabs/ccufsy.js | 334 | CCU/FSY | CCU 1-12, FS 1-67 with device mapping, syncs to FIBER TAC and COAX MULTS |
+| js/tabs/engineer.js | 1140 | ENGINEER | UMD groups (CCU/FS, EVS/CG, Switcher Outs, Spare De-Embed, TX DAs), NV9000 controls with per-page modes (Video I/O, Monitor Walls, EVS Config) |
 | js/tabs/swrio.js | 273 | SWR I/O | Switcher Inputs 1-120 (3 columns), Outputs 1-46, Tally Group 1-24, GPI 1-12 |
 | js/tabs/videoio.js | 559 | VIDEO I/O | Fiber RTR Out 1-16, Coax RTR Out 1-16, I/O Tie Lines 1-48, Truck Tie Lines 1-48, JFS MUX 1 (12), JFS MUX 2 (6) |
 | js/tabs/fibertac.js | 615 | FIBER TAC | Visual patch panels (TAC-A through TAC-H, S09, S10), 24 ports each, click-to-assign modal |
 | js/tabs/coax.js | 375 | COAX MULTS | 8 mult units, 15 outputs each (5x3 grid), click-to-assign modal |
-| js/tabs/audiomult.js | 180 | AUDIO MULT | DT-12 panels A-F, 12 channels each (6x2 grid) |
+| js/tabs/audiomult.js | 180 | AUDIO MULTS | DT-12 panels A-F, 12 channels each (6x2 grid) |
 | js/tabs/networkio.js | 188 | NETWORK I/O | I/O (24 ports), Truck Bench (24 ports), Above Tape (ports 13-24) |
 | js/tabs/proddigital.js | 1500+ | PROD Digital | PXM 1-8, 10-12 monitor wall with MV assignments, layouts, drag-drop |
-| js/tabs/monitors.js | 1234 | P2-P3, EVS, AUD, VIDEO | 4 monitor wall pages with drag-drop sources, layouts |
-| js/tabs/evsconfig.js | 531 | EVS CONFIG | 4 EVS servers (2101, 2102, 2103, 2105), XFILE gateway, Wohler config, Show Sources reference |
-| js/tabs/multiviewer.js | 887 | MULTIVIEWER | 22 Kaleido cards configuration, staged layout changes panel |
+| js/tabs/monitors.js | 1304 | P2-P3, EVS, AUD, VIDEO | 4 monitor wall pages with drag-drop sources, all 11 layouts |
+| js/tabs/evsconfig.js | 584 | EVS CONFIG | 4 EVS servers (2101, 2102, 2103, 2105), XFILE gateway, Wohler routing with NV9000 integration, clean Show Sources reference (active sources only) |
+| js/tabs/multiviewer.js | 887 | MULTIVIEWERS | 22 Kaleido cards configuration, staged layout changes panel |
 | js/tabs/routerpanel.js | 34 | ROUTER PANELS | Panel Form 1-20, TD Panel Buttons 1-20 |
 | js/tabs/rtrmaster.js | 276 | RTR I/O MASTER | Device library with video + 16 audio levels, sub-tabs for Inputs/Outputs |
-| js/tabs/sheet8.js | 46 | Sheet8 | Reference data editor: Device Types, Video/Audio Formats, Locations, TAC Panels, Audio Sources |
+| js/tabs/sheet8.js | 46 | Dropdown Options | Reference data editor: Device Types, Video/Audio Formats, Locations, TAC Panels, Audio Sources |
 
 ---
 
@@ -91,8 +91,23 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 - SHOW 61-80: IDs 1222-1241
 
 ### Router Outputs (from `defaultRtrOutputs()` in store.js)
-- Destination IDs starting at 289
-- Output devices through 637+
+
+**Video+Audio Outputs (IDs 289-864):**
+- EVS 1-1 through EVS 4-4 (IDs 289-320)
+- MV inputs, MUX outputs, Switcher inputs, etc.
+- Standard outputs with video level + 16 audio levels
+
+**Audio-Only Outputs (IDs 941-1100):**
+| ID Range | Device | Description |
+|----------|--------|-------------|
+| 941-1036 | MDI OP1-96 | MDI outputs (4 audio channels each) |
+| 1037-1060 | FEVS 1-1 to FEVS 6-4 | FEVS Wohler outputs (1-2 audio channels) |
+| 1061-1076 | REVS 1-1 to REVS 4-4 | REVS Wohler outputs (1-2 audio channels) |
+| 1077-1080 | P2WHLR1-4 | P2 Wohler outputs |
+| 1081-1084 | GFXWHLR1-4 | GFX Wohler outputs |
+| 1085-1092 | P3WHLR1-8 | P3 Wohler outputs |
+| 1093-1096 | VIDWHLR1-4 | VID Wohler outputs |
+| 1097-1100 | M2A 061-064 | M2A outputs |
 
 ---
 
@@ -102,10 +117,27 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 
 | Server | S/N | Model | Position | Config | XNET |
 |--------|-----|-------|----------|--------|------|
-| 2101 | 310160 | XT VIA | REVS 1 | 6X2 | 1 |
-| 2102 | 310170 | XT VIA | FEVS 2 | 6X2 | 2 |
-| 2103 | 310140 | XT VIA | FEVS 1 | 6X2 | 3 |
+| 2101 | 310160 | XT VIA | REVS1 | 6X2 | 1 |
+| 2102 | 310170 | XT VIA | FEVS2 | 6X2 | 2 |
+| 2103 | 310140 | XT VIA | FEVS1 | 6X2 | 3 |
 | 2105 | 310110 | Xs VIA | TD | 0X4 | 20 |
+
+### Position Dropdown Options
+POS field is a dropdown with options: `FEVS1`, `FEVS2`, `FEVS3`, `REVS1`, `REVS2`
+(Server 2105/TD has fixed position, not selectable)
+
+### Wohler RTR Output Mapping
+When a position is selected, Wohler RTR OUT fields auto-populate with audio-only RTR destinations:
+
+| Position | Wohler Outputs (Ch 1-8) | RTR IDs |
+|----------|-------------------------|---------|
+| FEVS1 | FEVS 1-1 to 1-4, FEVS 2-1 to 2-4 | 1037-1044 |
+| FEVS2 | FEVS 3-1 to 3-4, FEVS 4-1 to 4-4 | 1045-1052 |
+| FEVS3 | FEVS 5-1 to 5-4, FEVS 6-1 to 6-4 | 1053-1060 |
+| REVS1 | REVS 1-1 to 1-4, REVS 2-1 to 2-4 | 1061-1068 |
+| REVS2 | REVS 3-1 to 3-4, REVS 4-1 to 4-4 | 1069-1076 |
+
+Wohler Source dropdown routes to these destinations via NV9000. Respects EVS Config mode (Global/Immediate/Staged) set on ENGINEER page.
 
 ### EVS Channel Names (per 6X2 server)
 Each server has 8 channels defined in `channelDefaults`:
@@ -129,7 +161,7 @@ EVS 3-As, EVS 3-Bs
 
 ## Multiviewer Layouts
 
-Defined in proddigital.js and multiviewer.js `LAYOUTS` object:
+Defined in proddigital.js, multiviewer.js, and monitors.js `LAYOUTS` object:
 
 | Layout | Name | Positions | Description |
 |--------|------|-----------|-------------|
@@ -259,6 +291,21 @@ Site hosted on Netlify (mu-21showbook.netlify.app). Bridge servers run on engine
 | Tallyman Bridge | 3002 | HTTP→TSL 5.0 UDP (port 8901) | UMD text sync |
 | NV9000 Bridge | 3003 | HTTP | Router control |
 
+### NV9000 Trigger Modes (ENGINEER Page)
+
+Routes can be executed immediately or staged for batch execution:
+
+| Mode | Behavior |
+|------|----------|
+| Immediate | Routes execute instantly when source is selected |
+| Staged | Routes queue in Staged Routes panel, execute with "Take All" button |
+| Global | Inherits from global mode setting |
+
+**Per-Page Mode Overrides:**
+- Video I/O: Controls VIDEO I/O page routing
+- Monitor Walls: Controls all monitor wall pages (PROD Digital, P2-P3, etc.)
+- EVS Config: Controls Wohler audio routing from EVS CONFIG page
+
 **Architecture:**
 - All devices access showbook via Netlify
 - Engineering computer runs bridge servers on localhost
@@ -363,7 +410,7 @@ Staging functions in app.js:
   monitorWalls: { ... },
   monitorWallsV2: { p2p3, evs, aud, video },
   prodDigital: { pxms: [...], multiviewers: [...] },
-  evsConfig: { servers: [4], xfile, showSources: [5 columns] },
+  evsConfig: { servers: [4], xfile },
   kaleidoConfig: { bridgeUrl, triggerMode, cards: [22], stagedLayouts },
   routerPanels: { form: [20], td: [20] },
   sheet8: { deviceTypes, videoFormats, audioFormats, locations, tacPanels, audioSources }
@@ -377,10 +424,32 @@ Staging functions in app.js:
 From ccufsy.js:
 
 ### CCU Section (12 units)
-Columns: #, Device, TAC, FIB-A, FIB-B, Show Name (computed), Lens checkboxes (B, S, W, DOLLY, HAND), Notes
+Columns: #, Device, TAC, FIB-A, FIB-B, Show Name (computed), Lens checkboxes (B, S, W, DOLLY), Notes
 
 ### FSY Section (67 units)
-Columns: #, Format, TAC, FIB-A, Show Name (computed), Source (computed), MULT, COAX, Fixed, JS, Notes
+Columns: #, Device (computed), Format, TAC, FIB-A, Show Name (computed), MULT, COAX, Notes
+
+### Frame Sync Device Mapping
+Device column auto-populated based on unit number:
+
+| FS Units | Device |
+|----------|--------|
+| 1-4 | AJA FS4-1 |
+| 5-8 | AJA FS4-2 |
+| 9-12 | AJA FS4-3 |
+| 13-16 | AJA FS4-4 |
+| 17-20 | AJA FS4-5 |
+| 21-24 | AJA FS4-6 |
+| 25-28 | AJA FS4-7 |
+| 29-30 | AJA FS2-1 |
+| 31-67 | EVS NEURON |
+
+### Show Name Column (FSY Section)
+The Show Name column displays names from two sources:
+1. **SOURCE page**: If a source has this FS as its engSource, shows the source's showName
+2. **TX/PGM/GFX page**: If this FS is assigned in a TX row's FRAMESYNC dropdown, shows that TX's UMD NAME
+
+This ensures CCU/FSY page shows complete framesync usage across all assignments.
 
 ### Bidirectional Sync
 - TAC/FIB assignments sync to FIBER TAC page via `Utils.syncToFiberTac()`
@@ -394,6 +463,8 @@ From txpgmgfx.js:
 
 ### Transmission Section (TX 1-8)
 Columns: TX, DA INPUT, UMD NAME, ENG SOURCE, AUDIO SRC, FRAMESYNC (dropdown FS 01-67), OUTPUT, I/O COAX 1-4 (checkboxes), I/O RTR OUT (computed)
+
+**Framesync Integration**: When a FRAMESYNC is selected, it is counted in the equipment summary (Home page FSY count) and the UMD NAME appears in the CCU/FSY page's Show Name column for that FS unit.
 
 ### Graphics Section
 - CG 1-6: DA INPUT, UMD, ENG SRC, KEY IN
@@ -420,11 +491,11 @@ Default positions include: PGM A, CLEAN, PRESET, SWPVW, ME buses, AUX 1-12, IS 1
 
 ---
 
-## Sheet8 Reference Data
+## Dropdown Options Reference Data
 
 From sheet8.js - 6 editable lists (one item per line):
 1. Device Types
-2. Video Formats
+2. Video Formats (default: 1080p/59.94, 1080i/59.94, 720p/59.94, 1080p/59.94 HDR)
 3. Audio Formats
 4. Locations
 5. TAC Panels (default: TAC-A through TAC-H, S09, S10)

@@ -1,7 +1,7 @@
-// Sheet8 — Reference/dropdown data editor
+// Dropdown Options — Reference/dropdown data editor
 const Sheet8Tab = (() => {
   function render(container) {
-    const page = Utils.tabPage('Sheet8 — Reference Data', 'Edit dropdown lists and reference data used across the showbook');
+    const page = Utils.tabPage('Dropdown Options', 'Edit dropdown lists and reference data used across the showbook');
     const d = Store.data.sheet8;
 
     const lists = [

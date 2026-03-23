@@ -79,10 +79,14 @@ const Formulas = (() => {
       s.engSource && s.engSource.toUpperCase().includes('CCU')
     ).length;
 
-    // FSY count: sources with engSource containing "FSY" or "FS"
-    const fsyCount = Store.data.sources.filter(s =>
+    // FSY count: sources with engSource containing "FSY" or "FS" + TX/PGM/GFX framesync assignments
+    const fsyFromSources = Store.data.sources.filter(s =>
       s.engSource && (s.engSource.toUpperCase().includes('FSY') || s.engSource.toUpperCase().match(/\bFS\s*\d/))
     ).length;
+    const fsyFromTx = (Store.data.txPgmGfx && Store.data.txPgmGfx.tx)
+      ? Store.data.txPgmGfx.tx.filter(tx => tx.framesync).length
+      : 0;
+    const fsyCount = fsyFromSources + fsyFromTx;
 
     // EVS count: sources with engSource containing "EVS"
     const evsCount = Store.data.sources.filter(s =>
@@ -120,6 +124,39 @@ const Formulas = (() => {
       .filter(s => s.engSource === deviceName && s.showName)
       .map(s => s.showName)
       .join(', ');
+  }
+
+  // Get TX UMD name for a Frame Sync (if assigned in TX/PGM/GFX page)
+  // Returns the UMD NAME from TX row that has this FS in its framesync field
+  function getTxUmdForFs(fsName) {
+    if (!fsName || !Store.data.txPgmGfx || !Store.data.txPgmGfx.tx) return '';
+    const txRow = Store.data.txPgmGfx.tx.find(tx => tx.framesync === fsName);
+    return txRow ? (txRow.umdName || `TX${txRow.row}`) : '';
+  }
+
+  // Get FS units assigned in TX/PGM/GFX (returns Set of FS names like "FS 01")
+  function getFsAssignedInTxPgmGfx() {
+    const assigned = new Set();
+    if (Store.data.txPgmGfx && Store.data.txPgmGfx.tx) {
+      Store.data.txPgmGfx.tx.forEach(tx => {
+        if (tx.framesync) {
+          assigned.add(tx.framesync);
+        }
+      });
+    }
+    return assigned;
+  }
+
+  // Get show name OR TX UMD name for a Frame Sync device
+  // First checks SOURCE page, then checks TX/PGM/GFX assignments
+  function getShowNameForFs(fsName) {
+    if (!fsName) return '';
+    // First check if any source uses this FS as engSource
+    const sourceNames = getSourceNamesForDevice(fsName);
+    if (sourceNames) return sourceNames;
+    // Then check if this FS is assigned in TX/PGM/GFX
+    const txUmd = getTxUmdForFs(fsName);
+    return txUmd;
   }
 
   // Get the engSource device name for sources assigned to a given FS device
@@ -216,5 +253,8 @@ const Formulas = (() => {
     getSourceNamesForDevice,
     getSourceDeviceForFs,
     getTxRoutingInfo,
+    getTxUmdForFs,
+    getFsAssignedInTxPgmGfx,
+    getShowNameForFs,
   };
 })();

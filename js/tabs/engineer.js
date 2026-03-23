@@ -357,6 +357,14 @@ const EngineerTab = (() => {
               <option value="staged" ${NV9000Client.getPageMode('monitors') === 'staged' ? 'selected' : ''}>Staged</option>
             </select>
           </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:10px;color:var(--text-secondary);">EVS Config:</span>
+            <select id="nv9000-mode-evsconfig" style="padding:3px 6px;font-size:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary);">
+              <option value="global" ${NV9000Client.getPageMode('evsconfig') === 'global' ? 'selected' : ''}>Global</option>
+              <option value="immediate" ${NV9000Client.getPageMode('evsconfig') === 'immediate' ? 'selected' : ''}>Immediate</option>
+              <option value="staged" ${NV9000Client.getPageMode('evsconfig') === 'staged' ? 'selected' : ''}>Staged</option>
+            </select>
+          </div>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
           <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">TEST ROUTE</div>
@@ -910,6 +918,13 @@ const EngineerTab = (() => {
     if (monitorsModeSelect) {
       monitorsModeSelect.addEventListener('change', () => {
         NV9000Client.setPageMode('monitors', monitorsModeSelect.value);
+      });
+    }
+
+    const evsconfigModeSelect = document.getElementById('nv9000-mode-evsconfig');
+    if (evsconfigModeSelect) {
+      evsconfigModeSelect.addEventListener('change', () => {
+        NV9000Client.setPageMode('evsconfig', evsconfigModeSelect.value);
       });
     }
 

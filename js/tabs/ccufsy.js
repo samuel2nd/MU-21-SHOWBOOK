@@ -31,8 +31,7 @@ const CcuFsyTab = (() => {
       { label: 'B', width: '30px' },
       { label: 'S', width: '30px' },
       { label: 'W', width: '30px' },
-      { label: 'DOLLY', width: '40px' },
-      { label: 'HAND', width: '40px' },
+      { label: 'DOLLY', width: '45px' },
       { label: 'Notes', width: 'auto' }
     ].forEach(col => {
       const th = document.createElement('th');
@@ -73,7 +72,7 @@ const CcuFsyTab = (() => {
       tr.appendChild(tdShow);
 
       // Lens checkboxes
-      ['lensB', 'lensS', 'lensW', 'lensDolly', 'lensHand'].forEach(key => {
+      ['lensB', 'lensS', 'lensW', 'lensDolly'].forEach(key => {
         tr.appendChild(makeCheckbox(row, idx, key));
       });
 
@@ -90,6 +89,20 @@ const CcuFsyTab = (() => {
     parent.appendChild(wrapper);
   }
 
+  // Get device name for Frame Sync unit
+  function getFsDevice(unit) {
+    if (unit >= 1 && unit <= 4) return 'AJA FS4-1';
+    if (unit >= 5 && unit <= 8) return 'AJA FS4-2';
+    if (unit >= 9 && unit <= 12) return 'AJA FS4-3';
+    if (unit >= 13 && unit <= 16) return 'AJA FS4-4';
+    if (unit >= 17 && unit <= 20) return 'AJA FS4-5';
+    if (unit >= 21 && unit <= 24) return 'AJA FS4-6';
+    if (unit >= 25 && unit <= 28) return 'AJA FS4-7';
+    if (unit >= 29 && unit <= 30) return 'AJA FS2-1';
+    if (unit >= 31 && unit <= 67) return 'EVS NEURON';
+    return '';
+  }
+
   function renderFsyTable(parent, data) {
     const table = document.createElement('table');
     table.className = 'data-table';
@@ -98,15 +111,13 @@ const CcuFsyTab = (() => {
     const hr = document.createElement('tr');
     [
       { label: '#', width: '35px' },
-      { label: 'Format', width: '90px' },
+      { label: 'Device', width: '75px' },
+      { label: 'Format', width: '120px' },
       { label: 'TAC', width: '65px' },
       { label: 'FIB-A', width: '50px' },
       { label: 'Show Name', width: '100px' },
-      { label: 'Source', width: '70px' },
       { label: 'MULT', width: '50px' },
       { label: 'COAX', width: '50px' },
-      { label: 'Fixed', width: '60px' },
-      { label: 'JS', width: '50px' },
       { label: 'Notes', width: 'auto' }
     ].forEach(col => {
       const th = document.createElement('th');
@@ -128,6 +139,17 @@ const CcuFsyTab = (() => {
       tdNum.textContent = row.unit;
       tr.appendChild(tdNum);
 
+      // Device (computed based on unit number, styled like text input)
+      const tdDevice = document.createElement('td');
+      const deviceInp = document.createElement('input');
+      deviceInp.type = 'text';
+      deviceInp.value = getFsDevice(row.unit);
+      deviceInp.readOnly = true;
+      deviceInp.style.backgroundColor = 'var(--bg-secondary)';
+      deviceInp.style.cursor = 'default';
+      tdDevice.appendChild(deviceInp);
+      tr.appendChild(tdDevice);
+
       // Format dropdown
       tr.appendChild(makeFormatDropdown(row, idx));
 
@@ -137,29 +159,17 @@ const CcuFsyTab = (() => {
       // FIB-A dropdown
       tr.appendChild(makeFibDropdown(row, idx, 'fibA', fsName, 'fsy'));
 
-      // Show Name (computed)
+      // Show Name (computed) - checks SOURCE page first, then TX/PGM/GFX assignments
       const tdShow = document.createElement('td');
       tdShow.className = 'cell-computed';
-      tdShow.textContent = Formulas.getSourceNamesForDevice(fsName);
+      tdShow.textContent = Formulas.getShowNameForFs(fsName);
       tr.appendChild(tdShow);
-
-      // Source (computed)
-      const tdSource = document.createElement('td');
-      tdSource.className = 'cell-computed';
-      tdSource.textContent = Formulas.getSourceNamesForDevice(fsName) ? fsName : '';
-      tr.appendChild(tdSource);
 
       // MULT dropdown
       tr.appendChild(makeMultDropdown(row, idx, fsName));
 
       // COAX dropdown
       tr.appendChild(makeCoaxDropdown(row, idx));
-
-      // Fixed
-      tr.appendChild(makeTextInput(row, idx, 'fixed', 'fsy'));
-
-      // JS
-      tr.appendChild(makeTextInput(row, idx, 'js', 'fsy'));
 
       // Notes
       tr.appendChild(makeTextInput(row, idx, 'notes', 'fsy'));

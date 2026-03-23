@@ -1,6 +1,19 @@
 // EVS CONFIG — 4 EVS servers (2101, 2102, 2103, 2105) + XFILE gateway
 const EvsConfigTab = (() => {
 
+  // Position options for EVS servers
+  const POS_OPTIONS = ['FEVS1', 'FEVS2', 'FEVS3', 'REVS1', 'REVS2'];
+
+  // Wohler RTR output mapping based on position
+  // Each position maps to 8 outputs (channels 1-8)
+  const WOHLER_MAPPING = {
+    'FEVS1': ['FEVS 1-1', 'FEVS 1-2', 'FEVS 1-3', 'FEVS 1-4', 'FEVS 2-1', 'FEVS 2-2', 'FEVS 2-3', 'FEVS 2-4'],
+    'FEVS2': ['FEVS 3-1', 'FEVS 3-2', 'FEVS 3-3', 'FEVS 3-4', 'FEVS 4-1', 'FEVS 4-2', 'FEVS 4-3', 'FEVS 4-4'],
+    'FEVS3': ['FEVS 5-1', 'FEVS 5-2', 'FEVS 5-3', 'FEVS 5-4', 'FEVS 6-1', 'FEVS 6-2', 'FEVS 6-3', 'FEVS 6-4'],
+    'REVS1': ['REVS 1-1', 'REVS 1-2', 'REVS 1-3', 'REVS 1-4', 'REVS 2-1', 'REVS 2-2', 'REVS 2-3', 'REVS 2-4'],
+    'REVS2': ['REVS 3-1', 'REVS 3-2', 'REVS 3-3', 'REVS 3-4', 'REVS 4-1', 'REVS 4-2', 'REVS 4-3', 'REVS 4-4'],
+  };
+
   function render(container) {
     // Ensure evsConfig data exists with new structure
     if (!Store.data.evsConfig || !Store.data.evsConfig.servers) {
@@ -55,15 +68,61 @@ const EvsConfigTab = (() => {
 
     card.appendChild(header);
 
-    // Config row: 8CH, POS, MOD
+    // Config row: 8CH, POS dropdown, MOD
     const configRow = document.createElement('div');
-    configRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;font-size:11px;';
+    configRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;font-size:11px;align-items:center;';
 
-    configRow.innerHTML = `
-      <div><span style="color:var(--text-secondary);">8CH</span></div>
-      <div><span style="color:var(--text-secondary);">POS:</span> <span style="color:var(--accent-bright);">${server.pos}</span></div>
-      <div><span style="color:var(--text-secondary);">MOD:</span> <span style="color:var(--text-primary);">${server.mod}</span></div>
-    `;
+    // 8CH label
+    const chLabel = document.createElement('div');
+    chLabel.innerHTML = '<span style="color:var(--text-secondary);">8CH</span>';
+    configRow.appendChild(chLabel);
+
+    // POS dropdown (not for 2105/TD which has analog Wohler)
+    const posWrapper = document.createElement('div');
+    posWrapper.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    const posLabel = document.createElement('span');
+    posLabel.style.color = 'var(--text-secondary)';
+    posLabel.textContent = 'POS:';
+    posWrapper.appendChild(posLabel);
+
+    if (server.id === '2105') {
+      // TD position is fixed
+      const posText = document.createElement('span');
+      posText.style.color = 'var(--accent-bright)';
+      posText.textContent = server.pos;
+      posWrapper.appendChild(posText);
+    } else {
+      // Create POS dropdown for other servers
+      const posOptions = [{ value: '', label: '--' }];
+      POS_OPTIONS.forEach(pos => posOptions.push({ value: pos, label: pos }));
+
+      const posDropdown = Utils.createDarkDropdown(posOptions, server.pos || '', (val) => {
+        server.pos = val;
+        Store.set(`evsConfig.servers.${sIdx}.pos`, val);
+
+        // Auto-populate Wohler RTR outputs based on position
+        if (val && WOHLER_MAPPING[val]) {
+          const wohlerOutputs = WOHLER_MAPPING[val];
+          server.wohler.forEach((w, wIdx) => {
+            w.rtrOut = wohlerOutputs[wIdx] || '';
+            Store.set(`evsConfig.servers.${sIdx}.wohler.${wIdx}.rtrOut`, w.rtrOut);
+          });
+          Utils.toast(`Wohler outputs updated for ${val}`, 'success');
+        }
+
+        // Re-render the card to update Wohler table
+        App.renderCurrentTab();
+      }, { placeholder: '--' });
+      posDropdown.style.fontSize = '10px';
+      posWrapper.appendChild(posDropdown);
+    }
+    configRow.appendChild(posWrapper);
+
+    // MOD label
+    const modLabel = document.createElement('div');
+    modLabel.innerHTML = `<span style="color:var(--text-secondary);">MOD:</span> <span style="color:var(--text-primary);">${server.mod}</span>`;
+    configRow.appendChild(modLabel);
+
     card.appendChild(configRow);
 
     // Config type and names row
@@ -229,7 +288,7 @@ const EvsConfigTab = (() => {
     thead.innerHTML = `
       <tr>
         <th style="width:20px;">CH</th>
-        <th>Description</th>
+        <th>Source</th>
         <th>${server.id === '2105' ? 'ANALOG' : 'RTR OUT'}</th>
       </tr>
     `;
@@ -244,27 +303,46 @@ const EvsConfigTab = (() => {
       tdCh.style.textAlign = 'center';
       tr.appendChild(tdCh);
 
-      const tdDesc = document.createElement('td');
-      const descInput = document.createElement('input');
-      descInput.type = 'text';
-      descInput.value = w.description || '';
-      descInput.style.cssText = 'width:100%;font-size:10px;padding:2px;';
-      descInput.addEventListener('change', () => {
-        w.description = descInput.value;
-        Store.set(`evsConfig.servers.${sIdx}.wohler.${wIdx}.description`, descInput.value);
+      // Source dropdown (for routing)
+      const tdSource = document.createElement('td');
+      const deviceOpts = Utils.getDeviceOptions();
+      const options = [{ value: '', label: '--' }];
+      // Add orphan if current value isn't in list
+      const validDevices = new Set(deviceOpts.map(o => o.value));
+      if (w.source && !validDevices.has(w.source)) {
+        options.push({ value: w.source, label: w.source });
+      }
+      deviceOpts.forEach(o => {
+        options.push({ value: o.value, label: o.label || o.value });
       });
-      tdDesc.appendChild(descInput);
-      tr.appendChild(tdDesc);
+      const sourceDropdown = Utils.createDarkDropdown(options, w.source || '', async (val) => {
+        w.source = val;
+        Store.set(`evsConfig.servers.${sIdx}.wohler.${wIdx}.source`, val);
 
+        // Trigger NV9000 route if source and destination are set
+        if (val && w.rtrOut) {
+          const result = await NV9000Client.handleRoute(val, w.rtrOut, 'evsconfig');
+          if (result.success) {
+            if (result.staged) {
+              Utils.toast(`Staged: ${val} → ${w.rtrOut}`, 'info');
+            } else {
+              Utils.toast(`Routed: ${val} → ${w.rtrOut}`, 'success');
+            }
+          }
+        }
+      }, { placeholder: '--' });
+      sourceDropdown.style.fontSize = '10px';
+      tdSource.appendChild(sourceDropdown);
+      tr.appendChild(tdSource);
+
+      // RTR OUT (read-only, auto-populated from position)
       const tdRtr = document.createElement('td');
       const rtrInput = document.createElement('input');
       rtrInput.type = 'text';
       rtrInput.value = w.rtrOut || '';
-      rtrInput.style.cssText = 'width:100%;font-size:10px;padding:2px;';
-      rtrInput.addEventListener('change', () => {
-        w.rtrOut = rtrInput.value;
-        Store.set(`evsConfig.servers.${sIdx}.wohler.${wIdx}.rtrOut`, rtrInput.value);
-      });
+      rtrInput.style.cssText = 'width:100%;font-size:10px;padding:2px;background:var(--bg-secondary);cursor:default;';
+      rtrInput.readOnly = true;
+      rtrInput.title = 'Auto-populated from Position selection';
       tdRtr.appendChild(rtrInput);
       tr.appendChild(tdRtr);
 
@@ -307,80 +385,67 @@ const EvsConfigTab = (() => {
   }
 
   function renderShowSourcesTable() {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;';
+    // Clean display - only show sources that are in use, in numerical order
+    const sources = Store.data.sources || [];
+    const activeSources = sources
+      .filter(s => s.showName || s.engSource)
+      .sort((a, b) => a.number - b.number);
 
-    const columnLabels = ['EVS 2101', 'EVS 2102', 'EVS 2103', 'EVS 2105', 'Overflow'];
+    if (activeSources.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding:20px;text-align:center;color:var(--text-muted);font-size:12px;';
+      empty.textContent = 'No sources configured. Add sources on the SOURCE page.';
+      return empty;
+    }
 
-    Store.data.evsConfig.showSources.forEach((col, colIdx) => {
-      const colDiv = document.createElement('div');
+    const table = document.createElement('table');
+    table.className = 'data-table compact';
+    table.style.cssText = 'font-size:11px;';
 
-      const colHeader = document.createElement('div');
-      colHeader.style.cssText = 'font-size:11px;font-weight:bold;color:var(--accent);margin-bottom:6px;text-align:center;padding:4px;background:var(--bg-secondary);border-radius:3px;';
-      colHeader.textContent = columnLabels[colIdx] || `Column ${colIdx + 1}`;
-      colDiv.appendChild(colHeader);
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th style="width:35px;">#</th>
+        <th style="width:120px;">Eng Source</th>
+        <th style="width:120px;">Show Name</th>
+        <th style="width:120px;">Audio</th>
+      </tr>
+    `;
+    table.appendChild(thead);
 
-      const table = document.createElement('table');
-      table.className = 'data-table compact';
-      table.style.cssText = 'font-size:10px;';
+    const tbody = document.createElement('tbody');
+    activeSources.forEach(src => {
+      const tr = document.createElement('tr');
 
-      const thead = document.createElement('thead');
-      thead.innerHTML = `
-        <tr>
-          <th>ENG SRC</th>
-          <th>Show Name</th>
-          <th>Audio</th>
-        </tr>
-      `;
-      table.appendChild(thead);
+      const tdNum = document.createElement('td');
+      tdNum.className = 'row-num';
+      tdNum.textContent = src.number;
+      tr.appendChild(tdNum);
 
-      const tbody = document.createElement('tbody');
-      col.forEach((src, rowIdx) => {
-        const tr = document.createElement('tr');
+      const tdEng = document.createElement('td');
+      tdEng.textContent = src.engSource || '';
+      tdEng.style.color = 'var(--text-secondary)';
+      tr.appendChild(tdEng);
 
-        const tdEng = document.createElement('td');
-        tdEng.textContent = src.engSource;
-        tdEng.style.color = 'var(--text-secondary)';
-        tr.appendChild(tdEng);
+      const tdShow = document.createElement('td');
+      tdShow.textContent = src.showName || '';
+      tdShow.style.color = 'var(--accent-cyan)';
+      tdShow.style.fontWeight = '500';
+      tr.appendChild(tdShow);
 
-        const tdShow = document.createElement('td');
-        const showInput = document.createElement('input');
-        showInput.type = 'text';
-        showInput.value = src.showName || '';
-        showInput.style.cssText = 'width:100%;font-size:10px;padding:1px 2px;';
-        showInput.addEventListener('change', () => {
-          src.showName = showInput.value;
-          Store.set(`evsConfig.showSources.${colIdx}.${rowIdx}.showName`, showInput.value);
-          // Sync to sources array for lookups throughout the app
-          syncEvsChannelToSources(src.engSource, showInput.value);
-        });
-        tdShow.appendChild(showInput);
-        tr.appendChild(tdShow);
+      const tdAudio = document.createElement('td');
+      tdAudio.textContent = src.audioSource || '';
+      tdAudio.style.color = 'var(--text-secondary)';
+      tr.appendChild(tdAudio);
 
-        const tdAudio = document.createElement('td');
-        const audioInput = document.createElement('input');
-        audioInput.type = 'text';
-        audioInput.value = src.audio || '';
-        audioInput.style.cssText = 'width:100%;font-size:10px;padding:1px 2px;';
-        audioInput.addEventListener('change', () => {
-          src.audio = audioInput.value;
-          Store.set(`evsConfig.showSources.${colIdx}.${rowIdx}.audio`, audioInput.value);
-        });
-        tdAudio.appendChild(audioInput);
-        tr.appendChild(tdAudio);
-
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-
-      const tableWrapper = document.createElement('div');
-      tableWrapper.className = 'table-scroll';
-      tableWrapper.style.maxHeight = '350px';
-      tableWrapper.appendChild(table);
-      colDiv.appendChild(tableWrapper);
-
-      wrapper.appendChild(colDiv);
+      tbody.appendChild(tr);
     });
+    table.appendChild(tbody);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-scroll';
+    wrapper.style.maxHeight = '400px';
+    wrapper.appendChild(table);
 
     return wrapper;
   }
@@ -417,9 +482,9 @@ const EvsConfigTab = (() => {
   // Fallback default data generator (mirrors store.js defaultEvsConfig)
   function getDefaultEvsConfig() {
     const serverDefs = [
-      { id: '2101', sn: '310160', mod: 'XT VIA', pos: 'REVS 1', config: '6X2', xnet: 1 },
-      { id: '2102', sn: '310170', mod: 'XT VIA', pos: 'FEVS 2', config: '6X2', xnet: 2 },
-      { id: '2103', sn: '310140', mod: 'XT VIA', pos: 'FEVS 1', config: '6X2', xnet: 3 },
+      { id: '2101', sn: '310160', mod: 'XT VIA', pos: 'REVS1', config: '6X2', xnet: 1 },
+      { id: '2102', sn: '310170', mod: 'XT VIA', pos: 'FEVS2', config: '6X2', xnet: 2 },
+      { id: '2103', sn: '310140', mod: 'XT VIA', pos: 'FEVS1', config: '6X2', xnet: 3 },
       { id: '2105', sn: '310110', mod: 'Xs VIA', pos: 'TD', config: '0X4', xnet: 20 },
     ];
 
@@ -468,10 +533,11 @@ const EvsConfigTab = (() => {
       ],
     };
 
+    // Wohler defaults now use WOHLER_MAPPING based on default positions
     const wohlerDefaults = {
-      '2101': ['REVS 1-1', 'REVS 1-2', 'REVS 1-3', 'REVS 1-4', 'REVS 2-1', 'REVS 2-2', 'REVS 2-3', 'REVS 2-4'],
-      '2102': ['FEVS 3-1', 'FEVS 3-2', 'FEVS 3-3', 'FEVS 3-4', 'FEVS 4-1', 'FEVS 4-2', 'FEVS 4-3', 'FEVS 4-4'],
-      '2103': ['FEVS 1-1', 'FEVS 1-2', 'FEVS 1-3', 'FEVS 1-4', 'FEVS 2-1', 'FEVS 2-2', 'FEVS 2-3', 'FEVS 2-4'],
+      '2101': WOHLER_MAPPING['REVS1'],  // Default pos: REVS1
+      '2102': WOHLER_MAPPING['FEVS2'],  // Default pos: FEVS2
+      '2103': WOHLER_MAPPING['FEVS1'],  // Default pos: FEVS1
       '2105': ['TD WOHLER 1', 'TD WOHLER 2', 'TD WOHLER 3', 'TD WOHLER 4', 'TD WOHLER 5', 'TD WOHLER 6', 'TD WOHLER 7', 'TD WOHLER 8'],
     };
 
@@ -497,8 +563,8 @@ const EvsConfigTab = (() => {
       },
       wohler: Array.from({ length: 8 }, (_, i) => ({
         channel: i + 1,
-        description: '',  // User fills in description
-        rtrOut: wohlerDefaults[def.id][i] || '',  // Default router output name
+        source: '',  // Source device for routing
+        rtrOut: wohlerDefaults[def.id][i] || '',  // Router output destination (auto-populated from position)
         isAnalog: def.id === '2105',
       })),
     }));
@@ -511,19 +577,7 @@ const EvsConfigTab = (() => {
       gateways: { pcLan: '10.5.21.1', tenG: '192.168.201.1' },
     };
 
-    const showSourcesDefaults = [
-      ['CCU 01', 'FS 01', 'SHOW03', 'SHOW04', 'SHOW05', 'SHOW06', 'SHOW07', 'SHOW08', 'SHOW09', 'SHOW10', 'SHOW11', 'SHOW12', 'SHOW13', 'SHOW14'],
-      ['SHOW15', 'SHOW16', 'SHOW17', 'SHOW18', 'SHOW19', 'SHOW20', 'SHOW21', 'SHOW22', 'SHOW23', 'SHOW24', 'SHOW25', 'SHOW26', 'SHOW27', 'SHOW28'],
-      ['SHOW29', 'SHOW30', 'SHOW31', 'SHOW32', 'SHOW33', 'SHOW34', 'SHOW35', 'SHOW36', 'SHOW37', 'SHOW38', 'SHOW39', 'SHOW40', 'SHOW41', 'SHOW42'],
-      ['SHOW41', 'SHOW42', 'SHOW43', 'SHOW44', 'SHOW45', 'SHOW46', 'SHOW47', 'SHOW48', 'SHOW49', 'SHOW50', 'SHOW51', 'SHOW52', 'SHOW53', 'SHOW54'],
-      ['SHOW55', 'SHOW56', 'SHOW57', 'SHOW58', 'SHOW59', 'SHOW60', 'SHOW61', 'SHOW62', 'SHOW63', 'SHOW64', 'SHOW65', 'SHOW66', 'SHOW67', 'SHOW68'],
-    ];
-
-    const showSources = showSourcesDefaults.map(col =>
-      col.map(engSource => ({ engSource, showName: '', audio: '*CNSLCAM' }))
-    );
-
-    return { servers, xfile, showSources };
+    return { servers, xfile };
   }
 
   return { render, getDefaultEvsConfig };
