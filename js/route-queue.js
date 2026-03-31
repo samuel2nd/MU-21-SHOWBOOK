@@ -42,8 +42,14 @@ const RouteQueue = (() => {
     // Listen for remote changes to process queue
     Store.on('show-loaded', handleShowLoaded);
 
-    // Also check queue periodically in case we missed an update
-    setInterval(() => {
+    // Periodically check queue AND re-check bridge reachability
+    // This handles cases where bridges start after page load
+    setInterval(async () => {
+      // Re-check bridge reachability periodically if not reachable
+      if (!bridgesReachable) {
+        await checkBridgesReachable();
+      }
+
       if (bridgesReachable && !isProcessing) {
         processQueue();
       }
@@ -54,8 +60,22 @@ const RouteQueue = (() => {
    * When show data is loaded (including from remote sync), check queue
    */
   function handleShowLoaded() {
-    if (bridgesReachable && !isProcessing) {
-      processQueue();
+    const queue = Store.data.routeQueue;
+    const hasItems = queue && (
+      (queue.nv9000 && queue.nv9000.length > 0) ||
+      (queue.kaleido && queue.kaleido.length > 0) ||
+      (queue.tallyman && queue.tallyman.length > 0)
+    );
+
+    console.log(`[RouteQueue] Show loaded - bridges: ${bridgesReachable}, queue items: ${hasItems ? 'YES' : 'no'}`);
+
+    if (hasItems) {
+      if (bridgesReachable && !isProcessing) {
+        console.log('[RouteQueue] Processing queue from show-loaded event');
+        processQueue();
+      } else if (!bridgesReachable) {
+        console.log('[RouteQueue] Queue has items but bridges not reachable (remote device)');
+      }
     }
   }
 

@@ -305,8 +305,15 @@ const SupabaseSync = (() => {
       isLoadingRemote = false;
 
       // Process route queue if this device can reach bridges
-      if (typeof RouteQueue !== 'undefined' && RouteQueue.bridgesReachable) {
-        RouteQueue.processQueue();
+      if (typeof RouteQueue !== 'undefined') {
+        const queue = Store.data.routeQueue;
+        const hasQueue = queue && (queue.nv9000?.length || queue.kaleido?.length || queue.tallyman?.length);
+        console.log(`[Supabase] Remote update - RouteQueue check: bridges=${RouteQueue.bridgesReachable}, hasQueue=${hasQueue}`);
+        if (RouteQueue.bridgesReachable) {
+          RouteQueue.processQueue();
+        } else if (hasQueue) {
+          console.log('[Supabase] Queue has items but bridges not reachable on this device');
+        }
       }
 
       // Refresh current tab

@@ -1579,6 +1579,12 @@ const Store = (() => {
         })),
         stagedLayouts: {}, // { "1-1": { from: "9_SPLIT", to: "6_SPLIT_R", cardId: 1 }, ... }
       },
+      // Route queue for remote device control
+      routeQueue: {
+        nv9000: [],      // Router routes: { source, destination, sourceId, destId, timestamp }
+        kaleido: [],     // Layout changes: { cardId, ip, port, index, layoutName, timestamp }
+        tallyman: []     // UMD updates: { position, text, timestamp }
+      },
     };
   }
 
