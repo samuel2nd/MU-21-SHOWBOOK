@@ -24,6 +24,7 @@ const SupabaseSync = (() => {
   let saveTimeout = null;
   let isLoadingRemote = false;
   let syncCheckInterval = null;
+  let realtimeActive = false; // Track if real-time subscription is working
 
   // Unique session ID to filter out our own real-time updates
   const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -246,6 +247,13 @@ const SupabaseSync = (() => {
   function subscribeToChanges(showName) {
     if (!client || !showName) return;
 
+    // Remove existing channel if any
+    if (channel) {
+      client.removeChannel(channel);
+    }
+
+    console.log(`[Supabase] Setting up real-time subscription for "${showName}"...`);
+
     channel = client
       .channel(`show:${showName}`)
       .on(
@@ -257,12 +265,29 @@ const SupabaseSync = (() => {
           filter: `name=eq.${showName}`
         },
         (payload) => {
+          console.log('[Supabase] Real-time UPDATE received');
           handleRemoteChange(payload.new);
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
+        console.log(`[Supabase] Subscription status: ${status}`);
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to real-time updates for "${showName}"`);
+          realtimeActive = true;
+          console.log(`[Supabase] ✓ Real-time active for "${showName}"`);
+          updateStatus(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          realtimeActive = false;
+          console.error(`[Supabase] Subscription error: ${status}`, err);
+          updateStatus(true); // Still connected, just polling
+          // Try to reconnect after a delay
+          setTimeout(() => {
+            console.log('[Supabase] Attempting to reconnect...');
+            subscribeToChanges(showName);
+          }, 5000);
+        } else if (status === 'CLOSED') {
+          realtimeActive = false;
+          console.warn('[Supabase] Channel closed, will reconnect on next sync');
+          updateStatus(true);
         }
       });
   }
@@ -330,11 +355,12 @@ const SupabaseSync = (() => {
     const el = document.getElementById('connection-status');
     if (el) {
       const version = Store.data.show?.version || 0;
-      // Show compact version: "LIVE v123" instead of full show name
-      el.textContent = online ? `LIVE v${version}` : (text || 'LOCAL');
+      // Show compact version with sync mode indicator
+      const syncMode = realtimeActive ? 'RT' : 'POLL';
+      el.textContent = online ? `${syncMode} v${version}` : (text || 'LOCAL');
       el.className = `status-indicator ${online ? 'online' : 'offline'}`;
       el.title = online
-        ? `Connected to Supabase — real-time sync active\nShow: ${currentShowName || 'None'}\nVersion: ${version}\nSession: ${sessionId.slice(0, 8)}...\nShare URL: ${window.location.href}\n\nClick ↻ to force refresh from cloud`
+        ? `Connected to Supabase\nSync: ${realtimeActive ? 'Real-time ✓' : 'Polling (5s)'}\nShow: ${currentShowName || 'None'}\nVersion: ${version}\nSession: ${sessionId.slice(0, 8)}...\n\nClick ↻ to force refresh from cloud`
         : 'localStorage only — configure Supabase for multi-user sync';
     }
   }
@@ -443,6 +469,7 @@ const SupabaseSync = (() => {
   }
 
   // Periodic sync check - catches stale clients that missed real-time updates
+  // Runs every 5 seconds for responsive sync even if real-time fails
   function startSyncCheck() {
     if (syncCheckInterval) clearInterval(syncCheckInterval);
     syncCheckInterval = setInterval(async () => {
@@ -461,19 +488,25 @@ const SupabaseSync = (() => {
         const localVersion = Store.data.show?.version || 0;
 
         if (cloudVersion > localVersion) {
-          console.log(`Sync check: cloud v${cloudVersion} > local v${localVersion}, updating...`);
+          console.log(`[Supabase] Sync check: cloud v${cloudVersion} > local v${localVersion}, updating...`);
           isLoadingRemote = true;
           Store.loadShow(data.data);
           isLoadingRemote = false;
-          Utils.toast('Synced from cloud (background check)', 'info');
+
+          // Process route queue on engineering computer
+          if (typeof RouteQueue !== 'undefined' && RouteQueue.bridgesReachable) {
+            RouteQueue.processQueue();
+          }
+
+          Utils.toast('Synced from cloud', 'info');
           if (typeof App !== 'undefined' && App.refreshCurrentTab) {
             App.refreshCurrentTab();
           }
         }
       } catch (e) {
-        console.warn('Sync check failed:', e);
+        console.warn('[Supabase] Sync check failed:', e);
       }
-    }, 30000); // Check every 30 seconds
+    }, 5000); // Check every 5 seconds
   }
 
   // Force refresh from cloud - for when users suspect stale data
