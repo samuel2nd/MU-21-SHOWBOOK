@@ -1631,6 +1631,38 @@ const Store = (() => {
     }
   }
 
+  // Migrate old SWR output names to match RTR I/O naming
+  function migratSwrNames() {
+    if (!data.swrIo || !data.swrIo.outputs) return;
+
+    // Name mappings: old → new
+    const nameMap = {
+      'SWPVW': 'SWR PVW',
+      'AUX 1': 'AUX 01', 'AUX 2': 'AUX 02', 'AUX 3': 'AUX 03',
+      'AUX 4': 'AUX 04', 'AUX 5': 'AUX 05', 'AUX 6': 'AUX 06',
+      'AUX 7': 'AUX 07', 'AUX 8': 'AUX 08', 'AUX 9': 'AUX 09',
+      'IS 1': 'IS 01', 'IS 2': 'IS 02', 'IS 3': 'IS 03',
+      'IS 4': 'IS 04', 'IS 5': 'IS 05', 'IS 6': 'IS 06',
+      'IS 7': 'IS 07', 'IS 8': 'IS 08', 'IS 9': 'IS 09',
+    };
+
+    let migrated = 0;
+    data.swrIo.outputs.forEach(output => {
+      if (output.show && nameMap[output.show]) {
+        output.show = nameMap[output.show];
+        migrated++;
+      }
+      if (output.defaultShow && nameMap[output.defaultShow]) {
+        output.defaultShow = nameMap[output.defaultShow];
+        migrated++;
+      }
+    });
+
+    if (migrated > 0) {
+      console.log(`Migrated ${migrated} SWR output names to match RTR I/O`);
+    }
+  }
+
   // Load from localStorage
   function loadFromStorage() {
     try {
@@ -1775,6 +1807,8 @@ const Store = (() => {
             }
           }
         }
+        // Migrate SWR output names to match RTR I/O naming
+        migratSwrNames();
       }
     } catch (e) {
       console.warn('Failed to load from localStorage:', e);
@@ -1890,6 +1924,8 @@ const Store = (() => {
           data.rtrMaster.sort((a, b) => a.row - b.row);
         }
       }
+      // Migrate SWR output names to match RTR I/O naming
+      migratSwrNames();
       // Sync showNames from sources to rtrMaster deviceNames
       syncShowNamesToRtrMaster();
       saveToStorage();
