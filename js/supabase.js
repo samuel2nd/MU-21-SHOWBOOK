@@ -172,8 +172,8 @@ const SupabaseSync = (() => {
           Store.loadShow(cloudData.data);
           isLoadingRemote = false;
           Utils.toast('Synced newer data from cloud', 'info');
-          if (typeof App !== 'undefined' && App.renderCurrentTab) {
-            App.renderCurrentTab();
+          if (typeof App !== 'undefined' && App.refreshCurrentTab) {
+            App.refreshCurrentTab();
           }
           return;
         }
@@ -317,8 +317,8 @@ const SupabaseSync = (() => {
       }
 
       // Refresh current tab
-      if (typeof App !== 'undefined' && App.renderCurrentTab) {
-        App.renderCurrentTab();
+      if (typeof App !== 'undefined' && App.refreshCurrentTab) {
+        App.refreshCurrentTab();
       }
 
       Utils.toast('Show updated from another device', 'info');
@@ -466,8 +466,8 @@ const SupabaseSync = (() => {
           Store.loadShow(data.data);
           isLoadingRemote = false;
           Utils.toast('Synced from cloud (background check)', 'info');
-          if (typeof App !== 'undefined' && App.renderCurrentTab) {
-            App.renderCurrentTab();
+          if (typeof App !== 'undefined' && App.refreshCurrentTab) {
+            App.refreshCurrentTab();
           }
         }
       } catch (e) {
@@ -504,8 +504,8 @@ const SupabaseSync = (() => {
 
         Utils.toast(`Refreshed from cloud (v${cloudVersion}, was v${localVersion})`, 'success');
 
-        if (typeof App !== 'undefined' && App.renderCurrentTab) {
-          App.renderCurrentTab();
+        if (typeof App !== 'undefined' && App.refreshCurrentTab) {
+          App.refreshCurrentTab();
         }
 
         updateStatus(true, `LIVE: ${currentShowName}`);

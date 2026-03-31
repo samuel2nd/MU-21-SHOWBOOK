@@ -36,20 +36,33 @@ const App = (() => {
     updateNavHighlight(tabKey);
   }
 
-  function renderTab(tabKey) {
+  function renderTab(tabKey, preserveScroll = false) {
     const content = document.getElementById('tab-content');
+    const scrollTop = preserveScroll ? content.scrollTop : 0;
     content.innerHTML = '';
-    content.scrollTop = 0;
     const renderer = tabRenderers[tabKey];
     if (renderer) {
       renderer(content);
     } else {
       content.innerHTML = `<div class="tab-page"><h2 class="tab-title">Tab Not Found</h2><p class="tab-subtitle">No renderer for tab: ${tabKey}</p></div>`;
     }
+    // Restore scroll position (use requestAnimationFrame to ensure DOM is ready)
+    if (preserveScroll) {
+      requestAnimationFrame(() => {
+        content.scrollTop = scrollTop;
+      });
+    } else {
+      content.scrollTop = 0;
+    }
   }
 
   function renderCurrentTab() {
     renderTab(currentTab);
+  }
+
+  // Refresh current tab while preserving scroll position (for remote updates)
+  function refreshCurrentTab() {
+    renderTab(currentTab, true);
   }
 
   function updateNavHighlight(tabKey) {
@@ -291,10 +304,10 @@ const App = (() => {
       SupabaseSync.copyShareUrl();
     });
 
-    // Listen for show-loaded to refresh UI
+    // Listen for show-loaded to refresh UI (preserve scroll for remote updates)
     Store.on('show-loaded', () => {
       updateHeader();
-      renderCurrentTab();
+      refreshCurrentTab();
     });
 
     // Save indicator
@@ -309,9 +322,9 @@ const App = (() => {
       }
     });
 
-    // Listen for remote changes to refresh current tab
+    // Listen for remote changes to refresh current tab (preserve scroll)
     Store.on('remote-change', Utils.debounce(() => {
-      renderCurrentTab();
+      refreshCurrentTab();
     }, 500));
 
     // Update header
@@ -423,5 +436,5 @@ const App = (() => {
     init();
   }
 
-  return { navigateTo, renderCurrentTab, updateHeader, showStagingPrompt };
+  return { navigateTo, renderCurrentTab, refreshCurrentTab, updateHeader, showStagingPrompt };
 })();
