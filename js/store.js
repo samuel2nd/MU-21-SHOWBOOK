@@ -1192,15 +1192,15 @@ const Store = (() => {
       engSource: inputDefaults[i] || '',
     }));
 
-    // Switcher Outputs (1-46): defaultShow values
+    // Switcher Outputs (1-46): defaultShow values - must match RTR I/O naming
     const outputDefaults = [
-      'PGM A', 'CLEAN', 'PRESET', 'SWPVW', 'ME1 PVW', 'ME1 A', 'ME1 B', 'ME1 C', 'ME1 D',
+      'PGM A', 'CLEAN', 'PRESET', 'SWR PVW', 'ME1 PVW', 'ME1 A', 'ME1 B', 'ME1 C', 'ME1 D',
       'ME2 PVW', 'ME2 A', 'ME2 B', 'ME2 C', 'ME2 D',
       'ME3 PVW', 'ME3 A', 'ME3 B', 'ME3 C', 'ME3 D',
       'ME4 PVW', 'ME4 A', 'ME4 B', 'ME4 C', 'ME4 D',
-      'AUX 1', 'AUX 2', 'AUX 3', 'AUX 4', 'AUX 5', 'AUX 6', 'AUX 7', 'AUX 8',
-      'AUX 9', 'AUX 10', 'AUX 11', 'AUX 12',
-      'IS 1', 'IS 2', 'IS 3', 'IS 4', 'IS 5', 'IS 6', 'IS 7', 'IS 8', 'IS 9', 'IS 10'
+      'AUX 01', 'AUX 02', 'AUX 03', 'AUX 04', 'AUX 05', 'AUX 06', 'AUX 07', 'AUX 08',
+      'AUX 09', 'AUX 10', 'AUX 11', 'AUX 12',
+      'IS 01', 'IS 02', 'IS 03', 'IS 04', 'IS 05', 'IS 06', 'IS 07', 'IS 08', 'IS 09', 'IS 10'
     ];
     const outputs = Array.from({ length: 46 }, (_, i) => ({
       row: i + 1,

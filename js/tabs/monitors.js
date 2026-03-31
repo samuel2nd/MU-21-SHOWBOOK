@@ -1195,7 +1195,8 @@ const MonitorsTab = (() => {
           });
         }
         if (swrCount === 0) {
-          ['PGM', 'PVW', 'CLN', 'AUX1', 'AUX2', 'AUX3'].forEach(name => contentArea.appendChild(createDraggableChip(name, 'swr')));
+          // Fallback - use RTR I/O naming
+          ['PGM A', 'CLEAN', 'PRESET', 'SWR PVW', 'ME1 PVW', 'AUX 01'].forEach(name => contentArea.appendChild(createDraggableChip(name, 'swr')));
         }
       }
     }
