@@ -86,6 +86,7 @@ const HomeTab = (() => {
       { tab: 'engineer', label: 'ENGINEER', cat: 'config' },
       { tab: 'multiviewer', label: 'MULTIVIEWERS', cat: 'config' },
       { tab: 'routerpanel', label: 'ROUTER PANELS', cat: 'config' },
+      { tab: 'activitylog', label: 'ACTIVITY LOG', cat: 'config' },
       // LOOKUP
       { tab: 'rtrmaster', label: 'RTR I/O MASTER', cat: 'lookup' },
       { tab: 'sheet8', label: 'Dropdown Options', cat: 'lookup' },

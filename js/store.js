@@ -1585,6 +1585,8 @@ const Store = (() => {
         kaleido: [],     // Layout changes: { cardId, ip, port, index, layoutName, timestamp }
         tallyman: []     // UMD updates: { position, text, timestamp }
       },
+      // Activity log - synced across all devices (max 200 entries)
+      activityLog: [],
     };
   }
 

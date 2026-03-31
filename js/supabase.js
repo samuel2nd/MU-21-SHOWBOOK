@@ -325,6 +325,12 @@ const SupabaseSync = (() => {
       }
 
       console.log(`Applying remote update: v${remoteVersion} (was v${localVersion})`);
+
+      // Log the sync event
+      if (typeof ActivityLog !== 'undefined') {
+        ActivityLog.logSync(`Received update v${remoteVersion}`, `From session ${payload.session_id?.slice(0, 8) || 'unknown'}, was v${localVersion}`);
+      }
+
       isLoadingRemote = true;
       Store.loadShow(remoteData);
       isLoadingRemote = false;

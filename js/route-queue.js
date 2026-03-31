@@ -119,6 +119,11 @@ const RouteQueue = (() => {
     Store.set('routeQueue', queue);
     console.log(`[RouteQueue] Queued NV9000 route: ${sourceName} -> ${destName}`);
 
+    // Log as queued (will show as executed when processed)
+    if (typeof ActivityLog !== 'undefined') {
+      ActivityLog.logRoute(sourceName, destName, 'queued');
+    }
+
     // If we can reach bridges, process immediately
     if (bridgesReachable) {
       processQueue();
@@ -214,8 +219,19 @@ const RouteQueue = (() => {
         if (result.success) {
           console.log(`[RouteQueue] Executed ${routes.length} NV9000 routes`);
           Utils.toast(`Executed ${routes.length} routes`, 'success');
+          // Log each route
+          queue.nv9000.forEach(r => {
+            if (typeof ActivityLog !== 'undefined') {
+              ActivityLog.logRoute(r.source, r.destination, 'success');
+            }
+          });
         } else {
           console.error('[RouteQueue] NV9000 batch failed:', result);
+          queue.nv9000.forEach(r => {
+            if (typeof ActivityLog !== 'undefined') {
+              ActivityLog.logRoute(r.source, r.destination, 'failed');
+            }
+          });
         }
       }
 
@@ -237,8 +253,18 @@ const RouteQueue = (() => {
         if (result.success) {
           console.log(`[RouteQueue] Executed ${triggers.length} Kaleido layouts`);
           Utils.toast(`Executed ${triggers.length} layout changes`, 'success');
+          queue.kaleido.forEach(l => {
+            if (typeof ActivityLog !== 'undefined') {
+              ActivityLog.logLayout(l.cardId, l.layoutName, 'success');
+            }
+          });
         } else {
           console.error('[RouteQueue] Kaleido batch failed:', result);
+          queue.kaleido.forEach(l => {
+            if (typeof ActivityLog !== 'undefined') {
+              ActivityLog.logLayout(l.cardId, l.layoutName, 'failed');
+            }
+          });
         }
       }
 

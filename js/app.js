@@ -28,6 +28,7 @@ const App = (() => {
     'evsconfig': (c) => EvsConfigTab.render(c),
     'multiviewer': (c) => MultiviewerTab.render(c),
     'routerpanel': (c) => RouterPanelTab.render(c),
+    'activitylog': (c) => ActivityLogTab.render(c),
   };
 
   function navigateTo(tabKey) {
