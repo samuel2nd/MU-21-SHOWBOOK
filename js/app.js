@@ -277,6 +277,15 @@ const App = (() => {
       showCloudShowsModal();
     });
 
+    // Refresh from cloud button
+    document.getElementById('btn-refresh-cloud').addEventListener('click', () => {
+      if (SupabaseSync.connected) {
+        SupabaseSync.forceRefresh();
+      } else {
+        Utils.toast('Not connected to cloud', 'warn');
+      }
+    });
+
     // Click on status indicator copies share URL
     document.getElementById('connection-status').addEventListener('click', () => {
       SupabaseSync.copyShareUrl();

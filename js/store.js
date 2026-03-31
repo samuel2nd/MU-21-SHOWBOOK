@@ -1435,7 +1435,7 @@ const Store = (() => {
   // Default empty show template
   function emptyShow() {
     return {
-      show: { name: '', format: '' },
+      show: { name: '', format: '', version: 0, lastModified: Date.now() },
       sources: Array.from({ length: 80 }, (_, i) => ({
         number: i + 1,
         showName: '',
@@ -1821,6 +1821,11 @@ const Store = (() => {
         obj = obj[keys[i]];
       }
       obj[keys[keys.length - 1]] = value;
+      // Increment version and timestamp on every change (unless setting version/lastModified directly)
+      if (path !== 'show.version' && path !== 'show.lastModified') {
+        data.show.version = (data.show.version || 0) + 1;
+        data.show.lastModified = Date.now();
+      }
       saveToStorage();
       emit('saved', Date.now());
       emit('change', { path, value });
@@ -1829,6 +1834,13 @@ const Store = (() => {
 
     loadShow(newData) {
       data = mergeDeep(emptyShow(), newData);
+      // Ensure version tracking exists (migrate existing shows)
+      if (typeof data.show.version !== 'number') {
+        data.show.version = 0;
+      }
+      if (typeof data.show.lastModified !== 'number') {
+        data.show.lastModified = Date.now();
+      }
       if (!data.fiberTac || Object.keys(data.fiberTac).length === 0) {
         data.fiberTac = initTacData();
       }

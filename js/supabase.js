@@ -23,6 +23,7 @@ const SupabaseSync = (() => {
   let currentShowName = null;
   let saveTimeout = null;
   let isLoadingRemote = false;
+  let syncCheckInterval = null;
 
   // Unique session ID to filter out our own real-time updates
   const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -95,6 +96,9 @@ const SupabaseSync = (() => {
       connected = true;
       updateStatus(true, currentShowName ? `LIVE: ${currentShowName}` : 'LIVE');
 
+      // Start periodic sync check to catch stale clients
+      startSyncCheck();
+
       // Listen for local changes and save to Supabase
       Store.on('change', handleLocalChange);
       Store.on('show-loaded', handleShowLoaded);
@@ -150,6 +154,31 @@ const SupabaseSync = (() => {
     if (!client || !currentShowName || isLoadingRemote) return;
 
     try {
+      // Fetch current cloud version to check for conflicts
+      const { data: cloudData, error: fetchError } = await client
+        .from('shows')
+        .select('data')
+        .eq('name', currentShowName)
+        .single();
+
+      if (!fetchError && cloudData?.data) {
+        const cloudVersion = cloudData.data.show?.version || 0;
+        const localVersion = Store.data.show?.version || 0;
+
+        // If cloud has a newer version, don't overwrite - fetch and merge
+        if (cloudVersion > localVersion) {
+          console.log(`Cloud has newer version (${cloudVersion} > ${localVersion}), fetching...`);
+          isLoadingRemote = true;
+          Store.loadShow(cloudData.data);
+          isLoadingRemote = false;
+          Utils.toast('Synced newer data from cloud', 'info');
+          if (typeof App !== 'undefined' && App.renderCurrentTab) {
+            App.renderCurrentTab();
+          }
+          return;
+        }
+      }
+
       const showData = Store.exportData();
 
       const { error } = await client
@@ -251,7 +280,26 @@ const SupabaseSync = (() => {
 
     // Apply remote changes if show names match
     if (remoteData.show?.name === currentShowName) {
-      console.log('Received remote update from another device, applying...');
+      const localVersion = Store.data.show?.version || 0;
+      const localTimestamp = Store.data.show?.lastModified || 0;
+      const remoteVersion = remoteData.show?.version || 0;
+      const remoteTimestamp = remoteData.show?.lastModified || 0;
+
+      // Only apply if remote data is actually newer
+      // Compare version first, then timestamp as tiebreaker
+      if (remoteVersion < localVersion) {
+        console.log(`Ignoring stale remote update (remote v${remoteVersion} < local v${localVersion})`);
+        // Re-push our data to correct the stale update
+        debouncedSave();
+        return;
+      }
+
+      if (remoteVersion === localVersion && remoteTimestamp <= localTimestamp) {
+        console.log(`Ignoring same/older remote update (same version, remote time ${remoteTimestamp} <= local ${localTimestamp})`);
+        return;
+      }
+
+      console.log(`Applying remote update: v${remoteVersion} (was v${localVersion})`);
       isLoadingRemote = true;
       Store.loadShow(remoteData);
       isLoadingRemote = false;
@@ -274,10 +322,12 @@ const SupabaseSync = (() => {
     connected = online;
     const el = document.getElementById('connection-status');
     if (el) {
-      el.textContent = text || (online ? 'LIVE' : 'LOCAL');
+      const version = Store.data.show?.version || 0;
+      // Show compact version: "LIVE v123" instead of full show name
+      el.textContent = online ? `LIVE v${version}` : (text || 'LOCAL');
       el.className = `status-indicator ${online ? 'online' : 'offline'}`;
       el.title = online
-        ? `Connected to Supabase — real-time sync active\nShow: ${currentShowName || 'None'}\nShare URL: ${window.location.href}`
+        ? `Connected to Supabase — real-time sync active\nShow: ${currentShowName || 'None'}\nVersion: ${version}\nSession: ${sessionId.slice(0, 8)}...\nShare URL: ${window.location.href}\n\nClick ↻ to force refresh from cloud`
         : 'localStorage only — configure Supabase for multi-user sync';
     }
   }
@@ -385,6 +435,93 @@ const SupabaseSync = (() => {
     }
   }
 
+  // Periodic sync check - catches stale clients that missed real-time updates
+  function startSyncCheck() {
+    if (syncCheckInterval) clearInterval(syncCheckInterval);
+    syncCheckInterval = setInterval(async () => {
+      if (!client || !currentShowName || isLoadingRemote) return;
+
+      try {
+        const { data, error } = await client
+          .from('shows')
+          .select('data')
+          .eq('name', currentShowName)
+          .single();
+
+        if (error || !data?.data) return;
+
+        const cloudVersion = data.data.show?.version || 0;
+        const localVersion = Store.data.show?.version || 0;
+
+        if (cloudVersion > localVersion) {
+          console.log(`Sync check: cloud v${cloudVersion} > local v${localVersion}, updating...`);
+          isLoadingRemote = true;
+          Store.loadShow(data.data);
+          isLoadingRemote = false;
+          Utils.toast('Synced from cloud (background check)', 'info');
+          if (typeof App !== 'undefined' && App.renderCurrentTab) {
+            App.renderCurrentTab();
+          }
+        }
+      } catch (e) {
+        console.warn('Sync check failed:', e);
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  // Force refresh from cloud - for when users suspect stale data
+  async function forceRefresh() {
+    if (!client || !currentShowName) {
+      Utils.toast('No cloud connection', 'warn');
+      return false;
+    }
+
+    try {
+      updateStatus(false, 'Refreshing...');
+
+      const { data, error } = await client
+        .from('shows')
+        .select('data')
+        .eq('name', currentShowName)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.data) {
+        const cloudVersion = data.data.show?.version || 0;
+        const localVersion = Store.data.show?.version || 0;
+
+        isLoadingRemote = true;
+        Store.loadShow(data.data);
+        isLoadingRemote = false;
+
+        Utils.toast(`Refreshed from cloud (v${cloudVersion}, was v${localVersion})`, 'success');
+
+        if (typeof App !== 'undefined' && App.renderCurrentTab) {
+          App.renderCurrentTab();
+        }
+
+        updateStatus(true, `LIVE: ${currentShowName}`);
+        return true;
+      }
+    } catch (e) {
+      console.error('Force refresh failed:', e);
+      Utils.toast(`Refresh failed: ${e.message}`, 'error');
+      updateStatus(true, `LIVE: ${currentShowName}`);
+    }
+    return false;
+  }
+
+  // Get current version info for debugging
+  function getVersionInfo() {
+    return {
+      localVersion: Store.data.show?.version || 0,
+      localTimestamp: Store.data.show?.lastModified || 0,
+      sessionId: sessionId,
+      showName: currentShowName
+    };
+  }
+
   return {
     init,
     isConfigured,
@@ -394,6 +531,8 @@ const SupabaseSync = (() => {
     deleteCloudShow,
     getShareUrl,
     copyShareUrl,
+    forceRefresh,
+    getVersionInfo,
     get connected() { return connected; },
     get currentShowName() { return currentShowName; }
   };
