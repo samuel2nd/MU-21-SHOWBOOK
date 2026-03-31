@@ -4,33 +4,10 @@
 //
 // Logs changes, routes, and sync events so all devices can see
 // what happened and when. Synced via Supabase with the show data.
+// Focuses on WHAT changed, not WHO changed it.
 
 const ActivityLog = (() => {
   const MAX_ENTRIES = 200;
-
-  // Get or generate device name (stored in localStorage)
-  function getDeviceName() {
-    let name = localStorage.getItem('mu21_device_name');
-    if (!name) {
-      // Generate a short random ID
-      name = 'Device-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-      localStorage.setItem('mu21_device_name', name);
-    }
-    return name;
-  }
-
-  // Set device name
-  function setDeviceName(name) {
-    localStorage.setItem('mu21_device_name', name);
-  }
-
-  // Get session ID from SupabaseSync if available
-  function getSessionId() {
-    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.getVersionInfo) {
-      return SupabaseSync.getVersionInfo().sessionId || 'local';
-    }
-    return 'local';
-  }
 
   // Add a log entry
   function log(type, action, details, page = null, status = 'success') {
@@ -41,8 +18,6 @@ const ActivityLog = (() => {
     const entry = {
       id: Date.now() + '-' + Math.random().toString(36).substr(2, 6),
       timestamp: Date.now(),
-      device: getDeviceName(),
-      session: getSessionId().slice(0, 8),
       type,      // 'data', 'route', 'layout', 'sync', 'system'
       action,    // Brief description
       details,   // Full details
@@ -126,8 +101,6 @@ const ActivityLog = (() => {
     clear,
     formatTime,
     formatRelative,
-    getDeviceName,
-    setDeviceName,
     MAX_ENTRIES
   };
 })();
