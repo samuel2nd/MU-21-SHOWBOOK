@@ -97,14 +97,17 @@ const RouteQueue = (() => {
    * Add an NV9000 route to the queue
    */
   function queueRoute(sourceName, destName) {
+    console.log(`[RouteQueue] queueRoute called: ${sourceName} -> ${destName}`);
     const queue = ensureQueue();
 
     // Look up IDs
     const sourceId = NV9000Client.getSourceId(sourceName);
     const destId = NV9000Client.getDestinationId(destName);
 
+    console.log(`[RouteQueue] ID lookup: sourceId=${sourceId}, destId=${destId}`);
+
     if (!sourceId || !destId) {
-      console.warn(`[RouteQueue] Cannot queue route - invalid source/dest: ${sourceName} -> ${destName}`);
+      console.warn(`[RouteQueue] Cannot queue route - invalid source/dest: ${sourceName} -> ${destName} (sourceId=${sourceId}, destId=${destId})`);
       return false;
     }
 
@@ -192,12 +195,24 @@ const RouteQueue = (() => {
    * Process all queued routes (only runs on devices that can reach bridges)
    */
   async function processQueue() {
-    if (!bridgesReachable || isProcessing) return;
+    console.log(`[RouteQueue] processQueue called - bridgesReachable=${bridgesReachable}, isProcessing=${isProcessing}`);
+
+    if (!bridgesReachable) {
+      console.log('[RouteQueue] Skipping - bridges not reachable');
+      return;
+    }
+    if (isProcessing) {
+      console.log('[RouteQueue] Skipping - already processing');
+      return;
+    }
 
     const queue = ensureQueue();
     const hasItems = queue.nv9000.length > 0 || queue.kaleido.length > 0 || queue.tallyman.length > 0;
 
-    if (!hasItems) return;
+    if (!hasItems) {
+      console.log('[RouteQueue] Skipping - queue is empty');
+      return;
+    }
 
     isProcessing = true;
     console.log(`[RouteQueue] Processing queue: ${queue.nv9000.length} routes, ${queue.kaleido.length} layouts, ${queue.tallyman.length} UMDs`);

@@ -338,11 +338,17 @@ const SupabaseSync = (() => {
       // Process route queue if this device can reach bridges
       if (typeof RouteQueue !== 'undefined') {
         const queue = Store.data.routeQueue;
-        const hasQueue = queue && (queue.nv9000?.length || queue.kaleido?.length || queue.tallyman?.length);
-        console.log(`[Supabase] Remote update - RouteQueue check: bridges=${RouteQueue.bridgesReachable}, hasQueue=${hasQueue}`);
+        const nv9000Count = queue?.nv9000?.length || 0;
+        const kaleidoCount = queue?.kaleido?.length || 0;
+        const tallyCount = queue?.tallyman?.length || 0;
+        console.log(`[Supabase] Remote update - RouteQueue: bridges=${RouteQueue.bridgesReachable}, nv9000=${nv9000Count}, kaleido=${kaleidoCount}, tally=${tallyCount}`);
+        if (nv9000Count > 0) {
+          console.log('[Supabase] Queued routes:', JSON.stringify(queue.nv9000));
+        }
         if (RouteQueue.bridgesReachable) {
+          console.log('[Supabase] Calling processQueue...');
           RouteQueue.processQueue();
-        } else if (hasQueue) {
+        } else if (nv9000Count || kaleidoCount || tallyCount) {
           console.log('[Supabase] Queue has items but bridges not reachable on this device');
         }
       }
