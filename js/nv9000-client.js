@@ -26,26 +26,45 @@ const NV9000Client = (() => {
   }
 
   // ============================================================
-  // TRIGGER MODE (STAGED / IMMEDIATE)
+  // TRIGGER MODE (STAGED / IMMEDIATE) - Synced across all devices
   // ============================================================
 
-  // Global mode (fallback)
+  // Ensure routingConfig exists in store
+  function ensureRoutingConfig() {
+    if (!Store.data.routingConfig) {
+      Store.data.routingConfig = {
+        globalMode: 'immediate',
+        pageModes: { videoio: 'global', monitors: 'global', evsconfig: 'global' }
+      };
+    }
+    if (!Store.data.routingConfig.pageModes) {
+      Store.data.routingConfig.pageModes = { videoio: 'global', monitors: 'global', evsconfig: 'global' };
+    }
+    return Store.data.routingConfig;
+  }
+
+  // Global mode (synced across devices)
   function getTriggerMode() {
-    return localStorage.getItem('nv9000TriggerMode') || 'immediate';
+    const config = ensureRoutingConfig();
+    return config.globalMode || 'immediate';
   }
 
   function setTriggerMode(mode) {
-    localStorage.setItem('nv9000TriggerMode', mode);
+    const config = ensureRoutingConfig();
+    config.globalMode = mode;
+    Store.set('routingConfig', config);
   }
 
-  // Per-page modes
+  // Per-page modes (synced across devices)
   function getPageMode(page) {
-    const pageMode = localStorage.getItem(`nv9000Mode_${page}`);
-    return pageMode || 'global'; // 'global', 'staged', or 'immediate'
+    const config = ensureRoutingConfig();
+    return config.pageModes[page] || 'global';
   }
 
   function setPageMode(page, mode) {
-    localStorage.setItem(`nv9000Mode_${page}`, mode);
+    const config = ensureRoutingConfig();
+    config.pageModes[page] = mode;
+    Store.set('routingConfig', config);
   }
 
   // Get effective mode for a page

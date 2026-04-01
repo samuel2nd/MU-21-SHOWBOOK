@@ -1585,6 +1585,15 @@ const Store = (() => {
         kaleido: [],     // Layout changes: { cardId, ip, port, index, layoutName, timestamp }
         tallyman: []     // UMD updates: { position, text, timestamp }
       },
+      // Routing mode config - synced across all devices
+      routingConfig: {
+        globalMode: 'immediate',  // 'staged' or 'immediate'
+        pageModes: {              // Per-page overrides: 'global', 'staged', or 'immediate'
+          videoio: 'global',
+          monitors: 'global',
+          evsconfig: 'global'
+        }
+      },
       // Activity log - synced across all devices (max 200 entries)
       activityLog: [],
     };
