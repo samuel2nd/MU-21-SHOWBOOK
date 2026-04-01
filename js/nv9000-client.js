@@ -140,18 +140,24 @@ const NV9000Client = (() => {
    */
   async function handleRoute(sourceName, destName, page = null) {
     const mode = page ? getEffectiveMode(page) : getTriggerMode();
+    const bridgesOk = typeof RouteQueue !== 'undefined' ? RouteQueue.bridgesReachable : 'N/A';
+
+    console.log(`[NV9000] handleRoute: ${sourceName} → ${destName} | mode=${mode} | bridges=${bridgesOk}`);
 
     if (mode === 'staged') {
+      console.log(`[NV9000] Staging route (mode=staged)`);
       const result = stageRoute(sourceName, destName);
       return { ...result, staged: true };
     } else {
       // Check if RouteQueue is available and bridges aren't reachable locally
       // If so, queue the route for the engineering computer to execute
       if (typeof RouteQueue !== 'undefined' && !RouteQueue.bridgesReachable) {
+        console.log(`[NV9000] Queueing route (bridges not reachable)`);
         const result = RouteQueue.queueRoute(sourceName, destName);
         return { success: result, queued: true, staged: false };
       }
       // Bridges reachable - execute directly
+      console.log(`[NV9000] Executing route directly (bridges reachable)`);
       const result = await route(sourceName, destName);
       return { ...result, staged: false };
     }

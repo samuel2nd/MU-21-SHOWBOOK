@@ -32,9 +32,11 @@ const ActivityLog = (() => {
       Store.data.activityLog = Store.data.activityLog.slice(0, MAX_ENTRIES);
     }
 
-    // Save without triggering another log (use direct save)
-    Store.save();
+    // Use Store.set to trigger Supabase sync
+    Store.set('activityLog', Store.data.activityLog);
     Store.emit('activity-log', entry);
+
+    console.log(`[ActivityLog] ${type.toUpperCase()} | ${action} | ${status}`);
 
     return entry;
   }
