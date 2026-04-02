@@ -55,7 +55,7 @@ const TallymanBridge = (() => {
     'EVS 3-4 IN': 54, 'EVS 3-5 IN': 55, 'EVS 3-6 IN': 56,
 
     // SWITCHER OUTS (Index 57-80) - must match RTR I/O naming
-    'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWR PVW': 60,
+    'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWRPVW': 60,
     'ME1 PVW': 61, 'ME1 A': 62, 'ME1 B': 63, 'ME1 C': 64, 'ME1 D': 65,
     'ME2 PVW': 66, 'ME2 A': 67, 'ME2 B': 68, 'ME2 C': 69, 'ME2 D': 70,
     'ME3 PVW': 71, 'ME3 A': 72, 'ME3 B': 73, 'ME3 C': 74, 'ME3 D': 75,
@@ -208,8 +208,8 @@ const TallymanBridge = (() => {
    */
   function getUmdForPosition(position) {
     // Check SWR I/O outputs for switcher outs (PGM, CLEAN, ME buses, AUX, IS)
-    // Names must match RTR I/O naming convention (SWR PVW, AUX 01, IS 01, etc.)
-    const switcherOuts = ['PGM A', 'CLEAN', 'PRESET', 'SWR PVW',
+    // Names must match RTR I/O naming convention (SWRPVW, AUX 01, IS 01, etc.)
+    const switcherOuts = ['PGM A', 'CLEAN', 'PRESET', 'SWRPVW',
       'ME1 PVW', 'ME1 A', 'ME1 B', 'ME1 C', 'ME1 D',
       'ME2 PVW', 'ME2 A', 'ME2 B', 'ME2 C', 'ME2 D',
       'ME3 PVW', 'ME3 A', 'ME3 B', 'ME3 C', 'ME3 D',
