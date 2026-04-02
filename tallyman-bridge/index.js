@@ -77,21 +77,21 @@ const POSITION_INDEX_MAP = {
   'EVS 3-1 IN': 51, 'EVS 3-2 IN': 52, 'EVS 3-3 IN': 53,
   'EVS 3-4 IN': 54, 'EVS 3-5 IN': 55, 'EVS 3-6 IN': 56,
 
-  // SWITCHER OUTS (Index 57-80)
-  'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWPVW': 60,
+  // SWITCHER OUTS (Index 57-80) - must match RTR I/O naming
+  'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWRPVW': 60,
   'ME1 PVW': 61, 'ME1 A': 62, 'ME1 B': 63, 'ME1 C': 64, 'ME1 D': 65,
   'ME2 PVW': 66, 'ME2 A': 67, 'ME2 B': 68, 'ME2 C': 69, 'ME2 D': 70,
   'ME3 PVW': 71, 'ME3 A': 72, 'ME3 B': 73, 'ME3 C': 74, 'ME3 D': 75,
   'ME4 PVW': 76, 'ME4 A': 77, 'ME4 B': 78, 'ME4 C': 79, 'ME4 D': 80,
 
-  // AUX 1-12 (Index 81-92)
-  'AUX 1': 81, 'AUX 2': 82, 'AUX 3': 83, 'AUX 4': 84,
-  'AUX 5': 85, 'AUX 6': 86, 'AUX 7': 87, 'AUX 8': 88,
-  'AUX 9': 89, 'AUX 10': 90, 'AUX 11': 91, 'AUX 12': 92,
+  // AUX 01-12 (Index 81-92) - must match RTR I/O naming
+  'AUX 01': 81, 'AUX 02': 82, 'AUX 03': 83, 'AUX 04': 84,
+  'AUX 05': 85, 'AUX 06': 86, 'AUX 07': 87, 'AUX 08': 88,
+  'AUX 09': 89, 'AUX 10': 90, 'AUX 11': 91, 'AUX 12': 92,
 
-  // IS 1-10 (Index 93-102)
-  'IS 1': 93, 'IS 2': 94, 'IS 3': 95, 'IS 4': 96, 'IS 5': 97,
-  'IS 6': 98, 'IS 7': 99, 'IS 8': 100, 'IS 9': 101, 'IS 10': 102,
+  // IS 01-10 (Index 93-102) - must match RTR I/O naming
+  'IS 01': 93, 'IS 02': 94, 'IS 03': 95, 'IS 04': 96, 'IS 05': 97,
+  'IS 06': 98, 'IS 07': 99, 'IS 08': 100, 'IS 09': 101, 'IS 10': 102,
 
   // FS 21-24 (Index 103-106)
   'FS 21': 103, 'FS 22': 104, 'FS 23': 105, 'FS 24': 106,
