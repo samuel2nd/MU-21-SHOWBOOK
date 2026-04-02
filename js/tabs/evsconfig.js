@@ -498,8 +498,8 @@ const EvsConfigTab = (() => {
         { ch: 4, engName: 'EVS1-Din', showName: 'EVS 1-4 IN' },
         { ch: 5, engName: 'EVS1-Ein', showName: 'EVS 1-5 IN' },
         { ch: 6, engName: 'EVS1-Fin', showName: 'EVS 1-6 IN' },
-        { ch: 7, engName: 'EVS 1-As', showName: '', isOutput: true },
-        { ch: 8, engName: 'EVS 1-Bs', showName: '', isOutput: true },
+        { ch: 7, engName: 'EVS 1-As', showName: 'EVS 1-1 OUT', isOutput: true },
+        { ch: 8, engName: 'EVS 1-Bs', showName: 'EVS 1-2 OUT', isOutput: true },
       ],
       '2102': [
         { ch: 1, engName: 'EVS2-Ain', showName: 'EVS 2-1 IN' },
@@ -508,8 +508,8 @@ const EvsConfigTab = (() => {
         { ch: 4, engName: 'EVS2-Din', showName: 'EVS 2-4 IN' },
         { ch: 5, engName: 'EVS2-Ein', showName: 'EVS 2-5 IN' },
         { ch: 6, engName: 'EVS2-Fin', showName: 'EVS 2-6 IN' },
-        { ch: 7, engName: 'EVS 2-As', showName: '', isOutput: true },
-        { ch: 8, engName: 'EVS 2-Bs', showName: '', isOutput: true },
+        { ch: 7, engName: 'EVS 2-As', showName: 'EVS 2-1 OUT', isOutput: true },
+        { ch: 8, engName: 'EVS 2-Bs', showName: 'EVS 2-2 OUT', isOutput: true },
       ],
       '2103': [
         { ch: 1, engName: 'EVS3-Ain', showName: 'EVS 3-1 IN' },

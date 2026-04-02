@@ -1163,14 +1163,31 @@ const MonitorsTab = (() => {
           contentArea.appendChild(createDraggableChip(showName, 'show', isPlaceholder));
         }
       } else if (catId === 'evs') {
-        const evsInputs = [
-          'EVS1-Ain', 'EVS1-Bin', 'EVS1-Cin', 'EVS1-Din', 'EVS1-Ein', 'EVS1-Fin',
-          'EVS2-Ain', 'EVS2-Bin', 'EVS2-Cin', 'EVS2-Din', 'EVS2-Ein', 'EVS2-Fin',
-          'EVS3-Ain', 'EVS3-Bin', 'EVS3-Cin', 'EVS3-Din', 'EVS3-Ein', 'EVS3-Fin',
-        ];
-        evsInputs.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
-        const evsSupers = ['EVS 1-As', 'EVS 1-Bs', 'EVS 2-As', 'EVS 2-Bs', 'EVS 3-As', 'EVS 3-Bs'];
-        evsSupers.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
+        // Get EVS channel names from evsConfig, display show names but route with eng names
+        const evsConfig = Store.data.evsConfig;
+        if (evsConfig && evsConfig.servers) {
+          evsConfig.servers.forEach(server => {
+            if (server.channels) {
+              server.channels.forEach(ch => {
+                if (ch.engName) {
+                  const displayName = ch.showName || ch.engName;
+                  const routeName = ch.engName;
+                  contentArea.appendChild(createDraggableChip(displayName, 'evs', false, routeName));
+                }
+              });
+            }
+          });
+        } else {
+          // Fallback if no evsConfig
+          const evsInputs = [
+            'EVS1-Ain', 'EVS1-Bin', 'EVS1-Cin', 'EVS1-Din', 'EVS1-Ein', 'EVS1-Fin',
+            'EVS2-Ain', 'EVS2-Bin', 'EVS2-Cin', 'EVS2-Din', 'EVS2-Ein', 'EVS2-Fin',
+            'EVS3-Ain', 'EVS3-Bin', 'EVS3-Cin', 'EVS3-Din', 'EVS3-Ein', 'EVS3-Fin',
+          ];
+          evsInputs.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
+          const evsSupers = ['EVS 1-As', 'EVS 1-Bs', 'EVS 2-As', 'EVS 2-Bs', 'EVS 3-As', 'EVS 3-Bs'];
+          evsSupers.forEach(name => contentArea.appendChild(createDraggableChip(name, 'evs')));
+        }
       } else if (catId === 'tx') {
         const txDas = ['TX1 DA', 'TX2 DA', 'TX3 DA', 'TX4 DA', 'TX5 DA', 'TX6 DA', 'TX7 DA', 'TX8 DA', 'PGM DA'];
         txDas.forEach(name => contentArea.appendChild(createDraggableChip(name, 'tx')));
@@ -1236,10 +1253,11 @@ const MonitorsTab = (() => {
   }
 
   // Create a draggable source chip - router panel button style
-  function createDraggableChip(label, type, isPlaceholder = false) {
+  // routeName: optional - the name used for routing (if different from display label)
+  function createDraggableChip(label, type, isPlaceholder = false, routeName = null) {
     const chip = document.createElement('div');
     chip.draggable = true;
-    chip.dataset.source = label;
+    chip.dataset.source = routeName || label;  // Use routeName for routing if provided
     chip.dataset.sourceType = type;
 
     // Color scheme by category
@@ -1288,7 +1306,8 @@ const MonitorsTab = (() => {
     });
 
     chip.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', label);
+      // Use dataset.source which contains routeName if provided, otherwise label
+      e.dataTransfer.setData('text/plain', chip.dataset.source);
       e.dataTransfer.effectAllowed = 'copy';
       chip.style.opacity = '0.3';
     });
