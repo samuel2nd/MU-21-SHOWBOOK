@@ -54,21 +54,21 @@ const TallymanBridge = (() => {
     'EVS 3-1 IN': 51, 'EVS 3-2 IN': 52, 'EVS 3-3 IN': 53,
     'EVS 3-4 IN': 54, 'EVS 3-5 IN': 55, 'EVS 3-6 IN': 56,
 
-    // SWITCHER OUTS (Index 57-80)
-    'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWPVW': 60,
+    // SWITCHER OUTS (Index 57-80) - must match RTR I/O naming
+    'PGM A': 57, 'CLEAN': 58, 'PRESET': 59, 'SWR PVW': 60,
     'ME1 PVW': 61, 'ME1 A': 62, 'ME1 B': 63, 'ME1 C': 64, 'ME1 D': 65,
     'ME2 PVW': 66, 'ME2 A': 67, 'ME2 B': 68, 'ME2 C': 69, 'ME2 D': 70,
     'ME3 PVW': 71, 'ME3 A': 72, 'ME3 B': 73, 'ME3 C': 74, 'ME3 D': 75,
     'ME4 PVW': 76, 'ME4 A': 77, 'ME4 B': 78, 'ME4 C': 79, 'ME4 D': 80,
 
-    // AUX 1-12 (Index 81-92)
-    'AUX 1': 81, 'AUX 2': 82, 'AUX 3': 83, 'AUX 4': 84,
-    'AUX 5': 85, 'AUX 6': 86, 'AUX 7': 87, 'AUX 8': 88,
-    'AUX 9': 89, 'AUX 10': 90, 'AUX 11': 91, 'AUX 12': 92,
+    // AUX 01-12 (Index 81-92) - must match RTR I/O naming
+    'AUX 01': 81, 'AUX 02': 82, 'AUX 03': 83, 'AUX 04': 84,
+    'AUX 05': 85, 'AUX 06': 86, 'AUX 07': 87, 'AUX 08': 88,
+    'AUX 09': 89, 'AUX 10': 90, 'AUX 11': 91, 'AUX 12': 92,
 
-    // IS 1-10 (Index 93-102)
-    'IS 1': 93, 'IS 2': 94, 'IS 3': 95, 'IS 4': 96, 'IS 5': 97,
-    'IS 6': 98, 'IS 7': 99, 'IS 8': 100, 'IS 9': 101, 'IS 10': 102,
+    // IS 01-10 (Index 93-102) - must match RTR I/O naming
+    'IS 01': 93, 'IS 02': 94, 'IS 03': 95, 'IS 04': 96, 'IS 05': 97,
+    'IS 06': 98, 'IS 07': 99, 'IS 08': 100, 'IS 09': 101, 'IS 10': 102,
 
     // FS 21-24 (Index 103-106)
     'FS 21': 103, 'FS 22': 104, 'FS 23': 105, 'FS 24': 106,
@@ -208,14 +208,15 @@ const TallymanBridge = (() => {
    */
   function getUmdForPosition(position) {
     // Check SWR I/O outputs for switcher outs (PGM, CLEAN, ME buses, AUX, IS)
-    const switcherOuts = ['PGM A', 'CLEAN', 'PRESET', 'SWPVW',
+    // Names must match RTR I/O naming convention (SWR PVW, AUX 01, IS 01, etc.)
+    const switcherOuts = ['PGM A', 'CLEAN', 'PRESET', 'SWR PVW',
       'ME1 PVW', 'ME1 A', 'ME1 B', 'ME1 C', 'ME1 D',
       'ME2 PVW', 'ME2 A', 'ME2 B', 'ME2 C', 'ME2 D',
       'ME3 PVW', 'ME3 A', 'ME3 B', 'ME3 C', 'ME3 D',
       'ME4 PVW', 'ME4 A', 'ME4 B', 'ME4 C', 'ME4 D',
-      'AUX 1', 'AUX 2', 'AUX 3', 'AUX 4', 'AUX 5', 'AUX 6', 'AUX 7', 'AUX 8',
-      'AUX 9', 'AUX 10', 'AUX 11', 'AUX 12',
-      'IS 1', 'IS 2', 'IS 3', 'IS 4', 'IS 5', 'IS 6', 'IS 7', 'IS 8', 'IS 9', 'IS 10'];
+      'AUX 01', 'AUX 02', 'AUX 03', 'AUX 04', 'AUX 05', 'AUX 06', 'AUX 07', 'AUX 08',
+      'AUX 09', 'AUX 10', 'AUX 11', 'AUX 12',
+      'IS 01', 'IS 02', 'IS 03', 'IS 04', 'IS 05', 'IS 06', 'IS 07', 'IS 08', 'IS 09', 'IS 10'];
 
     if (switcherOuts.includes(position)) {
       const swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === position);
