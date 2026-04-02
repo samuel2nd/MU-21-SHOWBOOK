@@ -219,7 +219,16 @@ const TallymanBridge = (() => {
       'IS 01', 'IS 02', 'IS 03', 'IS 04', 'IS 05', 'IS 06', 'IS 07', 'IS 08', 'IS 09', 'IS 10'];
 
     if (switcherOuts.includes(position)) {
-      const swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === position);
+      // Try exact match first, then try old naming conventions for compatibility
+      let swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === position);
+      if (!swrOut) {
+        // Handle old naming: AUX 01 -> AUX 1, IS 01 -> IS 1, SWRPVW -> SWPVW
+        let altName = position;
+        if (position.match(/^AUX 0\d$/)) altName = position.replace(' 0', ' ');
+        else if (position.match(/^IS 0\d$/)) altName = position.replace(' 0', ' ');
+        else if (position === 'SWRPVW') altName = 'SWPVW';
+        swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === altName);
+      }
       if (swrOut) {
         return swrOut.umd || swrOut.show || '';
       }
