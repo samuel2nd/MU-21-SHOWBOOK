@@ -119,6 +119,7 @@ const SourceTab = (() => {
 
   function createAutofillControls(data) {
     const wrapper = document.createElement('div');
+    wrapper.className = 'no-print';
     wrapper.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:16px;';
 
     const title = document.createElement('div');
