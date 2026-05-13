@@ -73,9 +73,9 @@ const NetworkIoTab = (() => {
         transition:all 0.15s;
       `;
       cell.innerHTML = `
-        <div style="font-size:10px;font-weight:600;color:${hasData ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)'};margin-bottom:2px;">${port.port}</div>
-        <div style="font-size:10px;color:${hasData ? '#fff' : 'var(--text-secondary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${port.device || ''}">${port.device || '—'}</div>
-        <div style="font-size:9px;color:${hasData ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${port.notes || ''}">${port.notes || ''}</div>
+        <div style="font-size:10px;font-weight:600;color:${hasData ? '#0a3d0a' : 'var(--text-muted)'};margin-bottom:2px;">${port.port}</div>
+        <div style="font-size:10px;font-weight:600;color:${hasData ? '#000' : 'var(--text-secondary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${port.device || ''}">${port.device || '—'}</div>
+        <div style="font-size:9px;color:${hasData ? '#1a4d1a' : 'var(--text-muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${port.notes || ''}">${port.notes || ''}</div>
       `;
       cell.addEventListener('mouseenter', () => {
         cell.style.transform = 'scale(1.05)';
