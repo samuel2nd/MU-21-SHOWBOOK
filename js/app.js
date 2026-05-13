@@ -262,6 +262,103 @@ const App = (() => {
     });
   }
 
+  // Print current tab with clean formatting
+  function printCurrentTab() {
+    // Pages that should print in portrait (longer vertical content)
+    const portraitPages = ['source', 'videoio'];
+    const isPortrait = portraitPages.includes(currentTab);
+
+    // Set orientation class on body
+    if (isPortrait) {
+      document.body.classList.add('print-portrait');
+    } else {
+      document.body.classList.remove('print-portrait');
+    }
+
+    // Create print header if it doesn't exist
+    let printHeader = document.querySelector('.print-header');
+    if (!printHeader) {
+      printHeader = document.createElement('div');
+      printHeader.className = 'print-header';
+      document.getElementById('tab-content').insertBefore(printHeader, document.getElementById('tab-content').firstChild);
+    }
+
+    // Get current tab title
+    const tabTitles = {
+      'home': 'Home',
+      'txpgmgfx': 'TX/PGM/GFX',
+      'source': 'Show Sources',
+      'evsconfig': 'EVS Config',
+      'ccufsy': 'CCU/FSY',
+      'videoio': 'Video I/O',
+      'networkio': 'Network I/O',
+      'swrio': 'SWR I/O',
+      'fibertac': 'Fiber TAC',
+      'coax': 'Coax Mults',
+      'audiomult': 'Audio Mults',
+      'monitors-prod-digital': 'PROD Digital Monitor Wall',
+      'monitors-prod-print': 'PROD Print Monitor Wall',
+      'monitors-p2p3': 'P2-P3 Monitor Wall',
+      'monitors-evs': 'EVS Monitor Wall',
+      'monitors-aud': 'Audio Monitor Wall',
+      'monitors-video': 'Video Monitor Wall',
+      'engineer': 'Engineer',
+      'multiviewer': 'Multiviewers',
+      'routerpanel': 'Router Panels',
+      'activitylog': 'Activity Log',
+      'rtrmaster': 'RTR I/O Master',
+      'sheet8': 'Dropdown Options',
+    };
+
+    const showName = Store.data.show?.name || 'Untitled Show';
+    const showFormat = Store.data.show?.format || '';
+    const tabTitle = tabTitles[currentTab] || currentTab.toUpperCase();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+
+    printHeader.innerHTML = `
+      <div class="print-title">${showName}${showFormat ? ' — ' + showFormat : ''}</div>
+      <div class="print-subtitle">${tabTitle}</div>
+      <div class="print-meta">Printed: ${dateStr}</div>
+    `;
+
+    // Replace input values with visible text for printing
+    const inputs = document.querySelectorAll('#tab-content input[type="text"], #tab-content input[type="number"]');
+    inputs.forEach(input => {
+      // Create a span to show the value during print
+      let printSpan = input.nextElementSibling;
+      if (!printSpan || !printSpan.classList.contains('print-value')) {
+        printSpan = document.createElement('span');
+        printSpan.className = 'print-value';
+        printSpan.style.cssText = 'display:none;';
+        input.parentNode.insertBefore(printSpan, input.nextSibling);
+      }
+      printSpan.textContent = input.value || '—';
+    });
+
+    // Replace select values with visible text for printing
+    const selects = document.querySelectorAll('#tab-content select');
+    selects.forEach(select => {
+      let printSpan = select.nextElementSibling;
+      if (!printSpan || !printSpan.classList.contains('print-value')) {
+        printSpan = document.createElement('span');
+        printSpan.className = 'print-value';
+        printSpan.style.cssText = 'display:none;';
+        select.parentNode.insertBefore(printSpan, select.nextSibling);
+      }
+      const selectedOption = select.options[select.selectedIndex];
+      printSpan.textContent = selectedOption ? selectedOption.text : '—';
+    });
+
+    // Trigger print
+    window.print();
+
+    // Clean up orientation class after print
+    setTimeout(() => {
+      document.body.classList.remove('print-portrait');
+    }, 1000);
+  }
+
   function init() {
     // Init store
     Store.init();
@@ -298,6 +395,11 @@ const App = (() => {
       } else {
         Utils.toast('Not connected to cloud', 'warn');
       }
+    });
+
+    // Print button
+    document.getElementById('btn-print').addEventListener('click', () => {
+      printCurrentTab();
     });
 
     // Theme toggle (light/dark mode for outdoor use)
