@@ -268,12 +268,14 @@ const App = (() => {
     const portraitPages = ['source', 'videoio'];
     const isPortrait = portraitPages.includes(currentTab);
 
-    // Set orientation class on body
-    if (isPortrait) {
-      document.body.classList.add('print-portrait');
-    } else {
-      document.body.classList.remove('print-portrait');
+    // Inject dynamic @page rule for orientation (CSS @page doesn't support class selectors)
+    let printStyle = document.getElementById('print-orientation-style');
+    if (!printStyle) {
+      printStyle = document.createElement('style');
+      printStyle.id = 'print-orientation-style';
+      document.head.appendChild(printStyle);
     }
+    printStyle.textContent = `@page { size: ${isPortrait ? 'portrait' : 'landscape'}; margin: 0.5in; }`;
 
     // Create print header if it doesn't exist
     let printHeader = document.querySelector('.print-header');
@@ -353,10 +355,6 @@ const App = (() => {
     // Trigger print
     window.print();
 
-    // Clean up orientation class after print
-    setTimeout(() => {
-      document.body.classList.remove('print-portrait');
-    }, 1000);
   }
 
   function init() {

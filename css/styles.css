@@ -875,18 +875,7 @@ body.light-mode .section-header::before {
 
 /* ---- Print styles ---- */
 @media print {
-  /* Default to landscape */
-  @page {
-    size: landscape;
-    margin: 0.5in;
-  }
-
-  /* Portrait for longer pages */
-  body.print-portrait @page,
-  @page portrait {
-    size: portrait;
-    margin: 0.5in;
-  }
+  /* Note: Page orientation is set dynamically via JavaScript */
 
   /* Hide UI elements */
   #app-header, #sidebar, .theme-toggle, .header-btn, #btn-print,
