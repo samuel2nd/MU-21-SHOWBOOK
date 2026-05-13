@@ -300,6 +300,22 @@ const App = (() => {
       }
     });
 
+    // Theme toggle (light/dark mode for outdoor use)
+    const themeToggle = document.getElementById('btn-theme-toggle');
+    const savedTheme = localStorage.getItem('mu21-theme');
+    if (savedTheme === 'light') {
+      document.body.classList.add('light-mode');
+      themeToggle.textContent = '🌙';
+      themeToggle.title = 'Switch to Dark Mode';
+    }
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode');
+      localStorage.setItem('mu21-theme', isLight ? 'light' : 'dark');
+      themeToggle.textContent = isLight ? '🌙' : '☀️';
+      themeToggle.title = isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+      Utils.toast(isLight ? 'Light mode (outdoor)' : 'Dark mode (indoor)', 'info');
+    });
+
     // Click on status indicator copies share URL
     document.getElementById('connection-status').addEventListener('click', () => {
       SupabaseSync.copyShareUrl();

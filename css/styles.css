@@ -764,6 +764,110 @@ select option {
   color: #fff;
 }
 
+/* ---- Light Mode (Outdoor/Daylight) ---- */
+body.light-mode {
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8ecf1;
+  --bg-input: #ffffff;
+  --bg-hover: #dde3ea;
+  --bg-card: linear-gradient(145deg, #ffffff, #f0f3f7);
+
+  --border: #c5cdd6;
+  --border-light: #a8b5c2;
+  --border-focus: #2563eb;
+
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+
+  /* Adjusted accent colors for light mode - more saturated for visibility */
+  --accent-blue: #2563eb;
+  --accent-green: #059669;
+  --accent-red: #dc2626;
+  --accent-orange: #d97706;
+  --accent-yellow: #ca8a04;
+  --accent-purple: #7c3aed;
+  --accent-cyan: #0891b2;
+  --accent-pink: #db2777;
+
+  /* Tab category colors - adjusted for light mode */
+  --cat-home: #2563eb;
+  --cat-input: #059669;
+  --cat-lookup: #d97706;
+  --cat-output: #7c3aed;
+  --cat-physical: #0891b2;
+  --cat-connection: #db2777;
+  --cat-monitor: #dc2626;
+  --cat-config: #ca8a04;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+body.light-mode #app-header {
+  background: linear-gradient(180deg, #ffffff, #f0f3f7);
+}
+
+body.light-mode .header-logo {
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body.light-mode .data-table th {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+body.light-mode .data-table td {
+  background: #ffffff;
+}
+
+body.light-mode .data-table tr:hover td {
+  background: #f1f5f9;
+}
+
+body.light-mode .data-table input,
+body.light-mode .data-table select {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+body.light-mode .nav-tab.active {
+  background: #e2e8f0;
+}
+
+body.light-mode .section-header {
+  color: #2563eb;
+}
+
+body.light-mode .section-header::before {
+  background: #2563eb;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
 /* ---- Print styles ---- */
 @media print {
   #app-header, #sidebar { display: none !important; }
