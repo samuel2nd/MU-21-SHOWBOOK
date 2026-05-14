@@ -1003,20 +1003,47 @@ body.light-mode .section-header::before {
     page-break-before: avoid;
   }
 
-  /* Hide form elements, show print values */
+  /* Hide form elements and dropdown arrows, show values */
   .data-table input,
   .data-table select,
   input[type="text"],
   input[type="number"],
-  select {
+  select,
+  .dark-dropdown-popup {
     display: none !important;
   }
 
+  /* Hide dropdown arrow */
+  .dropdown-value + span {
+    display: none !important;
+  }
+
+  /* Print values from inputs */
   .print-value {
     display: inline !important;
     font-family: var(--font-mono);
-    font-size: inherit;
+    font-size: 8px !important;
     color: #000 !important;
+  }
+
+  /* Dropdown display values */
+  .dropdown-value {
+    color: #000 !important;
+    font-size: 8px !important;
+    font-family: var(--font-mono);
+  }
+
+  /* All table cell text should be consistent */
+  .data-table td,
+  .data-table td * {
+    color: #000 !important;
+    font-size: 8px !important;
+  }
+
+  .data-table td div[style*="position:relative"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
   }
 
   /* Section headers */
