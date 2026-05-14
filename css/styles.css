@@ -942,6 +942,12 @@ body.light-mode .section-header::before {
     height: auto !important;
   }
 
+  /* Prevent orphan/widow lines - minimum lines before/after break */
+  p, li, div {
+    orphans: 3;
+    widows: 3;
+  }
+
   /* Table styling for print */
   .data-table {
     font-size: 9px;
@@ -967,6 +973,32 @@ body.light-mode .section-header::before {
 
   .data-table tr {
     page-break-inside: avoid;
+  }
+
+  /* Keep table headers with at least a few rows */
+  .data-table thead {
+    display: table-header-group;
+  }
+
+  .data-table tbody {
+    page-break-before: avoid;
+  }
+
+  /* Keep related content together */
+  .data-table tbody tr:first-child {
+    page-break-before: avoid;
+  }
+
+  /* Avoid breaks right after headers */
+  h1, h2, h3, .tab-title, .section-header {
+    page-break-after: avoid;
+    orphans: 4;
+    widows: 4;
+  }
+
+  /* Keep at least 5 table rows together before allowing a break */
+  .data-table tbody tr:nth-child(-n+5) {
+    page-break-before: avoid;
   }
 
   /* Hide form elements, show print values */
@@ -1009,7 +1041,7 @@ body.light-mode .section-header::before {
     font-size: 11px;
   }
 
-  /* Cards and panels */
+  /* Cards and panels - keep together, avoid breaks inside */
   .home-nav-card,
   .equip-card,
   .evs-server-card,
@@ -1017,6 +1049,14 @@ body.light-mode .section-header::before {
     background: #f5f5f5 !important;
     border: 1px solid #ccc !important;
     box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Keep grids and their content together when possible */
+  .home-grid,
+  .equip-summary,
+  .tac-panel {
+    page-break-inside: avoid;
   }
 
   /* Monitor wall grids */
