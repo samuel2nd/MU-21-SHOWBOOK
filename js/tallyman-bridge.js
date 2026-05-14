@@ -221,6 +221,7 @@ const TallymanBridge = (() => {
     if (switcherOuts.includes(position)) {
       // Try exact match first, then try old naming conventions for compatibility
       let swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === position);
+      let matchType = 'exact';
       if (!swrOut) {
         // Handle old naming: AUX 01 -> AUX 1, IS 01 -> IS 1, SWRPVW -> SWPVW
         let altName = position;
@@ -228,6 +229,10 @@ const TallymanBridge = (() => {
         else if (position.match(/^IS 0\d$/)) altName = position.replace(' 0', ' ');
         else if (position === 'SWRPVW') altName = 'SWPVW';
         swrOut = Store.data.swrIo.outputs.find(o => o.defaultShow === altName);
+        matchType = altName;
+      }
+      if (position.startsWith('AUX')) {
+        console.log(`[Tallyman] ${position}: swrOut=${swrOut ? 'found' : 'NOT FOUND'} (${matchType}), outputs count=${Store.data.swrIo?.outputs?.length}, value="${swrOut?.umd || swrOut?.show || ''}"`);
       }
       if (swrOut) {
         return swrOut.umd || swrOut.show || '';

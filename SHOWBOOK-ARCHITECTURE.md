@@ -564,7 +564,7 @@ When a monitor is routed to a non-default multiviewer it displays that multiview
 Below each monitor wall display, sources are organized into categories available for drag and drop assignment to multiviewer inputs (VIPs):
 
 - **SHOW** — Show sources from the Show Sources page
-- **EVS** — EVS super channel outputs
+- **EVS** — EVS channels from EVS CONFIG (displays show names from config, routes using engineering names)
 - **TX/PGM/CG** — Transmission, program, and graphics feeds
 - **Test Signals** — Test patterns
 - **SWR Outs** — Switcher outputs
@@ -716,6 +716,28 @@ Six editable lists maintained here:
 Every list on this page is truck-specific. MU-21's TAC panel names, video formats, and device types will differ from another unit. This page is where a new truck installation customizes Showbook's dropdown options to match their actual infrastructure — without touching any code. Change the list here, every relevant dropdown in the book updates automatically.
 
 This is also the page that makes Showbook configurable for different environments without requiring developer intervention for basic option changes.
+
+---
+
+## Theme and Print
+
+### Light/Dark Mode Toggle
+
+Showbook defaults to a dark theme optimized for low-light control room environments. However, broadcast engineering regularly requires working outside the truck — at I/O panels, venue patch points, and equipment racks in full daylight. A light theme option exists specifically for these situations.
+
+The toggle is per-device and saves to localStorage rather than syncing to cloud. This is intentional — the engineer inside the truck needs dark mode while someone at the I/O panel needs light mode. They should not fight over a shared preference.
+
+### Print Functionality
+
+Every page can be printed with a clean layout for reference documentation. The print output includes:
+- Show name and page title in a header
+- Timestamp for version tracking
+- Automatic orientation selection (portrait for dense tables, landscape for visual layouts)
+- Form values displayed as text rather than input fields
+- Interactive elements (drag-and-drop, buttons) hidden
+- Monitor wall background colors preserved
+
+Print exists because paper still has a role in broadcast. A printed source list taped to a rack during setup, a monitor wall reference for the TD, a routing sheet for the venue — these use cases remain valid even in a digital workflow.
 
 ---
 

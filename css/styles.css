@@ -1088,13 +1088,13 @@ body.light-mode .section-header::before {
     page-break-inside: avoid;
   }
 
-  /* Monitor wall grids */
-  .monitor-cell,
+  /* Monitor wall grids - preserve dark backgrounds */
+  .prod-digital-wall,
+  .prod-digital-wall *,
   .pxm-display,
-  [style*="background:#"] {
-    border: 1px solid #999 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .pxm-display * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Ensure page breaks work */

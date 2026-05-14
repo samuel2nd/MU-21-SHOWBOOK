@@ -208,8 +208,12 @@ Modal dialogs allow quick selection from categorized options.
 Monitor walls display actual monitor layouts with drag-and-drop source assignment. Layout selectors show all 11 available configurations with 
 visual previews. VIP positions highlight for quick identification.
 
-The dark color scheme reduces eye strain during long production days. Color-coded accents — cyan for show names, orange for staging indicators 
-— help engineers quickly parse complex information. Status indicators show bridge connection states.
+The interface supports both dark and light themes — dark for control room environments, light for outdoor I/O hookup in bright conditions.
+A single button toggles between modes, with preferences saved per-device. Color-coded accents — cyan for show names, orange for staging
+indicators — help engineers quickly parse complex information. Status indicators show bridge connection states.
+
+Print functionality allows any page to be printed with a clean layout — show header, proper orientation, and preserved monitor wall colors
+for reference documentation.
 
 ---
 

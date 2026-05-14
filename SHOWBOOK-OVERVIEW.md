@@ -39,7 +39,7 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| js/app.js | 440 | Tab routing, header management, `stageAllFromShowData()`, `showStagingPrompt()` |
+| js/app.js | 440 | Tab routing, header management, theme toggle, print functionality, `stageAllFromShowData()`, `showStagingPrompt()` |
 | js/store.js | 1924 | Central data store, `defaultRtrMaster()`, `defaultRtrOutputs()`, `defaultEvsConfig()`, `emptyShow()` |
 | js/utils.js | 775 | Dark dropdowns, table rendering, `syncToFiberTac()`, `syncToCoaxMult()` |
 | js/formulas.js | 260 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()`, `getShowNameForFs()` |
@@ -64,7 +64,7 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 | js/tabs/fibertac.js | 615 | FIBER TAC | Visual patch panels (TAC-A through TAC-H, S09, S10), 24 ports each, click-to-assign modal |
 | js/tabs/coax.js | 375 | COAX MULTS | 8 mult units, 15 outputs each (5x3 grid), click-to-assign modal |
 | js/tabs/audiomult.js | 180 | AUDIO MULTS | DT-12 panels A-F, 12 channels each (6x2 grid) |
-| js/tabs/networkio.js | 188 | NETWORK I/O | I/O (24 ports), Truck Bench (24 ports), Above Tape (ports 13-24) |
+| js/tabs/networkio.js | 188 | NETWORK I/O | I/O (24 ports), Truck Bench (24 ports), Above Tape (ports 13-24). Green ports use dark text for readability. |
 | js/tabs/proddigital.js | 1500+ | PROD Digital | PXM 1-8, 10-12 monitor wall with MV assignments, layouts, drag-drop |
 | js/tabs/monitors.js | 1304 | P2-P3, EVS, AUD, VIDEO | 4 monitor wall pages with drag-drop sources, all 11 layouts |
 | js/tabs/evsconfig.js | 584 | EVS CONFIG | 4 EVS servers (2101, 2102, 2103, 2105), XFILE gateway, Wohler routing with NV9000 integration, clean Show Sources reference (active sources only) |
@@ -144,6 +144,8 @@ Each server has 8 channels defined in `channelDefaults`:
 - Channels 1-6: Inputs (e.g., `EVS1-Ain`, `EVS1-Bin`, `EVS1-Cin`, `EVS1-Din`, `EVS1-Ein`, `EVS1-Fin`)
 - Channels 7-8: Outputs/Super channels (e.g., `EVS 1-As`, `EVS 1-Bs`)
 
+**Default show names for outputs:** EVS 1 & 2 output channels have default showNames (`EVS 1-1 OUT`, `EVS 1-2 OUT`, etc.) so they display immediately without requiring user input.
+
 ### EVS Super Channels (RTR Master names with 's' suffix)
 ```
 EVS 1-As, EVS 1-Bs
@@ -200,10 +202,12 @@ MV Card Count: 22 cards (each with 2 sides, sharing 9 inputs)
 ### Drag-Drop Source Sections (from monitors.js)
 Source categories available for drag-drop:
 - SHOW: Show sources from SOURCE page
-- EVS: EVS super channels (`EVS 1-As`, `EVS 1-Bs`, `EVS 2-As`, `EVS 2-Bs`, `EVS 3-As`, `EVS 3-Bs`)
+- EVS: EVS channels from EVS CONFIG (displays show names, routes with engineering names)
 - TX/PGM/CG: Transmission and graphics
 - Test Signals: Test patterns
 - SWR Outs: Switcher outputs
+
+**EVS drag-drop behavior:** Chips display the show name from EVS CONFIG for readability, but routing commands use the engineering name for correct router addressing.
 
 ---
 
@@ -254,6 +258,8 @@ REVS-1 through REVS-12
 
 From tallyman-bridge.js `POSITION_INDEX_MAP` (166 positions total):
 
+**Switcher output naming convention:** Uses RTR I/O naming (SWRPVW, AUX 01-12, IS 01-10) for consistency with router device library. Fallback lookup handles legacy naming.
+
 | Position Range | Index Range |
 |----------------|-------------|
 | CCU 01-12 | 1-12 |
@@ -264,13 +270,13 @@ From tallyman-bridge.js `POSITION_INDEX_MAP` (166 positions total):
 | EVS 2-1 IN through EVS 2-6 IN | 43-48 |
 | EVS 3-1 OUT, EVS 3-2 OUT | 49-50 |
 | EVS 3-1 IN through EVS 3-6 IN | 51-56 |
-| PGM A, CLEAN, PRESET, SWPVW | 57-60 |
+| PGM A, CLEAN, PRESET, SWRPVW | 57-60 |
 | ME1 PVW, ME1 A-D | 61-65 |
 | ME2 PVW, ME2 A-D | 66-70 |
 | ME3 PVW, ME3 A-D | 71-75 |
 | ME4 PVW, ME4 A-D | 76-80 |
-| AUX 1-12 | 81-92 |
-| IS 1-10 | 93-102 |
+| AUX 01-12 | 81-92 |
+| IS 01-10 | 93-102 |
 | FS 21-24 | 103-106 |
 | CG 1-6 | 107-112 |
 | CANVAS 1-8 | 113-120 |
@@ -290,6 +296,9 @@ Site hosted on Netlify (mu-21showbook.netlify.app). Bridge servers run on engine
 | Kaleido Bridge | 3001 | HTTP | Multiviewer layouts |
 | Tallyman Bridge | 3002 | HTTP→TSL 5.0 UDP (port 8901) | UMD text sync |
 | NV9000 Bridge | 3003 | HTTP | Router control |
+
+### WebSocket Remote UMD Sync
+The Tallyman Bridge accepts WebSocket connections on port 3002 for remote UMD sync triggers from Bitfocus Companion. When Companion sends a trigger, all UMDs are synced to Tallyman.
 
 ### NV9000 Trigger Modes (ENGINEER Page)
 
@@ -533,3 +542,18 @@ SHOW 61-80: RTR IDs 1222-1241 (1161 + showNum)
 ```
 
 SHOW device names in rtrMaster sync bidirectionally with SOURCE page showName.
+
+---
+
+## UI Features
+
+### Light/Dark Theme Toggle
+Header button toggles between dark (default) and light themes. Preference saved to localStorage per-device (not synced to cloud). Light mode optimized for outdoor use during I/O hookup.
+
+### Print Functionality
+Header print button prints current page with:
+- Clean header showing show name, page title, and timestamp
+- Automatic orientation (portrait for SOURCE/VIDEO I/O, landscape for others)
+- Form values displayed as text (inputs/dropdowns hidden)
+- Drag-and-drop sections hidden from print
+- Monitor wall colors preserved via print-color-adjust

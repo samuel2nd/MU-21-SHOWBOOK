@@ -362,15 +362,19 @@ const MonitorsTab = (() => {
     page.appendChild(wallHeader);
     page.appendChild(renderMonitorWall(wallKey, config));
 
-    // Draggable Sources
-    page.appendChild(Utils.sectionHeader('DRAG SOURCES TO ASSIGN'));
-    page.appendChild(renderDraggableSources());
+    // Draggable Sources (hidden from print)
+    const dragWrapper = document.createElement('div');
+    dragWrapper.className = 'no-print';
+    dragWrapper.appendChild(Utils.sectionHeader('DRAG SOURCES TO ASSIGN'));
+    dragWrapper.appendChild(renderDraggableSources());
+    page.appendChild(dragWrapper);
 
     container.appendChild(page);
   }
 
   function renderMonitorWall(wallKey, config) {
     const wrapper = document.createElement('div');
+    wrapper.className = 'prod-digital-wall';
     wrapper.style.cssText = `
       padding: 12px;
       background: var(--bg-secondary);
@@ -470,6 +474,7 @@ const MonitorsTab = (() => {
 
   function renderMonitorDisplay(wallKey, monConfig, monData, idx) {
     const display = document.createElement('div');
+    display.className = 'pxm-display';
     display.style.cssText = `
       background: var(--bg-primary);
       border: 2px solid var(--border);

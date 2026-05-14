@@ -375,9 +375,12 @@ const ProdDigitalTab = (() => {
     page.appendChild(wallHeader);
     page.appendChild(renderMonitorWall());
 
-    // Draggable Source Sections
-    page.appendChild(Utils.sectionHeader('DRAG SOURCES TO ASSIGN'));
-    page.appendChild(renderDraggableSources());
+    // Draggable Source Sections (hidden from print)
+    const dragWrapper = document.createElement('div');
+    dragWrapper.className = 'no-print';
+    dragWrapper.appendChild(Utils.sectionHeader('DRAG SOURCES TO ASSIGN'));
+    dragWrapper.appendChild(renderDraggableSources());
+    page.appendChild(dragWrapper);
 
     container.appendChild(page);
   }
