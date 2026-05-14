@@ -275,7 +275,7 @@ const App = (() => {
       printStyle.id = 'print-orientation-style';
       document.head.appendChild(printStyle);
     }
-    printStyle.textContent = `@page { size: ${isPortrait ? 'portrait' : 'landscape'}; margin: 0.5in; }`;
+    printStyle.textContent = `@page { size: ${isPortrait ? 'portrait' : 'landscape'}; margin: 0.4in; }`;
 
     // Create print header if it doesn't exist
     let printHeader = document.querySelector('.print-header');
