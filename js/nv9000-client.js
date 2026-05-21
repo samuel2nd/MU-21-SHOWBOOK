@@ -10,8 +10,7 @@
  */
 
 const NV9000Client = (() => {
-  // Staged routes storage
-  let stagedRoutes = {};  // { 'destName': { source: 'srcName', destination: 'destName', sourceId, destId } }
+  // Staged routes now stored in Store.data.stagedRoutes for cross-device sync
 
   // ============================================================
   // CONFIGURATION - bridges always on localhost
@@ -77,11 +76,18 @@ const NV9000Client = (() => {
   }
 
   // ============================================================
-  // STAGED ROUTES
+  // STAGED ROUTES - Stored in Store.data for cross-device sync
   // ============================================================
 
+  function ensureStagedRoutes() {
+    if (!Store.data.stagedRoutes) {
+      Store.data.stagedRoutes = {};
+    }
+    return Store.data.stagedRoutes;
+  }
+
   function getStagedRoutes() {
-    return { ...stagedRoutes };
+    return { ...ensureStagedRoutes() };
   }
 
   function stageRoute(sourceName, destName) {
@@ -98,6 +104,7 @@ const NV9000Client = (() => {
       return { success: false, error: `Unknown destination: ${destName}` };
     }
 
+    const stagedRoutes = ensureStagedRoutes();
     stagedRoutes[destName] = {
       source: sourceName,
       destination: destName,
@@ -105,19 +112,23 @@ const NV9000Client = (() => {
       destId
     };
 
+    Store.set('stagedRoutes', stagedRoutes);
     console.log(`[NV9000] Staged: ${sourceName} -> ${destName}`);
     return { success: true };
   }
 
   function unstageRoute(destName) {
+    const stagedRoutes = ensureStagedRoutes();
     delete stagedRoutes[destName];
+    Store.set('stagedRoutes', stagedRoutes);
   }
 
   function clearStagedRoutes() {
-    stagedRoutes = {};
+    Store.set('stagedRoutes', {});
   }
 
   async function triggerAllStaged() {
+    const stagedRoutes = ensureStagedRoutes();
     const routes = Object.values(stagedRoutes);
     if (routes.length === 0) {
       return { success: true, message: 'No routes to execute' };
