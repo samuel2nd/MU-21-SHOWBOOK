@@ -44,7 +44,7 @@ Single-page web application for broadcast engineering show configuration. Tab-ba
 | js/utils.js | 775 | Dark dropdowns, table rendering, `syncToFiberTac()`, `syncToCoaxMult()` |
 | js/formulas.js | 260 | INDEX/MATCH lookups, `rtrMasterLookup()`, `equipmentSummary()`, `getTxRoutingInfo()`, `getShowNameForFs()` |
 | js/export.js | 301 | JSON/CSV export/import with validation, `sanitizeStrings()` |
-| js/supabase.js | 400 | Real-time cloud sync, session-based filtering, triggers RouteQueue on remote updates |
+| js/supabase.js | 738 | Cloud sync via broadcast notifications, focus buffering, selective refresh, RouteQueue triggers |
 | js/route-queue.js | 250 | Route queue system - remote devices queue routes, engineering computer executes |
 | js/kaleido.js | 325 | Multiviewer layout control, uses RouteQueue when bridges not reachable |
 | js/nv9000-client.js | 420 | Router control, uses RouteQueue when bridges not reachable |
@@ -365,10 +365,14 @@ RouteQueue.bridgesReachable                   // true on engineering computer
 - Bridge URLs stored per-computer in localStorage (not synced)
 
 ### Cloud Sync (Supabase)
-- Real-time sync via PostgreSQL changes subscription
+- **Broadcast-based sync** (egress-optimized): Lightweight notifications broadcast version + changed keys only
+- Clients fetch full data only when local version is outdated (reduces egress dramatically)
+- **Conflict handling**: Incoming sync buffered while user is focused on input fields
+- **Selective refresh**: Only re-renders tabs affected by the changed data
 - Session ID filtering to prevent own-update echoes
 - URL-based show loading: `?show=SHOWNAME`
-- Debounced save (500ms) via `debouncedSave()`
+- Debounced save (500ms) tracks changed keys for efficient broadcast
+- Fallback polling every 30 seconds catches missed broadcasts
 - Required table schema:
   ```sql
   CREATE TABLE shows (

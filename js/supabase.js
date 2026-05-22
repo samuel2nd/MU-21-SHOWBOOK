@@ -15,6 +15,9 @@
 // Enable RLS with public access for anon:
 // ALTER TABLE shows ENABLE ROW LEVEL SECURITY;
 // CREATE POLICY "Allow public access" ON shows FOR ALL USING (true) WITH CHECK (true);
+//
+// OPTIMIZATION: Uses Supabase Broadcast for lightweight change notifications instead of
+// streaming full row data via postgres_changes. This dramatically reduces egress.
 
 const SupabaseSync = (() => {
   let client = null;
@@ -29,9 +32,36 @@ const SupabaseSync = (() => {
   // Unique session ID to filter out our own real-time updates
   const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+  // ── Focus tracking for conflict handling ──
+  let userIsFocused = false;
+  let bufferedSync = null;  // Store pending sync notification while user is focused
+  let lastChangedKeys = []; // Track which Store keys changed (for selective re-render)
+
   function isConfigured() {
     return typeof SUPABASE_CONFIG !== 'undefined' &&
       SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey;
+  }
+
+  // ── Setup focus tracking for conflict handling ──
+  // When user is actively typing, we buffer incoming sync to avoid interrupting them
+  function setupFocusTracking() {
+    document.addEventListener('focusin', (e) => {
+      if (e.target.matches('input, textarea, select, [contenteditable="true"]')) {
+        userIsFocused = true;
+      }
+    });
+
+    document.addEventListener('focusout', (e) => {
+      if (e.target.matches('input, textarea, select, [contenteditable="true"]')) {
+        userIsFocused = false;
+        // Apply any buffered sync now that user is done editing
+        if (bufferedSync) {
+          console.log('[Supabase] Applying buffered sync after focus lost');
+          applyRemoteData(bufferedSync.data, bufferedSync.changedKeys);
+          bufferedSync = null;
+        }
+      }
+    });
   }
 
   // Parse URL for ?show=SHOWNAME parameter
@@ -54,6 +84,9 @@ const SupabaseSync = (() => {
       updateStatus(false, 'Not configured');
       return;
     }
+
+    // Setup focus tracking for conflict handling
+    setupFocusTracking();
 
     try {
       updateStatus(false, 'Connecting...');
@@ -151,7 +184,7 @@ const SupabaseSync = (() => {
     return false;
   }
 
-  async function saveShow() {
+  async function saveShow(changedKey = null) {
     if (!client || !currentShowName || isLoadingRemote) return;
 
     try {
@@ -193,6 +226,21 @@ const SupabaseSync = (() => {
 
       if (error) throw error;
 
+      // Broadcast lightweight change notification to other clients
+      // This is much more efficient than postgres_changes which streams full row data
+      if (channel && realtimeActive) {
+        channel.send({
+          type: 'broadcast',
+          event: 'show_changed',
+          payload: {
+            version: showData.show?.version || 0,
+            timestamp: Date.now(),
+            sessionId: sessionId,
+            changedKey: changedKey  // Hint about what changed (e.g., 'sources', 'monitors')
+          }
+        });
+      }
+
       updateStatus(true, `LIVE: ${currentShowName}`);
     } catch (e) {
       console.error('Failed to save show:', e);
@@ -201,13 +249,26 @@ const SupabaseSync = (() => {
   }
 
   // Debounced save - batch rapid changes
-  function debouncedSave() {
+  // Track the changed key(s) for efficient broadcast notifications
+  let pendingChangedKeys = new Set();
+
+  function debouncedSave(changedKey) {
+    if (changedKey) {
+      pendingChangedKeys.add(changedKey);
+    }
     if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => saveShow(), 500);
+    saveTimeout = setTimeout(() => {
+      const keys = Array.from(pendingChangedKeys);
+      pendingChangedKeys.clear();
+      saveShow(keys.length === 1 ? keys[0] : keys.join(','));
+    }, 500);
   }
 
   function handleLocalChange(detail) {
     if (isLoadingRemote) return;
+
+    // Extract the top-level key from path (e.g., 'sources' from 'sources.0.showName')
+    const changedKey = detail.path.split('.')[0];
 
     // If show name changed, update tracking and URL
     if (detail.path === 'show.name' && detail.value) {
@@ -224,7 +285,7 @@ const SupabaseSync = (() => {
       subscribeToChanges(currentShowName);
     }
 
-    debouncedSave();
+    debouncedSave(changedKey);
   }
 
   function handleShowLoaded(data) {
@@ -254,26 +315,39 @@ const SupabaseSync = (() => {
 
     console.log(`[Supabase] Setting up real-time subscription for "${showName}"...`);
 
+    // Use Broadcast channel instead of postgres_changes
+    // This is much more efficient - we only receive lightweight notifications
+    // and fetch data only when needed, instead of streaming full row data
     channel = client
-      .channel(`show:${showName}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'shows',
-          filter: `name=eq.${showName}`
-        },
-        (payload) => {
-          console.log('[Supabase] Real-time UPDATE received');
-          handleRemoteChange(payload.new);
+      .channel(`show:${showName}`, {
+        config: {
+          broadcast: { self: false }  // Don't receive our own broadcasts
         }
-      )
+      })
+      .on('broadcast', { event: 'show_changed' }, (payload) => {
+        const msg = payload.payload;
+        console.log(`[Supabase] Broadcast received: v${msg.version} from ${msg.sessionId?.slice(0, 8)}`);
+
+        // Ignore our own broadcasts (belt and suspenders with self: false)
+        if (msg.sessionId === sessionId) {
+          console.log('[Supabase] Ignoring own broadcast');
+          return;
+        }
+
+        // Check if remote version is newer
+        const localVersion = Store.data.show?.version || 0;
+        if (msg.version > localVersion) {
+          console.log(`[Supabase] Remote v${msg.version} > local v${localVersion}, fetching...`);
+          fetchAndApplyChanges(msg.changedKey);
+        } else {
+          console.log(`[Supabase] Ignoring stale broadcast (v${msg.version} <= v${localVersion})`);
+        }
+      })
       .subscribe((status, err) => {
         console.log(`[Supabase] Subscription status: ${status}`);
         if (status === 'SUBSCRIBED') {
           realtimeActive = true;
-          console.log(`[Supabase] ✓ Real-time active for "${showName}"`);
+          console.log(`[Supabase] ✓ Broadcast channel active for "${showName}"`);
           updateStatus(true);
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           realtimeActive = false;
@@ -292,73 +366,151 @@ const SupabaseSync = (() => {
       });
   }
 
-  function handleRemoteChange(payload) {
-    if (!payload || !payload.data) return;
+  // Fetch latest data from cloud and apply it
+  async function fetchAndApplyChanges(changedKey) {
+    if (!client || !currentShowName) return;
 
-    // Ignore updates from our own session
-    if (payload.session_id === sessionId) {
-      console.log('Ignoring own session update');
+    try {
+      const { data, error } = await client
+        .from('shows')
+        .select('data')
+        .eq('name', currentShowName)
+        .single();
+
+      if (error) throw error;
+      if (!data?.data) return;
+
+      const remoteData = data.data;
+      const localVersion = Store.data.show?.version || 0;
+      const remoteVersion = remoteData.show?.version || 0;
+
+      // Double-check version is still newer
+      if (remoteVersion <= localVersion) {
+        console.log(`[Supabase] Fetched data not newer (v${remoteVersion} <= v${localVersion})`);
+        return;
+      }
+
+      // Apply the remote data, respecting user focus state
+      applyRemoteData(remoteData, changedKey);
+    } catch (e) {
+      console.error('[Supabase] Failed to fetch changes:', e);
+    }
+  }
+
+  // Apply remote data with conflict handling (respects user focus state)
+  function applyRemoteData(remoteData, changedKey) {
+    // If user is currently focused on an input, buffer this sync
+    if (userIsFocused) {
+      console.log('[Supabase] User is typing, buffering sync...');
+      bufferedSync = { data: remoteData, changedKeys: changedKey };
       return;
     }
 
-    const remoteData = payload.data;
+    const localVersion = Store.data.show?.version || 0;
+    const remoteVersion = remoteData.show?.version || 0;
 
-    // Apply remote changes if show names match
+    console.log(`[Supabase] Applying remote update: v${remoteVersion} (was v${localVersion})`);
+
+    // Log the sync event
+    if (typeof ActivityLog !== 'undefined') {
+      ActivityLog.logSync(`Received update v${remoteVersion}`, `Changed: ${changedKey || 'unknown'}, was v${localVersion}`);
+    }
+
+    isLoadingRemote = true;
+    Store.loadShow(remoteData);
+    isLoadingRemote = false;
+
+    // Process route queue if this device can reach bridges
+    if (typeof RouteQueue !== 'undefined') {
+      const queue = Store.data.routeQueue;
+      const nv9000Count = queue?.nv9000?.length || 0;
+      const kaleidoCount = queue?.kaleido?.length || 0;
+      const tallyCount = queue?.tallyman?.length || 0;
+      console.log(`[Supabase] Remote update - RouteQueue: bridges=${RouteQueue.bridgesReachable}, nv9000=${nv9000Count}, kaleido=${kaleidoCount}, tally=${tallyCount}`);
+      if (nv9000Count > 0) {
+        console.log('[Supabase] Queued routes:', JSON.stringify(queue.nv9000));
+      }
+      if (RouteQueue.bridgesReachable) {
+        console.log('[Supabase] Calling processQueue...');
+        RouteQueue.processQueue();
+      } else if (nv9000Count || kaleidoCount || tallyCount) {
+        console.log('[Supabase] Queue has items but bridges not reachable on this device');
+      }
+    }
+
+    // Only refresh if the changed data affects the current tab
+    if (typeof App !== 'undefined' && App.refreshCurrentTab) {
+      const shouldRefresh = shouldRefreshForChange(changedKey);
+      if (shouldRefresh) {
+        App.refreshCurrentTab();
+      } else {
+        console.log(`[Supabase] Skipping refresh - change (${changedKey}) doesn't affect current tab`);
+      }
+    }
+
+    Utils.toast('Show updated from another device', 'info');
+  }
+
+  // Determine if we should refresh based on what changed vs current tab
+  function shouldRefreshForChange(changedKey) {
+    if (!changedKey) return true;  // Unknown change, refresh to be safe
+
+    // Map Store keys to the tabs that use them
+    const keyToTabs = {
+      'sources': ['showsources', 'monitors', 'proddigital', 'evs', 'p2p3', 'aud', 'video'],
+      'monitors': ['monitors', 'proddigital', 'evs', 'p2p3', 'aud', 'video'],
+      'evsConfig': ['evsconfig', 'monitors', 'evs'],
+      'videoIo': ['videoio'],
+      'ccuFsy': ['ccufsy'],
+      'swrIo': ['swrio'],
+      'fiberTac': ['fibertac'],
+      'coaxMults': ['coaxmults'],
+      'audioMults': ['audiomults'],
+      'sheet2': ['txpgmgfx'],
+      'sheet3': ['networkio'],
+      'routingConfig': ['engineer'],
+      'stagedRoutes': ['engineer'],
+      'routeQueue': ['engineer'],
+      'rtrMaster': ['rtriomaster'],
+      'rtrOutputs': ['rtriomaster'],
+      'show': ['home']  // Show metadata
+    };
+
+    // Get current tab (stored in App or URL)
+    const currentTab = getCurrentTab();
+    if (!currentTab) return true;  // Unknown tab, refresh to be safe
+
+    // Check if any changed key affects the current tab
+    const changedKeys = changedKey.split(',');
+    for (const key of changedKeys) {
+      const affectedTabs = keyToTabs[key.trim()] || [];
+      if (affectedTabs.includes(currentTab.toLowerCase())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Get current tab name
+  function getCurrentTab() {
+    // Try to get from URL hash or App state
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'home';
+  }
+
+  // Legacy handleRemoteChange kept for compatibility with any remaining postgres_changes usage
+  function handleRemoteChange(payload) {
+    if (!payload || !payload.data) return;
+    if (payload.session_id === sessionId) return;
+
+    const remoteData = payload.data;
     if (remoteData.show?.name === currentShowName) {
       const localVersion = Store.data.show?.version || 0;
-      const localTimestamp = Store.data.show?.lastModified || 0;
       const remoteVersion = remoteData.show?.version || 0;
-      const remoteTimestamp = remoteData.show?.lastModified || 0;
-
-      // Only apply if remote data is actually newer
-      // Compare version first, then timestamp as tiebreaker
-      if (remoteVersion < localVersion) {
-        console.log(`Ignoring stale remote update (remote v${remoteVersion} < local v${localVersion})`);
-        // Re-push our data to correct the stale update
-        debouncedSave();
-        return;
+      if (remoteVersion > localVersion) {
+        applyRemoteData(remoteData, null);
       }
-
-      if (remoteVersion === localVersion && remoteTimestamp <= localTimestamp) {
-        console.log(`Ignoring same/older remote update (same version, remote time ${remoteTimestamp} <= local ${localTimestamp})`);
-        return;
-      }
-
-      console.log(`Applying remote update: v${remoteVersion} (was v${localVersion})`);
-
-      // Log the sync event
-      if (typeof ActivityLog !== 'undefined') {
-        ActivityLog.logSync(`Received update v${remoteVersion}`, `From session ${payload.session_id?.slice(0, 8) || 'unknown'}, was v${localVersion}`);
-      }
-
-      isLoadingRemote = true;
-      Store.loadShow(remoteData);
-      isLoadingRemote = false;
-
-      // Process route queue if this device can reach bridges
-      if (typeof RouteQueue !== 'undefined') {
-        const queue = Store.data.routeQueue;
-        const nv9000Count = queue?.nv9000?.length || 0;
-        const kaleidoCount = queue?.kaleido?.length || 0;
-        const tallyCount = queue?.tallyman?.length || 0;
-        console.log(`[Supabase] Remote update - RouteQueue: bridges=${RouteQueue.bridgesReachable}, nv9000=${nv9000Count}, kaleido=${kaleidoCount}, tally=${tallyCount}`);
-        if (nv9000Count > 0) {
-          console.log('[Supabase] Queued routes:', JSON.stringify(queue.nv9000));
-        }
-        if (RouteQueue.bridgesReachable) {
-          console.log('[Supabase] Calling processQueue...');
-          RouteQueue.processQueue();
-        } else if (nv9000Count || kaleidoCount || tallyCount) {
-          console.log('[Supabase] Queue has items but bridges not reachable on this device');
-        }
-      }
-
-      // Refresh current tab
-      if (typeof App !== 'undefined' && App.refreshCurrentTab) {
-        App.refreshCurrentTab();
-      }
-
-      Utils.toast('Show updated from another device', 'info');
     }
   }
 
@@ -368,11 +520,11 @@ const SupabaseSync = (() => {
     if (el) {
       const version = Store.data.show?.version || 0;
       // Show compact version with sync mode indicator
-      const syncMode = realtimeActive ? 'RT' : 'POLL';
+      const syncMode = realtimeActive ? 'BC' : 'POLL';  // BC = Broadcast
       el.textContent = online ? `${syncMode} v${version}` : (text || 'LOCAL');
       el.className = `status-indicator ${online ? 'online' : 'offline'}`;
       el.title = online
-        ? `Connected to Supabase\nSync: ${realtimeActive ? 'Real-time ✓' : 'Polling (5s)'}\nShow: ${currentShowName || 'None'}\nVersion: ${version}\nSession: ${sessionId.slice(0, 8)}...\n\nClick ↻ to force refresh from cloud`
+        ? `Connected to Supabase\nSync: ${realtimeActive ? 'Broadcast ✓' : 'Polling (30s)'}\nShow: ${currentShowName || 'None'}\nVersion: ${version}\nSession: ${sessionId.slice(0, 8)}...\n\nClick ↻ to force refresh from cloud`
         : 'localStorage only — configure Supabase for multi-user sync';
     }
   }
@@ -480,48 +632,41 @@ const SupabaseSync = (() => {
     }
   }
 
-  // Periodic sync check - catches stale clients that missed real-time updates
-  // Runs every 5 seconds for responsive sync even if real-time fails
+  // Periodic sync check - fallback for missed broadcast notifications
+  // Runs every 30 seconds (reduced from 5s since broadcast is now primary)
+  // This catches edge cases like reconnections or missed messages
   function startSyncCheck() {
     if (syncCheckInterval) clearInterval(syncCheckInterval);
     syncCheckInterval = setInterval(async () => {
-      if (!client || !currentShowName || isLoadingRemote) return;
+      if (!client || !currentShowName || isLoadingRemote || userIsFocused) return;
 
       try {
+        // Only fetch version info, not full data (egress optimization)
         const { data, error } = await client
           .from('shows')
-          .select('data')
+          .select('data->show->version')  // Only fetch version, much smaller payload
           .eq('name', currentShowName)
           .single();
 
-        if (error || !data?.data) return;
+        if (error || !data) return;
 
-        const cloudVersion = data.data.show?.version || 0;
+        // Extract version from the response
+        const cloudVersion = data.version || 0;
         const localVersion = Store.data.show?.version || 0;
 
         if (cloudVersion > localVersion) {
-          console.log(`[Supabase] Sync check: cloud v${cloudVersion} > local v${localVersion}, updating...`);
-          isLoadingRemote = true;
-          Store.loadShow(data.data);
-          isLoadingRemote = false;
-
-          // Process route queue on engineering computer
-          if (typeof RouteQueue !== 'undefined' && RouteQueue.bridgesReachable) {
-            RouteQueue.processQueue();
-          }
-
-          Utils.toast('Synced from cloud', 'info');
-          if (typeof App !== 'undefined' && App.refreshCurrentTab) {
-            App.refreshCurrentTab();
-          }
+          console.log(`[Supabase] Sync check: cloud v${cloudVersion} > local v${localVersion}, fetching...`);
+          // Fetch full data only when we know it's newer
+          fetchAndApplyChanges(null);
         }
       } catch (e) {
         console.warn('[Supabase] Sync check failed:', e);
       }
-    }, 5000); // Check every 5 seconds
+    }, 30000); // Check every 30 seconds (fallback only)
   }
 
   // Force refresh from cloud - for when users suspect stale data
+  // This bypasses focus buffering since user explicitly requested refresh
   async function forceRefresh() {
     if (!client || !currentShowName) {
       Utils.toast('No cloud connection', 'warn');
@@ -543,9 +688,11 @@ const SupabaseSync = (() => {
         const cloudVersion = data.data.show?.version || 0;
         const localVersion = Store.data.show?.version || 0;
 
+        // Force apply - bypass focus buffering since user explicitly requested
         isLoadingRemote = true;
         Store.loadShow(data.data);
         isLoadingRemote = false;
+        bufferedSync = null;  // Clear any buffered sync
 
         Utils.toast(`Refreshed from cloud (v${cloudVersion}, was v${localVersion})`, 'success');
 
