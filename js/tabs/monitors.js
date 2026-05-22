@@ -1,6 +1,9 @@
 // Monitor Walls — P2-P3, EVS, AUD (using same MV system as PROD Digital)
 const MonitorsTab = (() => {
 
+  // Persist selected source category across re-renders
+  let selectedSourceCategory = 'show1';
+
   // Reference to shared LAYOUTS from ProdDigitalTab
   const LAYOUTS = {
     '9_SPLIT': {
@@ -1133,7 +1136,8 @@ const MonitorsTab = (() => {
     const contentArea = document.createElement('div');
     contentArea.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
 
-    let activeTab = 'show1';
+    // Use module-level variable to persist selection across re-renders
+    let activeTab = selectedSourceCategory;
 
     function renderContent(catId) {
       contentArea.innerHTML = '';
@@ -1239,6 +1243,7 @@ const MonitorsTab = (() => {
       `;
       tab.addEventListener('click', () => {
         activeTab = cat.id;
+        selectedSourceCategory = cat.id;  // Persist selection
         // Update all tab styles
         tabBar.querySelectorAll('button').forEach((btn, idx) => {
           const c = categories[idx];

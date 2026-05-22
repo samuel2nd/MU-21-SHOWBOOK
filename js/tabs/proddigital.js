@@ -1,5 +1,8 @@
 // PROD DIGITAL Tab — MU-21 Monitor Wall with dynamic MV layouts
 const ProdDigitalTab = (() => {
+  // Persist selected source category across re-renders
+  let selectedSourceCategory = 'show1';
+
   // Layout definitions with CSS grid templates
   // Based on MU-21 DEFAULT LAYOUT OPTIONS from marked-up reference image
   // VIP = blue/highlighted areas, positions numbered left-to-right, top-to-bottom
@@ -409,7 +412,8 @@ const ProdDigitalTab = (() => {
     const contentArea = document.createElement('div');
     contentArea.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;';
 
-    let activeTab = 'show1';
+    // Use module-level variable to persist selection across re-renders
+    let activeTab = selectedSourceCategory;
 
     function renderContent(catId) {
       contentArea.innerHTML = '';
@@ -497,6 +501,7 @@ const ProdDigitalTab = (() => {
       `;
       tab.addEventListener('click', () => {
         activeTab = cat.id;
+        selectedSourceCategory = cat.id;  // Persist selection
         // Update all tab styles
         tabBar.querySelectorAll('button').forEach((btn, idx) => {
           const c = categories[idx];
