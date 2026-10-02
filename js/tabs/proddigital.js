@@ -149,6 +149,20 @@ const ProdDigitalTab = (() => {
       rowSizes: '1fr',
       cells: [{ pos: 1, area: 'p1', vip: true }],
     },
+    // 16 SPLIT: 4x4 equal grid (for MV24)
+    '16_SPLIT': {
+      name: '16 SPLIT',
+      positions: 16,
+      template: '"p1 p2 p3 p4" "p5 p6 p7 p8" "p9 p10 p11 p12" "p13 p14 p15 p16"',
+      colSizes: '1fr 1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' },
+        { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' }, { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' },
+        { pos: 9, area: 'p9' }, { pos: 10, area: 'p10' }, { pos: 11, area: 'p11' }, { pos: 12, area: 'p12' },
+        { pos: 13, area: 'p13' }, { pos: 14, area: 'p14' }, { pos: 15, area: 'p15' }, { pos: 16, area: 'p16' },
+      ],
+    },
   };
 
   // PXM display configuration (physical monitor positions)
@@ -350,6 +364,30 @@ const ProdDigitalTab = (() => {
         }
         needsSave = true;
         console.log('[ProdDigital] Added MV card 26 (32x4 VIDEO MV)');
+      }
+    }
+
+    // Ensure card 24 MVs exist (GV Kaleido MV with 18 inputs, 2 outputs)
+    if (data.multiviewers) {
+      const has24 = data.multiviewers.some(m => m.cardId === 24);
+      if (!has24) {
+        // Output 1: 16_SPLIT layout, Output 2: no layout
+        data.multiviewers.push({
+          id: '24-1',
+          cardId: 24,
+          side: 1,
+          layout: '16_SPLIT',
+          inputs: Array(16).fill(''),
+        });
+        data.multiviewers.push({
+          id: '24-2',
+          cardId: 24,
+          side: 2,
+          layout: null,
+          inputs: Array(16).fill(''),
+        });
+        needsSave = true;
+        console.log('[ProdDigital] Added MV card 24 (18-input Kaleido MV)');
       }
     }
 
@@ -990,9 +1028,16 @@ const ProdDigitalTab = (() => {
       if (isSide2 && availableInputs === 0) {
         layoutSelect.innerHTML = '<option value="">N/A (0 inputs)</option>';
         layoutSelect.disabled = true;
+      } else if (mv.cardId === 24) {
+        // Card 24 (MV24) only supports 16_SPLIT layout
+        const opt = document.createElement('option');
+        opt.value = '16_SPLIT';
+        opt.textContent = LAYOUTS['16_SPLIT'].name;
+        opt.selected = true;
+        layoutSelect.appendChild(opt);
       } else {
         Object.entries(LAYOUTS).forEach(([key, l]) => {
-          if (key !== 'FULL_SCREEN') {
+          if (key !== 'FULL_SCREEN' && key !== '16_SPLIT') {
             // For side 2, only show layouts that fit in available inputs
             if (isSide2 && l.positions > availableInputs) return;
 
@@ -1809,18 +1854,27 @@ const ProdDigitalTab = (() => {
             layoutSelect.appendChild(noneOpt);
           }
 
-          Object.entries(LAYOUTS).forEach(([key, layout]) => {
-            if (key !== 'FULL_SCREEN') {
-              // For side 2, only show layouts that fit in available inputs
-              if (isSide2 && layout.positions > availableInputs) return;
+          // Card 24 (MV24) only supports 16_SPLIT layout
+          if (mv.cardId === 24) {
+            const opt = document.createElement('option');
+            opt.value = '16_SPLIT';
+            opt.textContent = `${LAYOUTS['16_SPLIT'].name} (${LAYOUTS['16_SPLIT'].positions} inputs)`;
+            opt.selected = true;
+            layoutSelect.appendChild(opt);
+          } else {
+            Object.entries(LAYOUTS).forEach(([key, layout]) => {
+              if (key !== 'FULL_SCREEN' && key !== '16_SPLIT') {
+                // For side 2, only show layouts that fit in available inputs
+                if (isSide2 && layout.positions > availableInputs) return;
 
-              const opt = document.createElement('option');
-              opt.value = key;
-              opt.textContent = `${layout.name} (${layout.positions} inputs)`;
-              if (mv.layout === key) opt.selected = true;
-              layoutSelect.appendChild(opt);
-            }
-          });
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = `${layout.name} (${layout.positions} inputs)`;
+                if (mv.layout === key) opt.selected = true;
+                layoutSelect.appendChild(opt);
+              }
+            });
+          }
 
           if (isSide2 && availableInputs === 0) {
             layoutSelect.disabled = true;
@@ -2064,15 +2118,24 @@ const ProdDigitalTab = (() => {
     // Layout dropdown
     const layoutSelect = document.createElement('select');
     layoutSelect.style.cssText = 'padding:4px 8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;';
-    Object.entries(LAYOUTS).forEach(([key, layout]) => {
-      if (key !== 'FULL_SCREEN') {
-        const opt = document.createElement('option');
-        opt.value = key;
-        opt.textContent = layout.name;
-        if (mv.layout === key) opt.selected = true;
-        layoutSelect.appendChild(opt);
-      }
-    });
+    // Card 24 (MV24) only supports 16_SPLIT layout
+    if (mv.cardId === 24) {
+      const opt = document.createElement('option');
+      opt.value = '16_SPLIT';
+      opt.textContent = LAYOUTS['16_SPLIT'].name;
+      opt.selected = true;
+      layoutSelect.appendChild(opt);
+    } else {
+      Object.entries(LAYOUTS).forEach(([key, layout]) => {
+        if (key !== 'FULL_SCREEN' && key !== '16_SPLIT') {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = layout.name;
+          if (mv.layout === key) opt.selected = true;
+          layoutSelect.appendChild(opt);
+        }
+      });
+    }
     layoutSelect.addEventListener('change', () => {
       mv.layout = layoutSelect.value;
       Store.set(`prodDigital.multiviewers.${idx}.layout`, layoutSelect.value);
@@ -2398,6 +2461,24 @@ const ProdDigitalTab = (() => {
         inputs: Array(9).fill(''),
       });
     }
+
+    // Card 24: GV Kaleido MV with 18 inputs, 2 outputs
+    // Output 1: 16_SPLIT layout (4x4 grid) with layout index 26
+    // Output 2: No layout
+    multiviewers.push({
+      id: '24-1',
+      cardId: 24,
+      side: 1,
+      layout: '16_SPLIT',
+      inputs: Array(16).fill(''),
+    });
+    multiviewers.push({
+      id: '24-2',
+      cardId: 24,
+      side: 2,
+      layout: null,
+      inputs: Array(16).fill(''),
+    });
 
     return {
       // 11 PXM displays

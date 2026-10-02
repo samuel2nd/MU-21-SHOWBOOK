@@ -154,7 +154,10 @@ const App = (() => {
             // Determine actual input number based on layout
             const layout = mv.layout;
             let actualInputNum = inputIdx + 1;
-            if (layout && (layout.includes('9_SPLIT') || layout === '9_SPLIT')) {
+            if (layout && layout === '16_SPLIT') {
+              // 16_SPLIT: 4x4 grid, positions 1-16 map directly to inputs 1-16
+              actualInputNum = inputIdx + 1;
+            } else if (layout && (layout.includes('9_SPLIT') || layout === '9_SPLIT')) {
               actualInputNum = inputIdx + 1;
             } else if (layout && layout.includes('6_SPLIT')) {
               const sixSplitMap = { 0: 1, 1: 2, 2: 3, 3: 7, 4: 9, 5: 8 };

@@ -198,7 +198,8 @@ const KaleidoClient = (() => {
       '9_SPLIT_R': 11,
       '5_SPLIT_FLIP': 15,
       '6_SPLIT_L_UP': 16,
-      '6_SPLIT_R_UP': 17
+      '6_SPLIT_R_UP': 17,
+      '16_SPLIT': 26
     };
 
     const index = layoutIndexMap[layoutName] || 4;

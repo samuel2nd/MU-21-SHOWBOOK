@@ -4,18 +4,40 @@ const MultiviewerTab = (() => {
   // Ensure kaleidoConfig exists in store
   function ensureKaleidoConfig() {
     if (!Store.data.kaleidoConfig) {
+      // Cards 1-22 + Card 24 (MV24 with 18 inputs)
+      const cards = Array.from({ length: 22 }, (_, i) => ({
+        cardId: i + 1,
+        ip: `192.168.23.${201 + i}`,
+        port: 8902,
+        enabled: true,
+      }));
+      // Add card 24 (MV24 - GV Kaleido with 18 inputs)
+      cards.push({
+        cardId: 24,
+        ip: '192.168.23.224',
+        port: 8902,
+        enabled: true,
+      });
       Store.data.kaleidoConfig = {
         bridgeUrl: 'http://localhost:3001',
         triggerMode: 'staged',
-        cards: Array.from({ length: 22 }, (_, i) => ({
-          cardId: i + 1,
-          ip: `192.168.23.${201 + i}`,
-          port: 8902,
-          enabled: true,
-        })),
+        cards: cards,
         stagedLayouts: {},
       };
       Store.save();
+    } else if (Store.data.kaleidoConfig.cards) {
+      // Ensure card 24 exists in existing config
+      const has24 = Store.data.kaleidoConfig.cards.some(c => c.cardId === 24);
+      if (!has24) {
+        Store.data.kaleidoConfig.cards.push({
+          cardId: 24,
+          ip: '192.168.23.224',
+          port: 8902,
+          enabled: true,
+        });
+        Store.save();
+        console.log('[Multiviewer] Added Kaleido card 24 config');
+      }
     }
   }
 
@@ -141,7 +163,7 @@ const MultiviewerTab = (() => {
     cardHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
     const cardTitle = document.createElement('span');
     cardTitle.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-primary);';
-    cardTitle.textContent = 'KALEIDO CARDS (22 total)';
+    cardTitle.textContent = 'KALEIDO CARDS (22 + MV24)';
     cardHeader.appendChild(cardTitle);
 
     // Toggle for showing/hiding card table
@@ -461,6 +483,17 @@ const MultiviewerTab = (() => {
         { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' },
       ],
     },
+    '16_SPLIT': {
+      name: '16 SPLIT', positions: 16,
+      template: '"p1 p2 p3 p4" "p5 p6 p7 p8" "p9 p10 p11 p12" "p13 p14 p15 p16"',
+      colSizes: '1fr 1fr 1fr 1fr', rowSizes: '1fr 1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' },
+        { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' }, { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' },
+        { pos: 9, area: 'p9' }, { pos: 10, area: 'p10' }, { pos: 11, area: 'p11' }, { pos: 12, area: 'p12' },
+        { pos: 13, area: 'p13' }, { pos: 14, area: 'p14' }, { pos: 15, area: 'p15' }, { pos: 16, area: 'p16' },
+      ],
+    },
   };
 
   // Get all source options from RTR Master
@@ -624,10 +657,17 @@ const MultiviewerTab = (() => {
 
     // Build layout options
     const layoutOptions = [{ value: '', label: '-- None --' }];
-    Object.entries(LAYOUTS).forEach(([key, l]) => {
-      if (side === 2 && l.positions > availableInputs) return;
-      layoutOptions.push({ value: key, label: `${l.name} (${l.positions})` });
-    });
+    // Card 24 (MV24) only supports 16_SPLIT layout
+    if (mv.cardId === 24) {
+      layoutOptions.push({ value: '16_SPLIT', label: `${LAYOUTS['16_SPLIT'].name} (${LAYOUTS['16_SPLIT'].positions})` });
+    } else {
+      Object.entries(LAYOUTS).forEach(([key, l]) => {
+        if (side === 2 && l.positions > availableInputs) return;
+        // Don't show 16_SPLIT for cards other than 24
+        if (key === '16_SPLIT') return;
+        layoutOptions.push({ value: key, label: `${l.name} (${l.positions})` });
+      });
+    }
 
     // Layout selector
     const layoutSelect = Utils.createDarkDropdown(layoutOptions, mv.layout || '', async (newLayout) => {

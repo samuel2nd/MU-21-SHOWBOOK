@@ -143,6 +143,20 @@ const MonitorsTab = (() => {
       rowSizes: '1fr',
       cells: [{ pos: 1, area: 'p1', vip: true }],
     },
+    // 16 SPLIT: 4x4 equal grid (for MV24)
+    '16_SPLIT': {
+      name: '16 SPLIT',
+      positions: 16,
+      template: '"p1 p2 p3 p4" "p5 p6 p7 p8" "p9 p10 p11 p12" "p13 p14 p15 p16"',
+      colSizes: '1fr 1fr 1fr 1fr',
+      rowSizes: '1fr 1fr 1fr 1fr',
+      cells: [
+        { pos: 1, area: 'p1' }, { pos: 2, area: 'p2' }, { pos: 3, area: 'p3' }, { pos: 4, area: 'p4' },
+        { pos: 5, area: 'p5' }, { pos: 6, area: 'p6' }, { pos: 7, area: 'p7' }, { pos: 8, area: 'p8' },
+        { pos: 9, area: 'p9' }, { pos: 10, area: 'p10' }, { pos: 11, area: 'p11' }, { pos: 12, area: 'p12' },
+        { pos: 13, area: 'p13' }, { pos: 14, area: 'p14' }, { pos: 15, area: 'p15' }, { pos: 16, area: 'p16' },
+      ],
+    },
   };
 
   // Wall configurations
@@ -240,6 +254,27 @@ const MonitorsTab = (() => {
         }
         Store.save();
         console.log('[Monitors] Added MV card 26 (32x4 VIDEO MV)');
+      }
+      // Ensure card 24 MVs exist (GV Kaleido MV with 18 inputs, 2 outputs)
+      const has24 = Store.data.prodDigital.multiviewers.some(m => m.cardId === 24);
+      if (!has24) {
+        // Output 1: 16_SPLIT layout, Output 2: no layout
+        Store.data.prodDigital.multiviewers.push({
+          id: '24-1',
+          cardId: 24,
+          side: 1,
+          layout: '16_SPLIT',
+          inputs: Array(16).fill(''),
+        });
+        Store.data.prodDigital.multiviewers.push({
+          id: '24-2',
+          cardId: 24,
+          side: 2,
+          layout: null,
+          inputs: Array(16).fill(''),
+        });
+        Store.save();
+        console.log('[Monitors] Added MV card 24 (18-input Kaleido MV)');
       }
     }
   }
@@ -419,8 +454,6 @@ const MonitorsTab = (() => {
         "vidmv1 vidmv2 vidmv3"
         "vidqc1 vidqc2 vidqc3"
       `;
-    }
-
     // Render each monitor
     config.monitors.forEach((monConfig, idx) => {
       const monData = wallData.monitors[idx];
@@ -466,8 +499,6 @@ const MonitorsTab = (() => {
         if (areaMap[monConfig.id]) {
           display.style.gridArea = areaMap[monConfig.id];
         }
-      }
-
       grid.appendChild(display);
     });
 
@@ -587,15 +618,24 @@ const MonitorsTab = (() => {
       if (isStaged) {
         layoutSelect.title = `Staged: ${stagedLayouts[mv.id].from} → ${stagedLayouts[mv.id].to}`;
       }
-      Object.entries(LAYOUTS).forEach(([key, l]) => {
-        if (key !== 'FULL_SCREEN') {
-          const opt = document.createElement('option');
-          opt.value = key;
-          opt.textContent = l.name;
-          if (mv.layout === key) opt.selected = true;
-          layoutSelect.appendChild(opt);
-        }
-      });
+      // Card 24 (MV24) only supports 16_SPLIT layout
+      if (mv.cardId === 24) {
+        const opt = document.createElement('option');
+        opt.value = '16_SPLIT';
+        opt.textContent = LAYOUTS['16_SPLIT'].name;
+        opt.selected = true;
+        layoutSelect.appendChild(opt);
+      } else {
+        Object.entries(LAYOUTS).forEach(([key, l]) => {
+          if (key !== 'FULL_SCREEN' && key !== '16_SPLIT') {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = l.name;
+            if (mv.layout === key) opt.selected = true;
+            layoutSelect.appendChild(opt);
+          }
+        });
+      }
       layoutSelect.addEventListener('change', async (e) => {
         e.stopPropagation();
         if (mvIdx >= 0) {
