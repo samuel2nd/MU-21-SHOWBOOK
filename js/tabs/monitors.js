@@ -454,6 +454,8 @@ const MonitorsTab = (() => {
         "vidmv1 vidmv2 vidmv3"
         "vidqc1 vidqc2 vidqc3"
       `;
+    }
+
     // Render each monitor
     config.monitors.forEach((monConfig, idx) => {
       const monData = wallData.monitors[idx];
@@ -499,6 +501,8 @@ const MonitorsTab = (() => {
         if (areaMap[monConfig.id]) {
           display.style.gridArea = areaMap[monConfig.id];
         }
+      }
+
       grid.appendChild(display);
     });
 
