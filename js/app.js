@@ -360,9 +360,53 @@ const App = (() => {
 
   }
 
+  // Ensure MV24 data exists in existing shows (migration for pre-MV24 shows)
+  function ensureMV24Data() {
+    // Ensure prodDigital.multiviewers has card 24
+    if (Store.data.prodDigital && Store.data.prodDigital.multiviewers) {
+      const has24 = Store.data.prodDigital.multiviewers.some(m => m.cardId === 24);
+      if (!has24) {
+        Store.data.prodDigital.multiviewers.push({
+          id: '24-1',
+          cardId: 24,
+          side: 1,
+          layout: '16_SPLIT',
+          inputs: Array(16).fill(''),
+        });
+        Store.data.prodDigital.multiviewers.push({
+          id: '24-2',
+          cardId: 24,
+          side: 2,
+          layout: null,
+          inputs: Array(16).fill(''),
+        });
+        Store.save();
+        console.log('[App] Added MV card 24 to existing show');
+      }
+    }
+
+    // Ensure kaleidoConfig has card 24
+    if (Store.data.kaleidoConfig && Store.data.kaleidoConfig.cards) {
+      const has24 = Store.data.kaleidoConfig.cards.some(c => c.cardId === 24);
+      if (!has24) {
+        Store.data.kaleidoConfig.cards.push({
+          cardId: 24,
+          ip: '192.168.23.224',
+          port: 8902,
+          enabled: true,
+        });
+        Store.save();
+        console.log('[App] Added Kaleido card 24 config to existing show');
+      }
+    }
+  }
+
   function init() {
     // Init store
     Store.init();
+
+    // Ensure MV24 exists in existing shows
+    ensureMV24Data();
 
     // Init Tallyman Bridge WebSocket (for remote trigger from Companion)
     if (typeof TallymanBridge !== 'undefined') {
